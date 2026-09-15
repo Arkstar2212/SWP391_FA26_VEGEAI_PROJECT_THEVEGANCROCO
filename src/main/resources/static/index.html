@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VEGEAI — Nền Tảng Ăn Chay Thông Minh & Giám Sát AI (Linh Vật Cá Sấu Ăn Chay)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            croc: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              200: '#a7f3d0',
+              300: '#6ee7b7',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            },
+            carrot: {
+              500: '#f97316',
+              600: '#ea580c',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glassmorphism {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .active-tab-nav {
+      color: #059669 !important;
+      border-bottom: 3px solid #059669 !important;
+      font-weight: 700 !important;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .animate-mascot {
+      animation: pulse-subtle 4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col custom-scrollbar">
+
+  <!-- ================= TOP NOTIFICATION BAR ================= -->
+  <div class="bg-gradient-to-r from-croc-800 via-croc-700 to-emerald-800 text-white text-xs py-1.5 px-4 font-medium flex items-center justify-between shadow-sm">
+    <div class="flex items-center gap-2 max-w-6xl mx-auto w-full justify-between">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1 bg-croc-900/60 px-2 py-0.5 rounded-full text-emerald-200 border border-croc-600/40">
+          <i data-lucide="sparkles" class="w-3 h-3 text-amber-300"></i> SWP391 FA26 PROJECT
+        </span>
+        <span class="hidden sm:inline text-emerald-100">Linh vật chính thức: <strong>Cá Sấu Ăn Chay (CrocVeggie)</strong> — "Cá sấu còn ăn chay được, bạn cũng thế!"</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-emerald-200 hidden md:inline">Đang giả lập vai trò:</span>
+        <div class="inline-flex rounded-lg bg-croc-900/80 p-0.5 border border-emerald-600/40">
+          <button id="roleBtnGuest" onclick="setSimulatedRole('GUEST')" class="px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-600 text-white shadow transition-all">Khách</button>
+          <button id="roleBtnMember" onclick="setSimulatedRole('MEMBER')" class="px-2.5 py-0.5 rounded text-xs font-semibold text-emerald-200 hover:text-white transition-all">Thành Viên</button>
+          <button id="roleBtnAdmin" onclick="setSimulatedRole('ADMIN')" class="px-2.5 py-0.5 rounded text-xs font-semibold text-emerald-200 hover:text-white transition-all">Admin</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN HEADER NAVIGATION ================= -->
+  <header class="sticky top-0 z-40 bg-white/90 glassmorphism border-b border-slate-200/80 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo with Vegetarian Crocodile (SVG + Fallback Image) -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchPortal('USER'); switchUserTab('home');">
+        <div class="relative w-12 h-12 rounded-2xl bg-gradient-to-tr from-croc-600 to-emerald-400 p-0.5 shadow-md shadow-croc-500/20 group hover:rotate-3 transition-transform">
+          <div class="w-full h-full bg-white rounded-[14px] overflow-hidden flex items-center justify-center p-0.5">
+            <!-- CrocVeggie Mascot SVG Vector -->
+            <svg class="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Chef Hat -->
+              <path d="M42 22C42 16 58 16 58 22C64 20 68 26 64 31C68 35 62 40 56 39L44 39C38 40 32 35 36 31C32 26 36 20 42 22Z" fill="#FFFFFF" stroke="#059669" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M41 38H59V41H41V38Z" fill="#10B981"/>
+              <!-- Crocodile Head -->
+              <ellipse cx="50" cy="55" rx="26" ry="20" fill="#10B981"/>
+              <!-- Snout -->
+              <path d="M26 56C26 50 36 46 54 48C70 49 76 54 74 61C71 67 48 70 30 65C27 63 26 59 26 56Z" fill="#34D399" stroke="#047857" stroke-width="2"/>
+              <!-- Nostrils -->
+              <circle cx="68" cy="54" r="1.5" fill="#065F46"/>
+              <circle cx="63" cy="53" r="1.5" fill="#065F46"/>
+              <!-- Big Friendly Eyes -->
+              <circle cx="43" cy="45" r="5.5" fill="#FFFFFF" stroke="#047857" stroke-width="1.5"/>
+              <circle cx="44.5" cy="44.5" r="2.8" fill="#064E3B"/>
+              <circle cx="43.5" cy="43.5" r="1" fill="#FFFFFF"/>
+              <!-- Cheerful Smile -->
+              <path d="M38 61C44 65 58 65 65 60" stroke="#064E3B" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Rosy Cheek -->
+              <circle cx="37" cy="56" r="3" fill="#FCA5A5" opacity="0.6"/>
+              <!-- Carrot held by croc -->
+              <path d="M62 65L76 78C78 80 81 78 80 75L70 59L62 65Z" fill="#F97316"/>
+              <path d="M78 77L84 81M79 79L86 76" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Avocado mini -->
+              <ellipse cx="25" cy="67" rx="6" ry="8" fill="#84CC16" stroke="#4D7C0F" stroke-width="1.5"/>
+              <circle cx="25" cy="68" r="3" fill="#78350F"/>
+            </svg>
+          </div>
+          <!-- Tiny floating leaf badge -->
+          <span class="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center text-[9px] shadow font-bold text-amber-900 border border-white">🌿</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-2xl font-black tracking-tight text-slate-900">VEGE<span class="text-croc-600">AI</span></span>
+            <span class="bg-croc-100 text-croc-800 text-[10px] font-bold px-1.5 py-0.5 rounded border border-croc-300">CrocVeggie</span>
+          </div>
+          <p class="text-[11px] text-slate-500 font-medium leading-none">Trợ lý Ăn Chay Thông Minh & Bền Vững</p>
+        </div>
+      </div>
+
+      <!-- User Portal Tabs (Only shown when viewing User Portal) -->
+      <nav id="userNavMenu" class="hidden md:flex items-center gap-1 lg:gap-2 h-full">
+        <button onclick="switchUserTab('home')" id="tabBtn-home" class="px-3 py-5 text-sm font-semibold text-slate-600 hover:text-croc-600 border-b-3 border-transparent transition-all flex items-center gap-1.5 active-tab-nav">
+          <i data-lucide="home" class="w-4 h-4"></i> Trang Chủ
+        </button>
+        <button onclick="switchUserTab('mealplanner')" id="tabBtn-mealplanner" class="px-3 py-5 text-sm font-semibold text-slate-600 hover:text-croc-600 border-b-3 border-transparent transition-all flex items-center gap-1.5">
+          <i data-lucide="calendar" class="w-4 h-4 text-croc-500"></i> Thực Đơn Tuần (AI)
+        </button>
+        <button onclick="switchUserTab('scanner')" id="tabBtn-scanner" class="px-3 py-5 text-sm font-semibold text-slate-600 hover:text-croc-600 border-b-3 border-transparent transition-all flex items-center gap-1.5">
+          <i data-lucide="camera" class="w-4 h-4 text-amber-500"></i> Quét Tủ Lạnh
+        </button>
+        <button onclick="switchUserTab('chatbot')" id="tabBtn-chatbot" class="px-3 py-5 text-sm font-semibold text-slate-600 hover:text-croc-600 border-b-3 border-transparent transition-all flex items-center gap-1.5">
+          <i data-lucide="bot" class="w-4 h-4 text-emerald-500"></i> Trợ Lý Dinh Dưỡng
+        </button>
+        <button onclick="switchUserTab('restaurants')" id="tabBtn-restaurants" class="px-3 py-5 text-sm font-semibold text-slate-600 hover:text-croc-600 border-b-3 border-transparent transition-all flex items-center gap-1.5">
+          <i data-lucide="map-pin" class="w-4 h-4 text-rose-500"></i> Quán Chay Gần Bạn
+        </button>
+      </nav>
+
+      <!-- Portal Switcher Button & Auth Profile -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Portal Toggle (User vs Admin) -->
+        <button id="portalToggleBtn" onclick="togglePortal()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs border bg-slate-900 text-white hover:bg-slate-800 border-slate-700">
+          <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span id="portalToggleText">Sang Cổng Admin</span>
+        </button>
+
+        <!-- Current User Avatar Profile -->
+        <div class="flex items-center gap-2 pl-2 border-l border-slate-200">
+          <div class="w-9 h-9 rounded-xl bg-croc-100 border border-croc-300 flex items-center justify-center font-bold text-croc-800 text-sm shadow-xs" id="userAvatarText">
+            CV
+          </div>
+          <div class="hidden lg:block text-left leading-tight">
+            <div class="text-xs font-bold text-slate-800" id="userDisplayName">Bạn Ăn Chay (Guest)</div>
+            <div class="text-[10px] text-croc-600 font-semibold flex items-center gap-1" id="userBadgeStatus">
+              <span class="w-1.5 h-1.5 rounded-full bg-croc-500 animate-pulse"></span> Thử nghiệm 3 câu
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT VIEWPORT ================= -->
+  <main class="flex-1">
+
+    <!-- ################################################################## -->
+    <!-- #################### PHÂN HỆ USER (USER PORTAL) #################### -->
+    <!-- ################################################################## -->
+    <div id="userPortalSection" class="transition-opacity duration-200">
+
+      <!-- ================= 1. TAB: TRANG CHỦ (DISCOVERY & HERO) ================= -->
+      <section id="userTab-home" class="space-y-10 pb-16">
+        
+        <!-- Hero Section with CrocVeggie Mascot Banner -->
+        <div class="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-croc-900 to-teal-950 text-white py-12 px-4 sm:px-6 lg:px-8 border-b border-croc-800 shadow-inner">
+          <!-- Background botanical pattern overlay -->
+          <div class="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px]"></div>
+          
+          <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+            <div class="lg:col-span-7 space-y-5">
+              <div class="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
+                Hệ Thống Trí Tuệ Nhân Tạo Thuần Chay SWP391
+              </div>
+              <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
+                Ăn Chay Chuẩn Khoa Học.<br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-amber-300">Đồng Hành Cùng Cá Sấu CrocVeggie.</span>
+              </h1>
+              <p class="text-slate-300 text-sm sm:text-base max-w-xl leading-relaxed">
+                Tự động lên thực đơn 7 ngày theo chỉ số cơ thể, quét ảnh tủ lạnh nhận diện độ tươi, và kiểm duyệt thông tin dinh dưỡng an toàn cho người ăn chay Việt Nam.
+              </p>
+              
+              <!-- Quick Search Bar -->
+              <div class="bg-white/95 p-2 rounded-2xl shadow-xl flex flex-col sm:flex-row gap-2 max-w-xl border border-white/20">
+                <div class="flex-1 flex items-center px-3 gap-2">
+                  <i data-lucide="search" class="w-5 h-5 text-slate-400"></i>
+                  <input id="mainSearchInput" type="text" placeholder="Tìm món ăn, nguyên liệu (VD: bún bò huế chay, nấm đùi gà)..." class="w-full text-slate-800 text-sm focus:outline-none placeholder-slate-400">
+                </div>
+                <button onclick="executeRecipeSearch()" class="bg-croc-600 hover:bg-croc-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i> Tìm Món Ngay
+                </button>
+              </div>
+
+              <!-- Social Proof Badges -->
+              <div class="flex flex-wrap items-center gap-4 pt-2 text-xs text-emerald-200 font-medium">
+                <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i> 100% Ràng buộc dị ứng nghiêm ngặt</span>
+                <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Tính toán BMI/TDEE xác định</span>
+                <span class="flex items-center gap-1.5"><i data-lucide="heart" class="w-4 h-4 text-rose-400"></i> Miễn phí trải nghiệm AI</span>
+              </div>
+            </div>
+
+            <!-- Hero Mascot Artwork Card -->
+            <div class="lg:col-span-5 flex justify-center">
+              <div class="relative w-72 sm:w-80 p-5 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl text-center space-y-3 group hover:scale-[1.02] transition-transform">
+                <div class="w-48 h-48 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-croc-600 p-1.5 shadow-xl relative overflow-hidden animate-mascot">
+                  <img src="assets/croc_veggie_logo.jpg" alt="Cá sấu ăn chay CrocVeggie" class="w-full h-full object-cover rounded-full bg-white" onerror="this.src='https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&q=80'">
+                  <div class="absolute bottom-1 inset-x-0 bg-croc-900/80 text-[10px] text-emerald-200 py-0.5 font-bold">CrocVeggie Mascot</div>
+                </div>
+                <div class="space-y-1">
+                  <div class="font-extrabold text-lg text-white">"Cá sấu còn ăn chay được!"</div>
+                  <p class="text-xs text-emerald-200">Hãy cùng tôi lên thực đơn ngon miệng, đủ chất và tràn đầy năng lượng mỗi ngày nhé!</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-2 text-xs">
+                  <button onclick="switchUserTab('mealplanner')" class="bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold py-2 rounded-xl transition shadow">Lập Thực Đơn</button>
+                  <button onclick="switchUserTab('scanner')" class="bg-white/20 hover:bg-white/30 text-white font-bold py-2 rounded-xl transition border border-white/30">Quét Tủ Lạnh</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Deterministic Health Profile & BMI Calculator (No AI Hallucination!) -->
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+          <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+              <div>
+                <div class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-700 text-xs font-bold px-2.5 py-1 rounded-md border border-sky-200 mb-1">
+                  <i data-lucide="calculator" class="w-3.5 h-3.5"></i> Thuật Toán Xác Thực (Deterministic Math)
+                </div>
+                <h2 class="text-xl font-bold text-slate-900">Tính Chỉ Số Cơ Thể Khoa Học (BMI & Nhu Cầu Calo TDEE)</h2>
+                <p class="text-xs text-slate-500">Áp dụng công thức Mifflin-St Jeor & WHO — Không dùng AI tự sinh số liệu toán học giả mạo.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400 font-medium">Cập nhật lúc: 09:15 AM</span>
+                <button onclick="recalculateDeterministicHealth()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tính Lại
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+              <!-- Height -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-slate-700 flex justify-between">
+                  <span>Chiều cao (cm)</span>
+                  <span id="labelHeight" class="text-croc-600 font-extrabold">170 cm</span>
+                </label>
+                <input type="range" id="inputHeight" min="140" max="210" value="170" oninput="updateHealthInputs()" class="w-full accent-croc-600">
+              </div>
+              <!-- Weight -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-slate-700 flex justify-between">
+                  <span>Cân nặng (kg)</span>
+                  <span id="labelWeight" class="text-croc-600 font-extrabold">64 kg</span>
+                </label>
+                <input type="range" id="inputWeight" min="40" max="130" value="64" oninput="updateHealthInputs()" class="w-full accent-croc-600">
+              </div>
+              <!-- Activity Level -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-slate-700">Mức độ vận động</label>
+                <select id="selectActivity" onchange="updateHealthInputs()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-700 focus:outline-none focus:border-croc-500">
+                  <option value="1.2">Ít vận động (Ngồi văn phòng)</option>
+                  <option value="1.375">Vận động nhẹ (Tập 1-3 ngày/tuần)</option>
+                  <option value="1.55" selected>Vận động vừa (Tập 3-5 ngày/tuần)</option>
+                  <option value="1.725">Vận động nhiều (Tập 6-7 ngày/tuần)</option>
+                </select>
+              </div>
+              <!-- Dietary Preference -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-slate-700">Loại hình ăn chay</label>
+                <select id="selectDietType" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-semibold text-slate-700 focus:outline-none focus:border-croc-500">
+                  <option value="VEGAN" selected>Thuần chay (Strict Vegan)</option>
+                  <option value="LACTO_OVO">Chay có trứng & sữa (Lacto-Ovo)</option>
+                  <option value="FLEXITARIAN">Ăn chay bán phần (Flexitarian)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Health Metric Output Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/80 rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-croc-600 text-white flex items-center justify-center font-black text-lg shadow-sm">
+                  BMI
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 font-medium">Chỉ số khối cơ thể</div>
+                  <div class="text-2xl font-black text-slate-900" id="resultBMI">22.1</div>
+                  <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800" id="badgeBMI">Cân đối lý tưởng</span>
+                </div>
+              </div>
+
+              <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow-sm">
+                  TDEE
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 font-medium">Năng lượng tiêu hao mỗi ngày</div>
+                  <div class="text-2xl font-black text-slate-900" id="resultTDEE">2,450 <span class="text-xs font-semibold text-slate-500">kcal</span></div>
+                  <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Calo cơ sở chuẩn</span>
+                </div>
+              </div>
+
+              <div class="bg-gradient-to-br from-rose-50 to-red-50 border border-rose-200/80 rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-rose-500 text-white flex items-center justify-center font-black text-sm shadow-sm">
+                  <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500 font-medium">Ràng buộc dị ứng đã chọn</div>
+                  <div class="text-sm font-bold text-rose-900" id="activeAllergyCount">Đậu phộng, Gluten (2 loại)</div>
+                  <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800">AI loại trừ 100%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Popular Categories & Cooking Hub -->
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">Món Chay Được Yêu Thích Hôm Nay</h2>
+              <p class="text-xs text-slate-500">Được thẩm định dinh dưỡng và kiểm duyệt tự động bởi hệ thống AI</p>
+            </div>
+            <button onclick="switchUserTab('mealplanner')" class="text-xs font-bold text-croc-600 hover:text-croc-700 flex items-center gap-1">
+              Xem toàn bộ công thức <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Recipe Card 1 -->
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs hover:shadow-md transition group">
+              <div class="relative h-44 bg-slate-100 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80" alt="Salad chay bơ hạt chia" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <span class="absolute top-3 left-3 bg-croc-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm">Thuần Chay</span>
+                <span class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <i data-lucide="clock" class="w-3 h-3"></i> 15 phút
+                </span>
+              </div>
+              <div class="p-4 space-y-2.5">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                  <span class="text-croc-600 font-semibold">Giàu Protein Thực Vật</span>
+                  <span class="flex items-center gap-1 text-amber-500 font-bold"><i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i> 4.9 (142)</span>
+                </div>
+                <h3 class="font-bold text-slate-900 group-hover:text-croc-600 transition">Salad Cầu Vồng Quả Bơ & Hạt Chia Sốt Cam</h3>
+                <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                  <span class="font-bold text-slate-700">380 kcal</span>
+                  <span class="text-slate-400">14g Protein · 8g Xơ</span>
+                  <button onclick="quickViewRecipe('Salad Bơ')" class="text-croc-600 hover:text-croc-700 font-bold">Xem cách nấu</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recipe Card 2 -->
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs hover:shadow-md transition group">
+              <div class="relative h-44 bg-slate-100 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80" alt="Bún Bò Huế Chay" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <span class="absolute top-3 left-3 bg-amber-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm">Món Nước Đậm Đà</span>
+                <span class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <i data-lucide="clock" class="w-3 h-3"></i> 35 phút
+                </span>
+              </div>
+              <div class="p-4 space-y-2.5">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                  <span class="text-amber-600 font-semibold">Đặc sản Chay Huế</span>
+                  <span class="flex items-center gap-1 text-amber-500 font-bold"><i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i> 4.8 (320)</span>
+                </div>
+                <h3 class="font-bold text-slate-900 group-hover:text-croc-600 transition">Bún Bò Huế Chay Nấm Đùi Gà & Chả Lụa Phù Trúc</h3>
+                <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                  <span class="font-bold text-slate-700">460 kcal</span>
+                  <span class="text-slate-400">18g Protein · 55g Carb</span>
+                  <button onclick="quickViewRecipe('Bún Bò Chay')" class="text-croc-600 hover:text-croc-700 font-bold">Xem cách nấu</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recipe Card 3 -->
+            <div class="bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs hover:shadow-md transition group">
+              <div class="relative h-44 bg-slate-100 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80" alt="Cà ri đậu gà rau củ" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <span class="absolute top-3 left-3 bg-rose-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm">Giàu Năng Lượng</span>
+                <span class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <i data-lucide="clock" class="w-3 h-3"></i> 25 phút
+                </span>
+              </div>
+              <div class="p-4 space-y-2.5">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                  <span class="text-rose-600 font-semibold">Tăng Cơ Thực Vật</span>
+                  <span class="flex items-center gap-1 text-amber-500 font-bold"><i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400"></i> 4.95 (88)</span>
+                </div>
+                <h3 class="font-bold text-slate-900 group-hover:text-croc-600 transition">Cà Ri Đậu Gà Nước Cốt Dừa & Khoai Lang Nhật</h3>
+                <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+                  <span class="font-bold text-slate-700">520 kcal</span>
+                  <span class="text-slate-400">21g Protein · 65g Carb</span>
+                  <button onclick="quickViewRecipe('Cà Ri Đậu Gà')" class="text-croc-600 hover:text-croc-700 font-bold">Xem cách nấu</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 2. TAB: LẬP THỰC ĐƠN TUẦN BẰNG AI ================= -->
+      <section id="userTab-mealplanner" class="hidden max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        
+        <!-- Meal Planner Header -->
+        <div class="bg-gradient-to-r from-croc-700 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div class="space-y-2 max-w-2xl">
+            <div class="inline-flex items-center gap-1.5 bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full backdrop-blur-xs">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i> AI Personalized Meal Planner · Gemini Structured JSON
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black">Thực Đơn Chay 7 Ngày Cá Nhân Hóa</h2>
+            <p class="text-emerald-100 text-xs sm:text-sm">
+              Tự động tính toán cân bằng dinh dưỡng, tuyệt đối không vi phạm danh mục dị ứng và bám sát mục tiêu TDEE.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <button onclick="generateWeeklyMealPlan()" id="btnGeneratePlan" class="bg-amber-400 hover:bg-amber-300 text-amber-950 font-extrabold text-xs sm:text-sm px-5 py-3 rounded-2xl transition-all shadow-lg flex items-center gap-2">
+              <i data-lucide="wand-2" class="w-4 h-4"></i> Tái Tạo Thực Đơn Tuần
+            </button>
+            <button onclick="openShoppingListModal()" class="bg-white/20 hover:bg-white/30 text-white font-bold text-xs sm:text-sm px-4 py-3 rounded-2xl transition border border-white/30 flex items-center gap-2">
+              <i data-lucide="shopping-cart" class="w-4 h-4"></i> Xuất Danh Sách Đi Chợ
+            </button>
+          </div>
+        </div>
+
+        <!-- Constraints and Allergy Summary Bar -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-slate-700 flex items-center gap-1"><i data-lucide="shield-check" class="w-4 h-4 text-croc-600"></i> Ràng buộc cứng:</span>
+            <span class="bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded-lg border border-rose-200">Cấm: Đậu phộng</span>
+            <span class="bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded-lg border border-rose-200">Cấm: Gluten</span>
+            <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-lg border border-emerald-200">Calo mục tiêu: 2,000 ± 10%</span>
+            <span class="bg-sky-100 text-sky-800 font-bold px-2.5 py-1 rounded-lg border border-sky-200">3 bữa chính + 1 phụ</span>
+          </div>
+          <div class="text-slate-500 font-medium">
+            AI Engine: <span class="font-bold text-slate-800">Gemini-1.5-Flash (Hard Schema Validation)</span>
+          </div>
+        </div>
+
+        <!-- 7-Day Meal Interactive Calendar Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4" id="weeklyMealGridContainer">
+          <!-- Meal cards injected by JS -->
+        </div>
+
+        <!-- Medical Disclaimer -->
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-xl text-xs text-amber-900 flex items-start gap-3">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+          <div>
+            <strong class="font-bold">Miễn trừ trách nhiệm y tế (Medical Disclaimer):</strong>
+            Mọi gợi ý thực đơn do AI sinh ra dựa trên dữ liệu thống kê dinh dưỡng thực vật tổng quát. Nếu bạn đang điều trị bệnh lý mãn tính hoặc mang thai, hãy tham vấn ý kiến của bác sĩ chuyên khoa trước khi thay đổi chế độ dinh dưỡng đột ngột.
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 3. TAB: QUÉT TỦ LẠNH & ĐỘ TƯƠI ================= -->
+      <section id="userTab-scanner" class="hidden max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <div class="text-center max-w-2xl mx-auto space-y-2">
+          <div class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">
+            <i data-lucide="scan" class="w-3.5 h-3.5"></i> Computer Vision & Freshness Estimator
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-slate-900">Quét Ảnh Rau Củ & Kiểm Tra Độ Tươi</h2>
+          <p class="text-xs sm:text-sm text-slate-500">
+            Chụp ảnh các nguyên liệu còn tồn đọng trong tủ lạnh. AI sẽ nhận diện thực phẩm, đánh giá độ tươi và gợi ý ngay món chay thơm ngon để tránh lãng phí!
+          </p>
+        </div>
+
+        <!-- Scanner Dropzone & Camera Simulation -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-dashed border-slate-300 hover:border-croc-500 transition-colors shadow-xs text-center space-y-4">
+          <div class="w-16 h-16 rounded-2xl bg-croc-100 text-croc-700 flex items-center justify-center mx-auto shadow-inner">
+            <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+          </div>
+          <div class="space-y-1">
+            <div class="text-base font-bold text-slate-800">Kéo & thả ảnh chụp thực phẩm vào đây, hoặc chụp từ điện thoại</div>
+            <p class="text-xs text-slate-400">Hỗ trợ JPG, PNG, WEBP (Tối đa 5MB) · Bảo mật dữ liệu hình ảnh</p>
+          </div>
+          <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button onclick="simulateFridgeScan('SAMPLE_1')" class="px-4 py-2.5 bg-croc-600 hover:bg-croc-700 text-white font-bold text-xs rounded-xl transition shadow flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-4 h-4"></i> Thử Với Ảnh Mẫu: Súp Lơ + Cà Rốt + Nấm
+            </button>
+            <button onclick="simulateFridgeScan('SAMPLE_2')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-2">
+              <i data-lucide="camera" class="w-4 h-4"></i> Ảnh Mẫu: Cà Chua + Đậu Hũ + Rau Cải
+            </button>
+          </div>
+        </div>
+
+        <!-- Vision Results Preview Card -->
+        <div id="visionResultCard" class="hidden bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <span class="text-[11px] font-bold text-croc-600 tracking-wide uppercase">Kết quả phân tích Vision AI</span>
+              <h3 class="text-lg font-black text-slate-900">Đã Phát Hiện 3 Nguyên Liệu Trong Bếp</h3>
+            </div>
+            <span class="text-xs font-semibold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full flex items-center gap-1.5 w-fit">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Độ tin cậy trung bình: 92.4%
+            </span>
+          </div>
+
+          <!-- Detected Tag Chips with Freshness Badges -->
+          <div class="space-y-3">
+            <div class="text-xs font-bold text-slate-700">Nguyên liệu đã nhận diện (Bạn có thể bấm [x] để xóa hoặc thêm mới):</div>
+            <div class="flex flex-wrap items-center gap-3" id="detectedTagsContainer">
+              <!-- Tags injected by JS -->
+            </div>
+          </div>
+
+          <!-- Matching Recipe Suggestions -->
+          <div class="space-y-4 pt-4 border-t border-slate-100">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="utensils" class="w-4 h-4 text-croc-600"></i> Món Chay Khớp Với Nguyên Liệu Trong Bếp (Nấu Ngay)
+              </h4>
+              <span class="text-xs text-croc-700 font-semibold">Tận dụng tối đa nguyên liệu cần dùng ngay</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="matchingRecipeList">
+              <!-- Recipe cards injected by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 4. TAB: TRỢ LÝ DINH DƯỠNG AI ================= -->
+      <section id="userTab-chatbot" class="hidden max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-lg overflow-hidden flex flex-col h-[640px]">
+          
+          <!-- Chatbot Top Bar -->
+          <div class="bg-gradient-to-r from-croc-800 to-emerald-700 text-white p-4 sm:px-6 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-white p-0.5 shadow-md">
+                <img src="assets/croc_veggie_logo.jpg" alt="Mascot" class="w-full h-full object-cover rounded-full" onerror="this.src='https://images.unsplash.com/photo-1540420773420-3366772f4999?w=100&q=80'">
+              </div>
+              <div>
+                <div class="font-bold text-sm flex items-center gap-1.5">
+                  Trợ Lý Dinh Dưỡng CrocVeggie
+                  <span class="bg-emerald-400/20 text-emerald-200 text-[10px] px-1.5 py-0.5 rounded border border-emerald-400/30">AI Active</span>
+                </div>
+                <div class="text-[11px] text-emerald-100">Hỏi đáp dinh dưỡng chay, thay thế nguyên liệu, calo món ăn</div>
+              </div>
+            </div>
+
+            <!-- Trial Limit Badge for Guest -->
+            <div id="chatTrialQuotaBadge" class="bg-amber-400 text-amber-950 text-xs font-extrabold px-3 py-1 rounded-full shadow flex items-center gap-1">
+              <i data-lucide="clock" class="w-3 h-3"></i> Còn <span id="quotaRemainingCount">3</span> / 3 câu thử
+            </div>
+          </div>
+
+          <!-- Chat Messages Scrollable Box -->
+          <div id="chatMessagesContainer" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-slate-50/50 custom-scrollbar">
+            <!-- Initial Welcome Message from CrocVeggie -->
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-full bg-croc-100 border border-croc-300 flex items-center justify-center text-xs font-bold text-croc-800 shrink-0">
+                🐊
+              </div>
+              <div class="bg-white p-4 rounded-2xl rounded-tl-none border border-slate-200 shadow-xs max-w-xl text-xs sm:text-sm text-slate-800 space-y-2">
+                <p><strong>Xin chào bạn! Tôi là CrocVeggie</strong> — linh vật đại sứ ăn chay của nền tảng VEGEAI.</p>
+                <p>Bạn có thắc mắc gì về cách ăn chay đủ đạm, nguồn bổ sung B12/sắt, hay muốn tìm nguyên liệu thay thế cho bữa tối hôm nay không? Hãy hỏi tôi nhé!</p>
+                <div class="text-[11px] text-slate-400 italic pt-1 border-t border-slate-100">
+                  Lưu ý: Mọi tư vấn chỉ mang tính giáo dục dinh dưỡng, không thay thế chẩn đoán y khoa.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Suggested Questions -->
+          <div class="px-4 sm:px-6 py-2 bg-slate-100 border-t border-slate-200/80 flex items-center gap-2 overflow-x-auto text-xs whitespace-nowrap custom-scrollbar">
+            <span class="text-slate-500 font-semibold shrink-0">Gợi ý nhanh:</span>
+            <button onclick="sendQuickChatMessage('Làm bánh chay thì thay trứng bằng nguyên liệu gì?')" class="bg-white hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg border border-slate-300 font-medium transition shrink-0">
+              Thay trứng khi làm bánh?
+            </button>
+            <button onclick="sendQuickChatMessage('Người ăn thuần chay lấy vitamin B12 và sắt ở đâu?')" class="bg-white hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg border border-slate-300 font-medium transition shrink-0">
+              Bổ sung B12 & Sắt thực vật?
+            </button>
+            <button onclick="sendQuickChatMessage('Gợi ý bữa sáng chay 500 kcal giàu protein cho người tập gym?')" class="bg-white hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg border border-slate-300 font-medium transition shrink-0">
+              Bữa sáng chay 500 kcal gym?
+            </button>
+          </div>
+
+          <!-- Chat Input Form -->
+          <div class="p-3 sm:p-4 bg-white border-t border-slate-200 flex items-center gap-2">
+            <input type="text" id="chatInputMessage" placeholder="Nhập câu hỏi dinh dưỡng của bạn (VD: Ăn nấm gì nhiều đạm nhất?)..." class="flex-1 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-croc-500" onkeydown="if(event.key==='Enter') sendUserChatMessage()">
+            <button onclick="sendUserChatMessage()" class="bg-croc-600 hover:bg-croc-500 text-white px-5 py-3 rounded-xl font-bold text-xs sm:text-sm transition shadow flex items-center gap-1.5">
+              <span>Gửi</span>
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 5. TAB: QUÁN CHAY GẦN BẠN ================= -->
+      <section id="userTab-restaurants" class="hidden max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-slate-900">Quán Ăn & Nhà Hàng Chay Lân Cận</h2>
+            <p class="text-xs sm:text-sm text-slate-500">Định vị GPS thô bảo mật quyền riêng tư · Đánh giá chuẩn xác từ cộng đồng</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-600">Bán kính:</span>
+            <select class="text-xs bg-white border border-slate-200 rounded-xl p-2 font-bold text-slate-700">
+              <option>Trong vòng 1 km</option>
+              <option selected>Trong vòng 3 km</option>
+              <option>Trong vòng 5 km</option>
+              <option>Toàn thành phố</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Simulated Map View Container -->
+        <div class="relative h-64 bg-slate-200 rounded-3xl overflow-hidden border border-slate-300 shadow-inner flex items-center justify-center">
+          <div class="absolute inset-0 opacity-40 bg-[radial-gradient(#059669_2px,transparent_2px)] [background-size:24px_24px]"></div>
+          <!-- Interactive Map Pins -->
+          <div class="relative z-10 flex flex-col items-center gap-2">
+            <div class="bg-white/95 px-4 py-2 rounded-2xl shadow-lg border border-slate-200 text-center">
+              <div class="text-xs font-black text-croc-800 flex items-center gap-1.5 justify-center">
+                <i data-lucide="navigation" class="w-3.5 h-3.5 text-croc-600"></i> Vị trí của bạn: Quận 7, TP. Hồ Chí Minh
+              </div>
+              <div class="text-[11px] text-slate-500">Tìm thấy <strong>8 quán chay</strong> uy tín trong bán kính 3km</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="px-3 py-1 bg-croc-600 text-white rounded-full text-[11px] font-bold shadow flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> Cơm Chay An Lạc (450m)</span>
+              <span class="px-3 py-1 bg-emerald-700 text-white rounded-full text-[11px] font-bold shadow flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> Buffet Chay Mandala (1.2km)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Restaurant Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:shadow-md transition">
+            <div class="h-36 bg-slate-100 relative">
+              <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80" class="w-full h-full object-cover">
+              <span class="absolute top-2 right-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">Mở cửa</span>
+            </div>
+            <div class="p-4 space-y-2">
+              <div class="flex justify-between items-start">
+                <h3 class="font-bold text-slate-900 text-sm">Quán Cơm Chay Thiện Tâm</h3>
+                <span class="text-xs font-bold text-amber-500 flex items-center"><i data-lucide="star" class="w-3 h-3 fill-amber-400"></i> 4.8</span>
+              </div>
+              <p class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3 text-slate-400"></i> Cách bạn 450m · Đường Nguyễn Thị Thập</p>
+              <div class="flex gap-1 flex-wrap text-[10px]">
+                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">Cơm tấm chay</span>
+                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">Bún riêu chay</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:shadow-md transition">
+            <div class="h-36 bg-slate-100 relative">
+              <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&q=80" class="w-full h-full object-cover">
+              <span class="absolute top-2 right-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">Mở cửa</span>
+            </div>
+            <div class="p-4 space-y-2">
+              <div class="flex justify-between items-start">
+                <h3 class="font-bold text-slate-900 text-sm">Nhà Hàng Buffet Chay Mandala</h3>
+                <span class="text-xs font-bold text-amber-500 flex items-center"><i data-lucide="star" class="w-3 h-3 fill-amber-400"></i> 4.9</span>
+              </div>
+              <p class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3 text-slate-400"></i> Cách bạn 1.2km · Đại lộ Nguyễn Văn Linh</p>
+              <div class="flex gap-1 flex-wrap text-[10px]">
+                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">Buffet 60 món</span>
+                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">Lẩu nấm dưỡng sinh</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:shadow-md transition">
+            <div class="h-36 bg-slate-100 relative">
+              <img src="https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&q=80" class="w-full h-full object-cover">
+              <span class="absolute top-2 right-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">Mở cửa</span>
+            </div>
+            <div class="p-4 space-y-2">
+              <div class="flex justify-between items-start">
+                <h3 class="font-bold text-slate-900 text-sm">Bún Bò Huế Chay Dì Bảy</h3>
+                <span class="text-xs font-bold text-amber-500 flex items-center"><i data-lucide="star" class="w-3 h-3 fill-amber-400"></i> 4.7</span>
+              </div>
+              <p class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3 text-slate-400"></i> Cách bạn 2.1km · Đường Lê Văn Lương</p>
+              <div class="flex gap-1 flex-wrap text-[10px]">
+                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">Bún bò huế</span>
+                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">Bánh bèo chén chay</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ################################################################## -->
+    <!-- #################### PHÂN HỆ ADMIN (ADMIN PORTAL) ################# -->
+    <!-- ################################################################## -->
+    <div id="adminPortalSection" class="hidden min-h-screen bg-slate-900 text-slate-100">
+      
+      <!-- Admin Top Banner -->
+      <div class="bg-slate-950 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-croc-600 flex items-center justify-center text-white font-black shadow-lg shadow-croc-500/20">
+            <i data-lucide="shield" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="text-lg font-black tracking-tight text-white flex items-center gap-2">
+              VEGEAI <span class="text-croc-400">Admin Control Center</span>
+              <span class="bg-croc-900 text-croc-300 text-[10px] font-bold px-2 py-0.5 rounded border border-croc-700">SUPER ADMIN</span>
+            </div>
+            <p class="text-xs text-slate-400">Kiểm duyệt AI nội dung, giám sát độ trễ mô hình & quản trị hệ thống</p>
+          </div>
+        </div>
+
+        <!-- Admin Navigation Tabs -->
+        <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-xl border border-slate-800">
+          <button onclick="switchAdminTab('overview')" id="adminTabBtn-overview" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-croc-600 text-white transition">Tổng Quan KPI</button>
+          <button onclick="switchAdminTab('moderation')" id="adminTabBtn-moderation" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
+            Hàng Đợi AI <span class="bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-black" id="badgeQueueCount">4</span>
+          </button>
+          <button onclick="switchAdminTab('observability')" id="adminTabBtn-observability" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition">Giám Sát AI</button>
+          <button onclick="switchAdminTab('users')" id="adminTabBtn-users" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition">Thành Viên</button>
+        </div>
+      </div>
+
+      <!-- Admin Tab 1: Executive KPI Overview -->
+      <div id="adminTab-overview" class="p-6 max-w-7xl mx-auto space-y-6">
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 space-y-2">
+            <div class="flex justify-between items-center text-xs text-slate-400">
+              <span>Tổng Thành Viên</span>
+              <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <div class="text-3xl font-black text-white">12,840</div>
+            <div class="text-xs text-emerald-400 flex items-center gap-1 font-semibold">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> +14.2% tháng này
+            </div>
+          </div>
+
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 space-y-2">
+            <div class="flex justify-between items-center text-xs text-slate-400">
+              <span>Số Lượng Gọi AI Hôm Nay</span>
+              <i data-lucide="cpu" class="w-4 h-4 text-sky-400"></i>
+            </div>
+            <div class="text-3xl font-black text-white">48,290</div>
+            <div class="text-xs text-sky-400 flex items-center gap-1 font-semibold">
+              <i data-lucide="activity" class="w-3.5 h-3.5"></i> 99.96% Thành công
+            </div>
+          </div>
+
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 space-y-2">
+            <div class="flex justify-between items-center text-xs text-slate-400">
+              <span>Độ Trễ Phản Hồi (P95)</span>
+              <i data-lucide="gauge" class="w-4 h-4 text-amber-400"></i>
+            </div>
+            <div class="text-3xl font-black text-white">1.42s</div>
+            <div class="text-xs text-emerald-400 flex items-center gap-1 font-semibold">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i> Ngưỡng an toàn (&lt; 2.5s)
+            </div>
+          </div>
+
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 space-y-2">
+            <div class="flex justify-between items-center text-xs text-slate-400">
+              <span>Chờ Duyệt Vi Phạm AI</span>
+              <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-400"></i>
+            </div>
+            <div class="text-3xl font-black text-rose-400" id="kpiPendingCount">4 mục</div>
+            <div class="text-xs text-rose-300 font-semibold">
+              Cần xử lý Human-in-the-Loop
+            </div>
+          </div>
+        </div>
+
+        <!-- Observability Graph Simulator & Circuit Breaker Status -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-croc-400"></i> Phân Bổ Tải Các Module AI (24 Giờ Qua)
+              </h3>
+              <span class="text-xs text-slate-400">Tự động làm mới 30s</span>
+            </div>
+            <!-- Visual Bar Distribution -->
+            <div class="space-y-3 pt-2">
+              <div>
+                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                  <span>AI Meal Planner (Gemini-1.5-Flash Structured JSON)</span>
+                  <span class="font-bold text-emerald-400">42% (20,281 req)</span>
+                </div>
+                <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                  <div class="bg-croc-500 h-full rounded-full" style="width: 42%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                  <span>AI Nutrition Chatbot (Conversational Streaming)</span>
+                  <span class="font-bold text-sky-400">35% (16,901 req)</span>
+                </div>
+                <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                  <div class="bg-sky-500 h-full rounded-full" style="width: 35%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                  <span>Fridge Vision & Freshness (Computer Vision)</span>
+                  <span class="font-bold text-amber-400">18% (8,692 req)</span>
+                </div>
+                <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                  <div class="bg-amber-500 h-full rounded-full" style="width: 18%"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                  <span>Video-to-Recipe Extraction (Whisper Speech-to-Text)</span>
+                  <span class="font-bold text-purple-400">5% (2,416 req)</span>
+                </div>
+                <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                  <div class="bg-purple-500 h-full rounded-full" style="width: 5%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Circuit Breaker & Fallback Box -->
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 space-y-4">
+            <h3 class="font-bold text-white text-sm flex items-center gap-2">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Trạng Thái Circuit Breaker
+            </h3>
+            <div class="p-4 rounded-xl bg-emerald-950/60 border border-emerald-800 text-center space-y-1">
+              <span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">Trạng Thái Toàn Bộ Cụm AI</span>
+              <div class="text-2xl font-black text-emerald-200">CLOSED (HEALTHY)</div>
+              <p class="text-[11px] text-emerald-300">Tất cả Provider chính hoạt động ổn định</p>
+            </div>
+            <div class="text-xs space-y-2 text-slate-300">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Provider Chính:</span>
+                <span class="font-bold text-white">Google Gemini API</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Dự phòng (Fallback):</span>
+                <span class="font-bold text-white">OpenAI GPT-4o-mini</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">User Correction Rate:</span>
+                <span class="font-bold text-croc-400">8.2% (Thấp)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Tab 2: AI Moderation Queue (Human-in-the-Loop) -->
+      <div id="adminTab-moderation" class="hidden p-6 max-w-7xl mx-auto space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="shield-alert" class="w-5 h-5 text-rose-500"></i> Hàng Đợi Kiểm Duyệt AI (Human-in-the-Loop)
+            </h2>
+            <p class="text-xs text-slate-400">Xem xét nội dung bị AI gắn cờ độc hại (> 0.85) hoặc quảng cáo thịt trong cộng đồng ăn chay</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-400">Lọc theo:</span>
+            <select class="bg-slate-800 border border-slate-700 text-white rounded-lg p-2 font-semibold">
+              <option>Tất cả cờ vi phạm</option>
+              <option>Nội dung phi chay</option>
+              <option>Ngôn từ xúc phạm</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Moderation Data Table -->
+        <div class="bg-slate-800/90 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700 font-bold">
+                <tr>
+                  <th class="py-3.5 px-4">Bài Viết / Tác Giả</th>
+                  <th class="py-3.5 px-4">Trích Đoạn Nội Dung Bị Gắn Cờ</th>
+                  <th class="py-3.5 px-4">Điểm Vi Phạm AI</th>
+                  <th class="py-3.5 px-4">Lý Do AI Gắn Cờ</th>
+                  <th class="py-3.5 px-4 text-right">Hành Động Của Admin</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700/60" id="moderationTableBody">
+                <!-- Rows injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Tab 3: AI Observability & Live Audit Log -->
+      <div id="adminTab-observability" class="hidden p-6 max-w-7xl mx-auto space-y-6">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i data-lucide="activity" class="w-5 h-5 text-sky-400"></i> AI Observability & Live Audit Logs
+          </h2>
+          <p class="text-xs text-slate-400">Nhật ký kiểm toán thời gian thực từng cuộc gọi API, thời gian phản hồi và can thiệp thủ công</p>
+        </div>
+
+        <div class="bg-slate-800/90 border border-slate-700 rounded-2xl overflow-hidden shadow-xl p-4">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-700">
+                <tr>
+                  <th class="py-3 px-3">Thời Gian</th>
+                  <th class="py-3 px-3">Module</th>
+                  <th class="py-3 px-3">Model Provider</th>
+                  <th class="py-3 px-3">Độ Trễ</th>
+                  <th class="py-3 px-3">Token Cost</th>
+                  <th class="py-3 px-3">Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700/50">
+                <tr>
+                  <td class="py-2.5 px-3 font-mono text-[11px] text-slate-400">09:14:58</td>
+                  <td class="py-2.5 px-3 font-bold text-white">MealPlanner.generateWeekPlan</td>
+                  <td class="py-2.5 px-3 text-croc-400">Gemini-1.5-Flash</td>
+                  <td class="py-2.5 px-3">1,240 ms</td>
+                  <td class="py-2.5 px-3">$0.0004</td>
+                  <td class="py-2.5 px-3"><span class="bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded font-bold">200 OK</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 px-3 font-mono text-[11px] text-slate-400">09:14:45</td>
+                  <td class="py-2.5 px-3 font-bold text-white">VisionService.detectIngredients</td>
+                  <td class="py-2.5 px-3 text-amber-400">Gemini-1.5-Flash Vision</td>
+                  <td class="py-2.5 px-3">1,820 ms</td>
+                  <td class="py-2.5 px-3">$0.0006</td>
+                  <td class="py-2.5 px-3"><span class="bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded font-bold">200 OK</span></td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 px-3 font-mono text-[11px] text-slate-400">09:14:12</td>
+                  <td class="py-2.5 px-3 font-bold text-white">Moderation.filterPostContent</td>
+                  <td class="py-2.5 px-3 text-rose-400">Content-Guard-v2</td>
+                  <td class="py-2.5 px-3">340 ms</td>
+                  <td class="py-2.5 px-3">$0.0001</td>
+                  <td class="py-2.5 px-3"><span class="bg-rose-950 text-rose-400 border border-rose-800 px-2 py-0.5 rounded font-bold">FLAGGED</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Tab 4: User Management -->
+      <div id="adminTab-users" class="hidden p-6 max-w-7xl mx-auto space-y-6">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-xl font-bold text-white">Quản Lý Thành Viên Nền Tảng</h2>
+            <p class="text-xs text-slate-400">Kiểm soát tài khoản, vai trò và lịch sử cảnh cáo</p>
+          </div>
+          <button class="bg-croc-600 hover:bg-croc-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition">
+            + Thêm Quản Trị Viên Phụ
+          </button>
+        </div>
+
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] font-bold border-b border-slate-700">
+              <tr>
+                <th class="p-3.5">Họ Tên / Email</th>
+                <th class="p-3.5">Vai Trò</th>
+                <th class="p-3.5">Chỉ Số Sức Khỏe</th>
+                <th class="p-3.5">Trạng Thái</th>
+                <th class="p-3.5 text-right">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-700/60">
+              <tr>
+                <td class="p-3.5">
+                  <div class="font-bold text-white">Lê Hoàng Nam</div>
+                  <div class="text-[11px] text-slate-500">hoangnam.vegan@gmail.com</div>
+                </td>
+                <td class="p-3.5"><span class="bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded font-bold">AUTHORIZED_USER</span></td>
+                <td class="p-3.5">BMI 21.8 · Dị ứng Gluten</td>
+                <td class="p-3.5"><span class="text-emerald-400 font-semibold">Hoạt động</span></td>
+                <td class="p-3.5 text-right">
+                  <button class="text-rose-400 hover:text-rose-300 font-bold">Khóa</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="p-3.5">
+                  <div class="font-bold text-white">Trần Thị Mai Hương</div>
+                  <div class="text-[11px] text-slate-500">maihuong.chef@vegeai.vn</div>
+                </td>
+                <td class="p-3.5"><span class="bg-purple-950 text-purple-400 px-2 py-0.5 rounded font-bold">ADMIN</span></td>
+                <td class="p-3.5">BMI 20.5 · Thuần Chay</td>
+                <td class="p-3.5"><span class="text-emerald-400 font-semibold">Hoạt động</span></td>
+                <td class="p-3.5 text-right text-slate-500">Mặc định</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Shopping List Modal -->
+  <div id="shoppingListModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in duration-200">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-croc-100 text-croc-700 flex items-center justify-center font-bold">
+            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-base">Danh Sách Đi Chợ 7 Ngày</h3>
+            <p class="text-[11px] text-slate-500">Tổng hợp nguyên liệu tự động từ thực đơn tuần của bạn</p>
+          </div>
+        </div>
+        <button onclick="closeShoppingListModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 max-h-72 overflow-y-auto pr-1 text-xs custom-scrollbar" id="shoppingItemsList">
+        <div class="font-bold text-slate-800 text-xs text-croc-700">Rau củ tươi & Nấm</div>
+        <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer">
+          <input type="checkbox" checked class="accent-croc-600 w-4 h-4">
+          <span class="flex-1 font-semibold text-slate-700">Súp lơ xanh</span>
+          <span class="text-slate-500 font-bold">800g</span>
+        </label>
+        <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer">
+          <input type="checkbox" class="accent-croc-600 w-4 h-4">
+          <span class="flex-1 font-semibold text-slate-700">Nấm đùi gà & Nấm đông cô</span>
+          <span class="text-slate-500 font-bold">600g</span>
+        </label>
+        <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer">
+          <input type="checkbox" class="accent-croc-600 w-4 h-4">
+          <span class="flex-1 font-semibold text-slate-700">Cà rốt Đà Lạt</span>
+          <span class="text-slate-500 font-bold">500g</span>
+        </label>
+        <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer">
+          <input type="checkbox" class="accent-croc-600 w-4 h-4">
+          <span class="flex-1 font-semibold text-slate-700">Quả bơ sáp 034</span>
+          <span class="text-slate-500 font-bold">4 quả</span>
+        </label>
+        <div class="font-bold text-slate-800 text-xs text-croc-700 pt-2">Đậu & Ngũ cốc dinh dưỡng</div>
+        <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer">
+          <input type="checkbox" class="accent-croc-600 w-4 h-4">
+          <span class="flex-1 font-semibold text-slate-700">Đậu phụ trắng không biến đổi gen</span>
+          <span class="text-slate-500 font-bold">5 miếng</span>
+        </label>
+        <label class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer">
+          <input type="checkbox" class="accent-croc-600 w-4 h-4">
+          <span class="flex-1 font-semibold text-slate-700">Hạt diêm mạch (Quinoa) & Yến mạch</span>
+          <span class="text-slate-500 font-bold">400g</span>
+        </label>
+      </div>
+
+      <div class="flex gap-2 pt-2 border-t border-slate-100">
+        <button onclick="copyShoppingList()" class="flex-1 bg-croc-600 hover:bg-croc-500 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i> Sao Chép Danh Sách
+        </button>
+        <button onclick="closeShoppingListModal()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 rounded-xl transition">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trial Limit Exceeded Modal (Guest Limit reached) -->
+  <div id="trialLimitModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+      <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-croc-500 to-emerald-400 p-1 shadow-lg">
+        <img src="assets/croc_veggie_logo.jpg" alt="Mascot CrocVeggie" class="w-full h-full object-cover rounded-full bg-white">
+      </div>
+      <div class="space-y-1">
+        <h3 class="text-xl font-black text-slate-900">Hết Lượt Dùng Thử Miễn Phí!</h3>
+        <p class="text-xs text-slate-500">
+          Bạn đã trải nghiệm hết <strong>3 câu hỏi thử nghiệm</strong> của Trợ lý dinh dưỡng CrocVeggie. Hãy đăng ký tài khoản hoàn toàn miễn phí để mở khóa không giới hạn!
+        </p>
+      </div>
+      <div class="space-y-2 pt-2">
+        <button onclick="upgradeToMemberFromModal()" class="w-full bg-croc-600 hover:bg-croc-500 text-white font-extrabold text-sm py-3 rounded-2xl shadow-lg transition flex items-center justify-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> Đăng Ký Tài Khoản Miễn Phí
+        </button>
+        <button onclick="closeTrialLimitModal()" class="text-xs text-slate-400 hover:text-slate-600 py-1 font-semibold">
+          Để sau, tôi muốn xem tiếp công thức
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl border border-slate-700 hidden items-center gap-2.5 transition-all">
+    <span id="toastIcon">🌿</span>
+    <span id="toastMessage">Thông báo</span>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ENGINE ================= -->
+  <script>
+    // System State
+    let currentPortal = 'USER'; // 'USER' | 'ADMIN'
+    let simulatedRole = 'GUEST'; // 'GUEST' | 'MEMBER' | 'ADMIN'
+    let chatTrialRemaining = 3;
+
+    // 7-Day Meal Plan Data (Simulated LLM Structured JSON output)
+    let weeklyPlan = [
+      {
+        day: 'Thứ Hai',
+        date: '15/09',
+        calories: 1980,
+        breakfast: { name: 'Cháo Yến Mạch Chuối Hạt Chia', cal: 380, time: '10p', protein: '12g' },
+        lunch: { name: 'Cơm Gạo Lứt Đậu Hũ Sốt Cà Chua & Cải Xào', cal: 680, time: '25p', protein: '24g' },
+        dinner: { name: 'Canh Rong Biển Đậu Hũ Non & Nấm Rơm', cal: 420, time: '20p', protein: '18g' }
+      },
+      {
+        day: 'Thứ Ba',
+        date: '16/09',
+        calories: 2020,
+        breakfast: { name: 'Bánh Mì Nướng Quả Bơ & Hạt Bí Xanh', cal: 410, time: '15p', protein: '14g' },
+        lunch: { name: 'Bún Chả Giò Chay Nấm Mộc Nhĩ & Rau Sống', cal: 690, time: '30p', protein: '22g' },
+        dinner: { name: 'Súp Bí Đỏ Hạt Sen Nước Cốt Dừa', cal: 440, time: '25p', protein: '16g' }
+      },
+      {
+        day: 'Thứ Tư',
+        date: '17/09',
+        calories: 1960,
+        breakfast: { name: 'Sinh Tố Xoài Cải Kale & Sữa Đậu Nành', cal: 360, time: '10p', protein: '15g' },
+        lunch: { name: 'Nấm Đùi Gà Kho Tiêu Chay & Rau Luộc Chấm Quẹt', cal: 660, time: '30p', protein: '26g' },
+        dinner: { name: 'Miến Xào Rau Củ Ngũ Sắc & Nấm Đông Cô', cal: 460, time: '20p', protein: '17g' }
+      },
+      {
+        day: 'Thứ Năm',
+        date: '18/09',
+        calories: 2040,
+        breakfast: { name: 'Phở Chay Nước Dùng Rau Củ Thanh Ngọt', cal: 430, time: '25p', protein: '16g' },
+        lunch: { name: 'Cà Ri Đậu Gà Khoai Lang & Cơm Trắng', cal: 710, time: '35p', protein: '28g' },
+        dinner: { name: 'Salad Rau Mầm Dầu Giấm & Đậu Hũ Chiên Giòn', cal: 400, time: '15p', protein: '15g' }
+      },
+      {
+        day: 'Thứ Sáu',
+        date: '19/09',
+        calories: 1990,
+        breakfast: { name: 'Ngũ Cốc Granola Ăn Kèm Quả Mọng & Chuối', cal: 390, time: '5p', protein: '13g' },
+        lunch: { name: 'Cơm Chiên Trái Thơm Hạt Sen Chay', cal: 670, time: '25p', protein: '20g' },
+        dinner: { name: 'Canh Chua Bạc Hà Nấm Rơm Đậu Bắp', cal: 430, time: '25p', protein: '16g' }
+      },
+      {
+        day: 'Thứ Bảy',
+        date: '20/09',
+        calories: 2050,
+        breakfast: { name: 'Bánh Cuốn Chay Nhân Nấm Mộc Nhĩ Chả Lụa', cal: 420, time: '20p', protein: '15g' },
+        lunch: { name: 'Lẩu Nấm Thập Cẩm Chay Nước Dừa Xiêm', cal: 750, time: '40p', protein: '30g' },
+        dinner: { name: 'Cháo Nấm Tràm Hạt Sen Thanh Lọc', cal: 380, time: '20p', protein: '14g' }
+      },
+      {
+        day: 'Chủ Nhật',
+        date: '21/09',
+        calories: 2010,
+        breakfast: { name: 'Bánh Mì Xíu Mại Chay Sốt Cà Cà Rốt', cal: 440, time: '20p', protein: '18g' },
+        lunch: { name: 'Mì Ý Chay Sốt Cà Chua Nấm Đùi Gà Bằm', cal: 680, time: '30p', protein: '24g' },
+        dinner: { name: 'Gỏi Ngó Sen Đậu Hũ Đậu Phộng Không Dị Ứng', cal: 410, time: '20p', protein: '16g' }
+      }
+    ];
+
+    // Moderation Queue Data for Admin
+    let moderationQueue = [
+      {
+        id: 'MOD-101',
+        type: 'Blog Post',
+        author: 'User_X992',
+        title: 'Kinh nghiệm bổ sung đạm từ thịt bò khi ăn chay',
+        snippet: '...nếu thấy yếu sức các bạn cứ ăn thêm chút bò tái hoặc xúc xích heo vào bữa phụ sẽ khỏe ngay...',
+        score: 0.96,
+        reason: 'Khuyến khích phi chay & thịt động vật',
+        flaggedBy: 'Gemini-Guard-v2',
+        status: 'PENDING'
+      },
+      {
+        id: 'MOD-102',
+        type: 'Comment',
+        author: 'AntiVeg_Troll',
+        title: 'Bình luận tại bài Bún bò chay',
+        snippet: '...bọn ăn chay toàn đạo đức giả thiếu chất mặt mày xanh xao...',
+        score: 0.94,
+        reason: 'Ngôn từ kích động & thù ghét',
+        flaggedBy: 'OpenAI Moderation API',
+        status: 'PENDING'
+      },
+      {
+        id: 'MOD-103',
+        type: 'Blog Post',
+        author: 'Chef_ThienTrang',
+        title: 'Bí quyết làm chả lụa chay giả thịt bò thơm nức',
+        snippet: '...chúng ta dùng nấm chân nấm hương xay nhuyễn nêm dầu điều để tạo màu giống hệt thịt bò...',
+        score: 0.88,
+        reason: 'Chứa từ khóa "thịt bò" (Nghi vấn False Positive)',
+        flaggedBy: 'Keyword Matcher',
+        status: 'PENDING'
+      },
+      {
+        id: 'MOD-104',
+        type: 'Video Recipe',
+        author: 'KitchenVibe',
+        title: 'Nấu lẩu thái chay cực ngon',
+        snippet: '...cho một muỗng nước mắm cá cơm truyền thống vào cho dậy mùi thơm nức...',
+        score: 0.91,
+        reason: 'Nước mắm cá cơm (Sản phẩm từ động vật)',
+        flaggedBy: 'Transcript NLP Filter',
+        status: 'PENDING'
+      }
+    ];
+
+    // Initialize Page
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderWeeklyGrid();
+      renderModerationTable();
+      updateHealthInputs();
+    });
+
+    // Switch between User Portal and Admin Portal
+    function switchPortal(portal) {
+      currentPortal = portal;
+      const userSec = document.getElementById('userPortalSection');
+      const adminSec = document.getElementById('adminPortalSection');
+      const toggleText = document.getElementById('portalToggleText');
+      const navMenu = document.getElementById('userNavMenu');
+
+      if (portal === 'ADMIN') {
+        userSec.classList.add('hidden');
+        adminSec.classList.remove('hidden');
+        navMenu.classList.add('hidden');
+        toggleText.textContent = 'Quay Lại Giao Diện Người Dùng';
+        showToast('🛡️ Đã chuyển sang Cổng Quản Trị Viên (Admin & AI Control Center)');
+      } else {
+        userSec.classList.remove('hidden');
+        adminSec.classList.add('hidden');
+        navMenu.classList.remove('hidden');
+        toggleText.textContent = 'Sang Cổng Admin';
+        showToast('🌿 Đã chuyển sang Cổng Người Dùng (User Portal)');
+      }
+      lucide.createIcons();
+    }
+
+    function togglePortal() {
+      if (currentPortal === 'USER') {
+        switchPortal('ADMIN');
+      } else {
+        switchPortal('USER');
+      }
+    }
+
+    // Role Simulation Switcher
+    function setSimulatedRole(role) {
+      simulatedRole = role;
+      document.getElementById('roleBtnGuest').className = "px-2.5 py-0.5 rounded text-xs font-semibold text-emerald-200 hover:text-white transition-all";
+      document.getElementById('roleBtnMember').className = "px-2.5 py-0.5 rounded text-xs font-semibold text-emerald-200 hover:text-white transition-all";
+      document.getElementById('roleBtnAdmin').className = "px-2.5 py-0.5 rounded text-xs font-semibold text-emerald-200 hover:text-white transition-all";
+
+      const badge = document.getElementById('userBadgeStatus');
+      const name = document.getElementById('userDisplayName');
+      const avatar = document.getElementById('userAvatarText');
+
+      if (role === 'GUEST') {
+        document.getElementById('roleBtnGuest').className = "px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-600 text-white shadow transition-all";
+        name.textContent = 'Bạn Ăn Chay (Guest)';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Thử nghiệm 3 câu';
+        avatar.textContent = 'CV';
+        document.getElementById('chatTrialQuotaBadge').classList.remove('hidden');
+        showToast('👤 Đang trải nghiệm vai trò: Khách vãng lai (Guest)');
+      } else if (role === 'MEMBER') {
+        document.getElementById('roleBtnMember').className = "px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-600 text-white shadow transition-all";
+        name.textContent = 'Lê Hoàng Nam (Member)';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-croc-500"></span> Thành viên VIP · Không giới hạn';
+        avatar.textContent = 'HN';
+        document.getElementById('chatTrialQuotaBadge').classList.add('hidden');
+        showToast('✨ Đang trải nghiệm vai trò: Thành viên chính thức (Authorized Member)');
+      } else if (role === 'ADMIN') {
+        document.getElementById('roleBtnAdmin').className = "px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-600 text-white shadow transition-all";
+        name.textContent = 'Quản Trị Viên (Admin)';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Toàn quyền hệ thống & AI';
+        avatar.textContent = 'AD';
+        switchPortal('ADMIN');
+      }
+    }
+
+    // Switch Tabs in User Portal
+    function switchUserTab(tabName) {
+      const tabs = ['home', 'mealplanner', 'scanner', 'chatbot', 'restaurants'];
+      tabs.forEach(t => {
+        const sec = document.getElementById(`userTab-${t}`);
+        const btn = document.getElementById(`tabBtn-${t}`);
+        if (t === tabName) {
+          sec.classList.remove('hidden');
+          if (btn) btn.classList.add('active-tab-nav');
+        } else {
+          sec.classList.add('hidden');
+          if (btn) btn.classList.remove('active-tab-nav');
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    // Switch Tabs in Admin Portal
+    function switchAdminTab(tabName) {
+      const tabs = ['overview', 'moderation', 'observability', 'users'];
+      tabs.forEach(t => {
+        const sec = document.getElementById(`adminTab-${t}`);
+        const btn = document.getElementById(`adminTabBtn-${t}`);
+        if (t === tabName) {
+          sec.classList.remove('hidden');
+          btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-croc-600 text-white transition";
+        } else {
+          sec.classList.add('hidden');
+          btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition";
+        }
+      });
+      lucide.createIcons();
+    }
+
+    // Deterministic Math BMI/TDEE calculation
+    function updateHealthInputs() {
+      const h = parseFloat(document.getElementById('inputHeight').value);
+      const w = parseFloat(document.getElementById('inputWeight').value);
+      const pal = parseFloat(document.getElementById('selectActivity').value);
+
+      document.getElementById('labelHeight').textContent = `${h} cm`;
+      document.getElementById('labelWeight').textContent = `${w} kg`;
+
+      const heightM = h / 100;
+      const bmi = (w / (heightM * heightM)).toFixed(1);
+      document.getElementById('resultBMI').textContent = bmi;
+
+      const badge = document.getElementById('badgeBMI');
+      if (bmi < 18.5) {
+        badge.textContent = 'Nhẹ cân';
+        badge.className = 'inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800';
+      } else if (bmi <= 24.9) {
+        badge.textContent = 'Cân đối lý tưởng';
+        badge.className = 'inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+      } else {
+        badge.textContent = 'Cần giảm cân';
+        badge.className = 'inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800';
+      }
+
+      // Mifflin-St Jeor formula for BMR (Male default, age 25): (10 * w) + (6.25 * h) - (5 * 25) + 5
+      const bmr = (10 * w) + (6.25 * h) - (5 * 25) + 5;
+      const tdee = Math.round(bmr * pal);
+      document.getElementById('resultTDEE').innerHTML = `${tdee.toLocaleString()} <span class="text-xs font-semibold text-slate-500">kcal</span>`;
+    }
+
+    function recalculateDeterministicHealth() {
+      updateHealthInputs();
+      showToast('⚡ Đã tính toán lại BMI và TDEE bằng thuật toán khoa học xác định!');
+    }
+
+    // Render Weekly Meal Grid
+    function renderWeeklyGrid() {
+      const container = document.getElementById('weeklyMealGridContainer');
+      container.innerHTML = weeklyPlan.map((d, index) => `
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-croc-400 transition space-y-3">
+          <div class="border-b border-slate-100 pb-2 flex justify-between items-center">
+            <div>
+              <span class="font-extrabold text-sm text-slate-900">${d.day}</span>
+              <span class="text-[10px] text-slate-400 block">${d.date}</span>
+            </div>
+            <span class="text-[11px] font-bold text-croc-700 bg-croc-50 px-2 py-0.5 rounded-md">${d.calories} kcal</span>
+          </div>
+
+          <!-- Breakfast -->
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-amber-600 uppercase tracking-wide">Sáng (${d.breakfast.cal} kcal)</span>
+            <div class="text-xs font-bold text-slate-800 line-clamp-2">${d.breakfast.name}</div>
+            <div class="text-[10px] text-slate-400">${d.breakfast.protein} protein · ${d.breakfast.time}</div>
+          </div>
+
+          <!-- Lunch -->
+          <div class="space-y-1 bg-slate-50/80 p-2 rounded-xl border border-slate-100">
+            <span class="text-[10px] font-bold text-croc-700 uppercase tracking-wide">Trưa (${d.lunch.cal} kcal)</span>
+            <div class="text-xs font-bold text-slate-800 line-clamp-2">${d.lunch.name}</div>
+            <div class="text-[10px] text-slate-400">${d.lunch.protein} protein · ${d.lunch.time}</div>
+          </div>
+
+          <!-- Dinner -->
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-teal-600 uppercase tracking-wide">Tối (${d.dinner.cal} kcal)</span>
+            <div class="text-xs font-bold text-slate-800 line-clamp-2">${d.dinner.name}</div>
+            <div class="text-[10px] text-slate-400">${d.dinner.protein} protein · ${d.dinner.time}</div>
+          </div>
+
+          <!-- Card Actions -->
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+            <button onclick="swapMealCard(${index})" class="text-[11px] font-bold text-croc-600 hover:text-croc-700 flex items-center gap-1">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i> Đổi món
+            </button>
+            <button onclick="showToast('📋 Đã lưu thực đơn ${d.day} vào sổ tay!')" class="text-[11px] text-slate-400 hover:text-slate-600">
+              Lưu ngày
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // Swap Meal Handler
+    function swapMealCard(dayIndex) {
+      const alternatives = [
+        { name: 'Nấm Đùi Gà Xào Sốt Me Cay Ngọt', cal: 650, time: '20p', protein: '25g' },
+        { name: 'Đậu Phụ Nhồi Nấm Sốt Cà Chua Đậm Đà', cal: 660, time: '25p', protein: '28g' },
+        { name: 'Cơm Trộn Hàn Quốc Chay Hạt Quinoa', cal: 640, time: '20p', protein: '22g' },
+        { name: 'Canh Chua Nấm Đùi Gà & Đậu Bắp', cal: 410, time: '20p', protein: '18g' }
+      ];
+      const randomChoice = alternatives[Math.floor(Math.random() * alternatives.length)];
+      weeklyPlan[dayIndex].lunch = randomChoice;
+      renderWeeklyGrid();
+      showToast(`🔄 AI đã đổi món bữa trưa ${weeklyPlan[dayIndex].day} thành: ${randomChoice.name} (Tương đương ${randomChoice.cal} kcal)`);
+    }
+
+    // Generate Weekly Plan Button
+    function generateWeeklyMealPlan() {
+      const btn = document.getElementById('btnGeneratePlan');
+      btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> AI Đang Tạo Thực Đơn Tuần...';
+      setTimeout(() => {
+        btn.innerHTML = '<i data-lucide="wand-2" class="w-4 h-4"></i> Tái Tạo Thực Đơn Tuần';
+        renderWeeklyGrid();
+        showToast('✨ AI đã tạo xong thực đơn tuần mới đạt chuẩn an toàn không dị ứng!');
+        lucide.createIcons();
+      }, 1200);
+    }
+
+    // Simulate Fridge Vision Scan
+    function simulateFridgeScan(sampleType) {
+      const card = document.getElementById('visionResultCard');
+      card.classList.remove('hidden');
+      const tagsContainer = document.getElementById('detectedTagsContainer');
+      const recipeContainer = document.getElementById('matchingRecipeList');
+
+      if (sampleType === 'SAMPLE_1') {
+        tagsContainer.innerHTML = `
+          <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl">
+            <span class="font-bold text-xs text-slate-800">Súp lơ xanh</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-600 text-white">TƯƠI (3-5 ngày)</span>
+            <span class="text-[10px] text-emerald-700 font-semibold">95%</span>
+            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500 font-bold ml-1">✕</button>
+          </div>
+          <div class="flex items-center gap-2 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-xl">
+            <span class="font-bold text-xs text-slate-800">Cà rốt</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-600 text-white">CẦN DÙNG NGAY (24h)</span>
+            <span class="text-[10px] text-amber-700 font-semibold">91%</span>
+            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500 font-bold ml-1">✕</button>
+          </div>
+          <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl">
+            <span class="font-bold text-xs text-slate-800">Nấm đông cô</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-600 text-white">TƯƠI</span>
+            <span class="text-[10px] text-emerald-700 font-semibold">88%</span>
+            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500 font-bold ml-1">✕</button>
+          </div>
+          <button onclick="showToast('📝 Đã mở ô thêm nguyên liệu bằng tay')" class="text-xs text-croc-700 hover:text-croc-800 font-bold px-3 py-1.5 rounded-xl border border-dashed border-croc-400 hover:bg-croc-50 transition">
+            + Thêm nguyên liệu thủ công
+          </button>
+        `;
+
+        recipeContainer.innerHTML = `
+          <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Khớp 100% nguyên liệu</span>
+              <h5 class="font-bold text-sm text-slate-900 mt-1">Súp Lơ Xào Nấm Đông Cô & Cà Rốt Dầu Hào Chay</h5>
+              <p class="text-xs text-slate-500">Nấu trong 15 phút · Giàu Vitamin A & C · 180 kcal</p>
+            </div>
+            <button onclick="showToast('🍳 Bắt đầu nấu món Súp lơ xào nấm!')" class="bg-croc-600 hover:bg-croc-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition shadow">Nấu Ngay</button>
+          </div>
+          <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">Khớp 85% nguyên liệu</span>
+              <h5 class="font-bold text-sm text-slate-900 mt-1">Canh Củ Quả Hầm Nấm Thanh Nhiệt</h5>
+              <p class="text-xs text-slate-500">Nấu trong 25 phút · Dễ tiêu hóa · 120 kcal</p>
+            </div>
+            <button onclick="showToast('🍳 Bắt đầu nấu món Canh củ quả hầm nấm!')" class="bg-croc-600 hover:bg-croc-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition shadow">Nấu Ngay</button>
+          </div>
+        `;
+      } else {
+        tagsContainer.innerHTML = `
+          <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl">
+            <span class="font-bold text-xs text-slate-800">Cà chua chín</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-600 text-white">TƯƠI</span>
+            <span class="text-[10px] text-emerald-700 font-semibold">96%</span>
+          </div>
+          <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl">
+            <span class="font-bold text-xs text-slate-800">Đậu hũ trắng</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-600 text-white">CẦN DÙNG TRONG 12H</span>
+            <span class="text-[10px] text-emerald-700 font-semibold">93%</span>
+          </div>
+        `;
+        recipeContainer.innerHTML = `
+          <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Khớp 100% nguyên liệu</span>
+              <h5 class="font-bold text-sm text-slate-900 mt-1">Đậu Hũ Sốt Cà Chua Hành Bo-rô Thanh Đạm</h5>
+              <p class="text-xs text-slate-500">Nấu trong 15 phút · 22g Protein · 280 kcal</p>
+            </div>
+            <button onclick="showToast('🍳 Bắt đầu nấu món Đậu hũ sốt cà chua!')" class="bg-croc-600 hover:bg-croc-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition shadow">Nấu Ngay</button>
+          </div>
+        `;
+      }
+      showToast('👁️ Computer Vision đã nhận diện xong nguyên liệu và phân loại độ tươi!');
+      card.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Chatbot Functions
+    function sendQuickChatMessage(text) {
+      document.getElementById('chatInputMessage').value = text;
+      sendUserChatMessage();
+    }
+
+    function sendUserChatMessage() {
+      const input = document.getElementById('chatInputMessage');
+      const text = input.value.trim();
+      if (!text) return;
+
+      // Check trial limit if in GUEST mode
+      if (simulatedRole === 'GUEST') {
+        if (chatTrialRemaining <= 0) {
+          document.getElementById('trialLimitModal').classList.remove('hidden');
+          return;
+        }
+        chatTrialRemaining--;
+        document.getElementById('quotaRemainingCount').textContent = chatTrialRemaining;
+      }
+
+      // Add user message to UI
+      const container = document.getElementById('chatMessagesContainer');
+      container.innerHTML += `
+        <div class="flex items-start gap-3 justify-end">
+          <div class="bg-croc-600 text-white p-3.5 rounded-2xl rounded-tr-none shadow-xs max-w-xl text-xs sm:text-sm">
+            ${text}
+          </div>
+          <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
+            Tôi
+          </div>
+        </div>
+      `;
+      input.value = '';
+      container.scrollTop = container.scrollHeight;
+
+      // Simulate AI Streaming response
+      setTimeout(() => {
+        let answer = "Cảm ơn câu hỏi rất hay của bạn! ";
+        if (text.includes('trứng') || text.includes('bánh')) {
+          answer += "Để thay thế 1 quả trứng khi làm bánh chay, bạn có 3 cách tốt nhất:\n1. 1 thìa canh hạt lanh xay + 3 thìa canh nước ấm (ủ 5 phút tạo gel).\n2. 1/2 quả chuối chín nghiền nhuyễn (tạo độ ẩm và ngọt tự nhiên).\n3. 60g sốt táo (applesauce) không đường.";
+        } else if (text.includes('B12') || text.includes('sắt')) {
+          answer += "Người ăn thuần chay nên bổ sung Vitamin B12 từ nấm men dinh dưỡng (Nutritional Yeast), sữa hạt có tăng cường vi chất hoặc viên uống bổ sung định kỳ. Về sắt thực vật (Non-heme iron), bạn hãy ăn nhiều cải bó xôi, đậu lăng, hạt bí ngô và nhớ kèm theo vitamin C (chanh, cam) để tăng hấp thu gấp 3 lần!";
+        } else {
+          answer += "Chế độ ăn chay lành mạnh cần tập trung vào việc đa dạng hóa các loại đậu, hạt dinh dưỡng, nấm và rau củ theo mùa. Hãy đảm bảo bạn nạp đủ nước và chất xơ mỗi ngày nhé!";
+        }
+
+        container.innerHTML += `
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-croc-100 border border-croc-300 flex items-center justify-center text-xs font-bold text-croc-800 shrink-0">
+              🐊
+            </div>
+            <div class="bg-white p-4 rounded-2xl rounded-tl-none border border-slate-200 shadow-xs max-w-xl text-xs sm:text-sm text-slate-800 space-y-2">
+              <p class="whitespace-pre-line">${answer}</p>
+              <div class="text-[10px] text-slate-400 italic pt-1 border-t border-slate-100">
+                Lưu ý: Không thay thế chỉ định y tế chuyên môn.
+              </div>
+            </div>
+          </div>
+        `;
+        container.scrollTop = container.scrollHeight;
+
+        // If guest hits 0, prompt modal
+        if (simulatedRole === 'GUEST' && chatTrialRemaining === 0) {
+          setTimeout(() => {
+            document.getElementById('trialLimitModal').classList.remove('hidden');
+          }, 800);
+        }
+      }, 600);
+    }
+
+    function upgradeToMemberFromModal() {
+      closeTrialLimitModal();
+      setSimulatedRole('MEMBER');
+      showToast('🎉 Chúc mừng bạn đã nâng cấp thành Thành Viên Chính Thức! Trò chuyện AI không giới hạn!');
+    }
+
+    function closeTrialLimitModal() {
+      document.getElementById('trialLimitModal').classList.add('hidden');
+    }
+
+    // Shopping List Modal
+    function openShoppingListModal() {
+      document.getElementById('shoppingListModal').classList.remove('hidden');
+    }
+
+    function closeShoppingListModal() {
+      document.getElementById('shoppingListModal').classList.add('hidden');
+    }
+
+    function copyShoppingList() {
+      navigator.clipboard.writeText("DANH SÁCH ĐI CHỢ 7 NGÀY - VEGEAI:\n- 800g Súp lơ xanh\n- 600g Nấm đùi gà & nấm đông cô\n- 500g Cà rốt Đà Lạt\n- 4 quả Bơ sáp 034\n- 5 miếng Đậu phụ trắng\n- 400g Hạt diêm mạch & yến mạch");
+      showToast('📋 Đã sao chép danh sách đi chợ vào khay nhớ tạm!');
+      closeShoppingListModal();
+    }
+
+    // Admin Moderation Queue Actions
+    function renderModerationTable() {
+      const tbody = document.getElementById('moderationTableBody');
+      const pendingItems = moderationQueue.filter(i => i.status === 'PENDING');
+      document.getElementById('badgeQueueCount').textContent = pendingItems.length;
+      document.getElementById('kpiPendingCount').textContent = `${pendingItems.length} mục`;
+
+      if (pendingItems.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-8 text-center text-slate-400">
+              <i data-lucide="check-circle" class="w-8 h-8 text-emerald-500 mx-auto mb-2"></i>
+              <div class="font-bold text-sm">Hàng đợi trống! Tất cả nội dung đã được xử lý an toàn.</div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = pendingItems.map(item => `
+        <tr class="hover:bg-slate-700/30 transition">
+          <td class="py-3 px-4">
+            <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-slate-700 text-slate-300 mb-1">${item.type}</span>
+            <div class="font-bold text-white">${item.title}</div>
+            <div class="text-[11px] text-slate-400">Tác giả: ${item.author}</div>
+          </td>
+          <td class="py-3 px-4 max-w-xs">
+            <p class="italic text-slate-300 line-clamp-2 bg-slate-900/60 p-2 rounded-lg border border-slate-700/50">
+              "${item.snippet}"
+            </p>
+          </td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center gap-1 font-black px-2.5 py-1 rounded-full text-xs ${item.score > 0.9 ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}">
+              ${item.score} / 1.00
+            </span>
+          </td>
+          <td class="py-3 px-4">
+            <div class="font-semibold text-rose-400">${item.reason}</div>
+            <div class="text-[10px] text-slate-500">${item.flaggedBy}</div>
+          </td>
+          <td class="py-3 px-4 text-right space-y-1">
+            <button onclick="adminApproveItem('${item.id}')" class="block w-full text-center bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg transition shadow">
+              Duyệt (Báo AI Nhận Diện Sai)
+            </button>
+            <button onclick="adminRejectItem('${item.id}')" class="block w-full text-center bg-rose-600/80 hover:bg-rose-600 text-white font-bold text-[11px] py-1 px-3 rounded-lg transition">
+              Xóa Vĩnh Viễn
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function adminApproveItem(id) {
+      const item = moderationQueue.find(i => i.id === id);
+      if (item) {
+        item.status = 'APPROVED';
+        renderModerationTable();
+        showToast(`✅ Admin đã duyệt bài '${item.title}'. Đã ghi log FALSE_POSITIVE cho AI!`);
+      }
+    }
+
+    function adminRejectItem(id) {
+      const item = moderationQueue.find(i => i.id === id);
+      if (item) {
+        item.status = 'DELETED';
+        renderModerationTable();
+        showToast(`🗑️ Đã gỡ bỏ vĩnh viễn nội dung vi phạm '${item.title}' khỏi hệ thống!`);
+      }
+    }
+
+    // Quick Recipe View
+    function quickViewRecipe(name) {
+      showToast(`📖 Đang mở sổ tay nấu món: ${name}`);
+    }
+
+    function executeRecipeSearch() {
+      const q = document.getElementById('mainSearchInput').value.trim();
+      if (!q) {
+        showToast('🔍 Vui lòng nhập từ khóa món ăn hoặc nguyên liệu!');
+        return;
+      }
+      showToast(`🔍 Tìm thấy 12 công thức món chay phù hợp với "${q}"!`);
+      switchUserTab('mealplanner');
+    }
+
+    // Global Toast Notification
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').textContent = msg;
+      toast.classList.remove('hidden');
+      toast.classList.add('flex');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('flex');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
