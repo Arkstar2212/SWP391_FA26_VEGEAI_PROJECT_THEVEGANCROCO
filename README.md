@@ -1,82 +1,79 @@
-﻿<div align="center">
+<div align="center">
 
 # 🌿 VEGEAI
-### Intelligent Vegetarian & Vegan Nutrition Ecosystem
+### Intelligent Vegetarian & Vegan Nutrition Ecosystem — Backend Service
 
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/Arkstar2212/SWP391-VEGEAI-Project)
+[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/Arkstar2212/SWP391_FA26_VEGEAI_PROJECT_THEVEGANCROCO)
 [![Java](https://img.shields.io/badge/Java-21%20LTS-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Architecture](https://img.shields.io/badge/Architecture-Modular_Monolith-blue?style=for-the-badge)](docs/ARCHITECTURE.md)
-[![Database](https://img.shields.io/badge/Database-MySQL_8-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Database](https://img.shields.io/badge/Database-PostgreSQL_16-4479A1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Swagger](https://img.shields.io/badge/OpenAPI-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger&logoColor=white)](http://localhost:8080/swagger-ui.html)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 <p align="center">
-  <b>A production-grade, full-stack platform empowering vegetarian & vegan lifestyles through personalized meal planning, deterministic nutrition calculations, computer-vision ingredient analysis, and responsible AI governance.</b>
+  <b>Dedicated enterprise backend for the VEGEAI platform, providing robust RESTful APIs, JWT stateless authentication, dual-token invalidation, brute-force protection, and deterministic nutrition calculation.</b>
 </p>
 
-[Explore Documentation](docs/ARCHITECTURE.md) • [User Stories & Specs](VEGEAI_User_Stories_Requirements_Specification.md) • [Product PRD](PRD.md) • [Interactive Prototype](Demo_UI_Prototype_Interactive.html)
+[Swagger UI](http://localhost:8080/swagger-ui.html) • [OpenAPI Docs](http://localhost:8080/api-docs) • [ERD Diagram](docs/VEGEAI_CROWS_FOOT_ERD.drawio)
 
 ---
 
 </div>
 
-## 📌 Executive Summary
+## 📌 Overview
 
-**VEGEAI** is engineered to address the core challenges of plant-based eating: nutritional deficiency risks, meal planning monotony, ingredient sourcing, and unverified AI nutrition hallucinations. 
+This repository houses the **VEGEAI Backend Service**. Frontend clients (React Vite SPA / Mobile) run as independent repositories and consume this service via standardized REST APIs.
 
-Unlike brittle prototypes, VEGEAI is designed as an **Enterprise Modular Monolith** combining:
-- **Deterministic Nutritional Engine:** Exact mathematical calculations for BMI, BMR, and daily calorie targets (no hallucinated AI math).
-- **AI Nutrition Assistant:** Structured conversational assistant powered by Google Gemini with strict guardrails and rate-limiting.
-- **Smart Meal Planner:** Automated weekly calendars that respect dietary restrictions (Vegan, Lacto-Ovo, Buddhist vegetarian) and hard allergen exclusions.
-- **Vegetarian Discovery:** Location-aware directory of plant-based restaurants and specialty grocery stores.
-- **Admin AI Observability:** Real-time metrics dashboard, AI audit trails, token monitoring, and human-in-the-loop content moderation queue.
+### 🛡️ Key Features & Security
+- **Stateless JWT Authentication:** HMAC-SHA256 access tokens (15-min TTL) paired with database-backed refresh tokens (UUID, 1-day TTL).
+- **Dual Invalidation:** Logout simultaneously blacklists the JWT access token and revokes the refresh token.
+- **Brute-Force Rate Limiting:** In-memory Caffeine-based limiter blocks login attempts after 5 consecutive failures per identifier for 15 minutes.
+- **Anti-Enumeration Protection:** Forgot password endpoint returns uniform response messages regardless of email existence.
+- **Standardized API Envelope:** Every endpoint returns `ApiResponse<T>` with typed error codes and HTTP status codes.
+- **CORS Configured:** Pre-configured for Vite frontend (`http://localhost:5173`) and Next/React (`http://localhost:3000`) with credential support (`HttpOnly` cookies).
+- **Flexible Refresh Token Transport:** Supports both standard `HttpOnly` cookies and `X-Refresh-Token` request headers.
 
 ---
 
-## 🏛️ System Architecture: Modular Monolith
+## 📡 Authentication API Matrix
 
-VEGEAI avoids the unnecessary latency, memory overhead, and distributed transaction pitfalls of microservices by employing a **Domain-Driven Modular Monolith**:
+All authentication endpoints are located under `/api/auth`:
 
-```mermaid
-graph TD
-    Client[Web Browser / Mobile SPA] -->|REST API / JSON| Monolith[VEGEAI Core Platform]
+| Method | Endpoint | Request Body | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | `RegisterRequest` | Registers member (`PENDING_VERIFICATION`) & issues 6-digit OTP |
+| `POST` | `/api/auth/verify-email` | `VerifyEmailRequest` | Verifies 6-digit OTP and activates account (`ACTIVE`) |
+| `POST` | `/api/auth/resend-otp` | `ResendOtpRequest` | Resends verification OTP (30s cooldown enforced) |
+| `POST` | `/api/auth/login` | `LoginRequest` | Returns access token + sets `refreshToken` HttpOnly cookie |
+| `POST` | `/api/auth/refresh` | *(Cookie or Header)* | Rotates access token via HttpOnly cookie or `X-Refresh-Token` header |
+| `POST` | `/api/auth/logout` | *(Bearer + Cookie/Header)* | Dual invalidation: blacklists access token + revokes refresh token |
+| `POST` | `/api/auth/forgot-password`| `ForgotPasswordRequest` | Sends reset OTP (anti-enumeration protected) |
+| `POST` | `/api/auth/reset-password` | `ResetPasswordRequest` | Verifies OTP and resets account password |
+| `GET`  | `/api/auth/error-codes` | *(None)* | Developer reference of all error codes & HTTP statuses |
 
-    subgraph Monolith [Modular Monolith Architecture]
-        Security[Security & JWT Filter] --> Router[Spring MVC Controllers]
-        
-        subgraph Domain_Modules [Feature Modules]
-            Router --> AuthModule[Auth & Role-Based Access]
-            Router --> UserModule[User Profile & Allergies]
-            Router --> NutritionModule[Deterministic BMI & Nutrition Engine]
-            Router --> RecipeModule[Recipe & Ingredient Catalog]
-            Router --> MealPlanModule[Weekly Meal Planner]
-            Router --> RestModule[Vegetarian Discovery & Stores]
-            Router --> AiModule[AI Orchestrator & Audit Logger]
-            Router --> AdminModule[Admin Control Center & Moderation]
-        end
-
-        NutritionModule -.->|Hard Constraints| MealPlanModule
-        AiModule -.->|Audit Trail| AdminModule
-    end
-
-    Domain_Modules --> Persistence[(MySQL / Hibernate JPA)]
-    AiModule --> ExternalAI[External LLM / Vision Providers]
+### Standard Response Envelope (`ApiResponse<T>`)
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "Operation successful.",
+  "data": { ... },
+  "timestamp": "2026-10-06T11:25:00Z"
+}
 ```
 
-> 📖 **Deep Dive:** Read our full architectural rationale comparing Modular Monolith vs. Microservices in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
----
-
-## 🚀 Key Modules & Feature Highlights
-
-| Module | Key Capabilities | Compliance & Safety |
-| :--- | :--- | :--- |
-| **Auth & Security** | JWT (Stateless), BCrypt hashing, Role-Based Access (Guest, Member, Admin) | OWASP top 10 protected, input sanitization |
-| **Deterministic Nutrition** | BMI, BMR, Calorie targets, Macronutrient balance | 100% deterministic Java logic; never trusted to LLM hallucination |
-| **AI Nutritionist** | 24/7 vegetarian meal advice, meat alternatives recommendation | Token rate-limited, medical disclaimer enforced |
-| **Smart Meal Planner** | 7-day personalized meal calendar, auto-generated shopping lists | Hard allergen filters (Peanuts, Gluten, Soy, etc.) |
-| **Ingredient Vision** | Photo-to-ingredient recognition, freshness estimation | Multi-label computer vision with confidence scores |
-| **Admin Governance** | AI token tracker, moderation queue, user audit logs | Human-in-the-loop override for AI decisions |
+### Error Response Envelope
+```json
+{
+  "success": false,
+  "code": 1001,
+  "message": "Username must be between 4 and 50 characters.",
+  "data": {
+    "username": "Username must be between 4 and 50 characters."
+  },
+  "timestamp": "2026-10-06T11:25:00Z"
+}
+```
 
 ---
 
@@ -85,95 +82,63 @@ graph TD
 ```text
 SWP391_FA26_VEGEAI_PROJECT/
 ├── .github/
-│   ├── workflows/ci.yml             # GitHub Actions automated build & test pipeline
-│   ├── ISSUE_TEMPLATE/              # Bug report & Feature request issue forms
-│   └── PULL_REQUEST_TEMPLATE.md     # Standardized code review checklist
-├── .agents/                         # Autonomous engineering agent skills & rules
-├── docs/
-│   ├── ARCHITECTURE.md              # Architectural blueprint & monolith justification
-│   └── SWP391_WEEK1_ANALYSIS.md     # Analysis, test cases & AI usage guidelines
-├── harness/                         # End-to-end testing harness (Playwright)
+│   └── workflows/ci.yml         # Automated GitHub Actions test pipeline
+├── docs/                        # Architecture specs, PRD, and database ERD
 ├── src/
 │   ├── main/
-│   │   ├── java/com/example/swp391_fa26_vegeai_project/
-│   │   │   ├── Swp391Fa26VegeaiProjectApplication.java
-│   │   │   ├── common/              # Cross-cutting concerns (Security, Exceptions, DTOs)
-│   │   │   │   ├── config/          # SecurityConfig, CorsConfig, OpenApiConfig
-│   │   │   │   ├── dto/             # ApiResponse<T>, PageResponse<T>
-│   │   │   │   ├── entity/          # BaseEntity (@MappedSuperclass)
-│   │   │   │   └── exception/       # GlobalExceptionHandler, AppException, ErrorCode
-│   │   │   └── modules/             # High-cohesion domain modules
-│   │   │       ├── auth/            # Authentication & Registration
-│   │   │       ├── user/            # Profile & Preferences
-│   │   │       ├── nutrition/       # Deterministic BMI & Calorie Calculator
-│   │   │       ├── recipe/          # Vegetarian Recipe Catalog
-│   │   │       ├── mealplan/        # 7-Day Meal Planning Engine
-│   │   │       ├── restaurant/      # Vegetarian Discovery
-│   │   │       ├── ai/              # LLM Chatbot, Vision, & Audit Logs
-│   │   │       └── admin/           # Platform Metrics & Moderation Queue
+│   │   ├── java/com/vegeai/backend/
+│   │   │   ├── VegeaiApplication.java
+│   │   │   ├── common/          # Config, Security, JWT Filter, ApiResponse, Exceptions
+│   │   │   └── modules/
+│   │   │       ├── auth/        # AuthController, AuthService, DTOs, Entities, Repositories
+│   │   │       ├── user/        # UserController, UserService, User Entity
+│   │   │       └── admin/       # AdminController (user management)
 │   │   └── resources/
-│   │       ├── static/              # Interactive UI Prototype & Assets
-│   │       └── application.properties
-│   └── test/                        # Unit and integration test suites
-├── Demo_UI_Prototype_Interactive.html# Self-contained browser prototype
-├── PRD.md                           # Product Requirements Document
-├── pom.xml                          # Maven dependencies & build configurations
-└── README.md                        # Master project documentation
+│   │       ├── application.properties
+│   │       └── db-init.sql
+│   └── test/                    # Integration and unit test suite
+├── .env.example                 # Template for local environment variables
+├── pom.xml                      # Maven project configuration
+├── mvnw / mvnw.cmd              # Maven wrapper
+└── README.md
 ```
 
 ---
 
-## ⚡ Quickstart & Local Setup
+## ⚡ Local Setup & Running
 
 ### Prerequisites
-- **Java Development Kit (JDK):** Version 21 LTS
-- **Build Tool:** Apache Maven 3.9+ (or use the included `./mvnw` wrapper)
-- **Database:** MySQL 8.0+ (or default in-memory for testing)
+- **Java:** JDK 21 LTS
+- **Database:** PostgreSQL 15+ (or H2 in-memory profile for testing)
 
-### 1. Clone the Repository
+### 1. Configure Environment
+Copy `.env.example` to `.env` or set environment variables:
 ```bash
-git clone https://github.com/Arkstar2212/SWP391-VEGEAI-Project.git
-cd SWP391-VEGEAI-Project
+cp .env.example .env
 ```
+Default connection (`src/main/resources/application.properties`):
+- URL: `jdbc:postgresql://localhost:5432/vegeai`
+- Username: `postgres`
+- Password: `your_password`
 
-### 2. Configure Database
-Update `src/main/resources/application.properties` with your database credentials:
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/vegeai_db?createDatabaseIfNotExist=true
-spring.datasource.username=root
-spring.datasource.password=your_password
-spring.jpa.hibernate.ddl-auto=update
+### 2. Run with Maven Wrapper
+**Windows:**
+```powershell
+.\mvnw.cmd spring-boot:run
 ```
-
-### 3. Build & Run the Application
+**Linux / macOS:**
 ```bash
-# Compile and run tests
-./mvnw clean compile
-
-# Run Spring Boot backend
 ./mvnw spring-boot:run
 ```
 
-The server will initialize on: `http://localhost:8080`
+### 3. Run Test Suite
+```powershell
+.\mvnw.cmd test
+```
 
-### 4. Explore the Interactive Prototype
-Open `http://localhost:8080/index.html` or double-click `Demo_UI_Prototype_Interactive.html` in your browser to test all 3 portals:
-- **Public / Guest:** Browse recipes, try limited AI nutritionist trial, calculate BMI.
-- **Authorized Member:** Weekly meal planner, grocery generator, custom recipe creator.
-- **Administrator:** AI log viewer, moderation review queue, system health metrics.
-
----
-
-## 📡 Core API Reference
-
-| HTTP Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Register new user with dietary preferences | No |
-| `POST` | `/api/auth/login` | Authenticate and obtain JWT token | No |
-| `POST` | `/api/nutrition/bmi/calculate`| Deterministic BMI & healthy weight calculation | No |
-| `GET` | `/api/recipes` | List published vegetarian/vegan recipes | No |
-| `POST` | `/api/ai/chat` | Query the AI Nutrition Assistant (rate-limited) | Optional |
-| `GET` | `/api/admin/dashboard/stats`| Retrieve real-time platform & AI telemetry | `ROLE_ADMIN` |
+### 4. Interactive Documentation
+- **Swagger UI:** `http://localhost:8080/swagger-ui.html`
+- **OpenAPI 3 JSON:** `http://localhost:8080/api-docs`
 
 ---
 
