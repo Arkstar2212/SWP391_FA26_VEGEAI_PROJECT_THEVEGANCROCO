@@ -49,11 +49,16 @@ public enum ErrorCode {
     // ── Rate Limiting ─────────────────────────────────────────────────────────
     TOO_MANY_REQUESTS(1400, "Too many requests. Please try again later.", HttpStatus.TOO_MANY_REQUESTS),
     LOGIN_ATTEMPTS_EXCEEDED(1401, "Too many failed login attempts. Try again in 15 minutes.", HttpStatus.TOO_MANY_REQUESTS),
+    GUEST_AI_QUOTA_EXCEEDED(1402, "Guest trial limit reached (3 requests per 24h). Please register or log in to continue.", HttpStatus.TOO_MANY_REQUESTS),
 
     // ── User / Resource ───────────────────────────────────────────────────────
     USER_NOT_FOUND(1500, "User not found.", HttpStatus.NOT_FOUND),
     RESOURCE_NOT_FOUND(1501, "Resource not found.", HttpStatus.NOT_FOUND),
     FORBIDDEN(1600, "You do not have permission to perform this action.", HttpStatus.FORBIDDEN),
+    OLD_PASSWORD_INCORRECT(1304, "Current password is incorrect.", HttpStatus.BAD_REQUEST),
+    SAME_PASSWORD_ERROR(1305, "New password cannot be the same as current password.", HttpStatus.BAD_REQUEST),
+    ADMIN_IMMUNITY_VIOLATION(1601, "Admin immunity: Cannot modify another administrator account.", HttpStatus.FORBIDDEN),
+    CANNOT_MODIFY_SELF_STATUS(1602, "You cannot modify your own administrative status or role.", HttpStatus.FORBIDDEN),
 
     // ── Email ─────────────────────────────────────────────────────────────────
     EMAIL_SEND_FAILED(1901, "Failed to send email. Please try again later.", HttpStatus.SERVICE_UNAVAILABLE);

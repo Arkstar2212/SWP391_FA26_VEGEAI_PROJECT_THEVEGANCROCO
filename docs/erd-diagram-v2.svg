@@ -1,0 +1,1740 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2600 2700" width="2600" height="2700" style="background:#0B0F17;font-family:'Inter',system-ui,sans-serif;">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace; }
+  .entity-card { transition: all 0.2s ease; cursor: default; }
+  .entity-card:hover rect:first-child { filter: brightness(1.15); stroke-width: 2.2 !important; }
+  .rel-group { transition: all 0.2s ease; }
+  .rel-group:hover .rel-line { stroke-width: 3.2 !important; filter: drop-shadow(0 0 6px rgba(255,255,255,0.4)); }
+  .rel-badge { cursor: pointer; transition: all 0.2s ease; }
+  .rel-badge:hover rect { filter: brightness(1.3); stroke-width: 2.2 !important; }
+  .rel-badge:hover text { fill: #FFFFFF !important; font-weight: 700 !important; }
+</style>
+<defs>
+  <!-- Card Drop Shadow -->
+  <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="110%">
+    <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.55"/>
+  </filter>
+  <!-- Pill Badge Shadow -->
+  <filter id="pill-shadow" x="-10%" y="-20%" width="120%" height="140%">
+    <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000000" flood-opacity="0.65"/>
+  </filter>
+  <!-- Header Gradient -->
+  <linearGradient id="header-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#1E293B"/>
+    <stop offset="100%" stop-color="#0F172A"/>
+  </linearGradient>
+</defs>
+
+<!-- Dark Grid Background -->
+<rect width="100%" height="100%" fill="#0B0F17" />
+<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1E293B" stroke-width="0.5" stroke-opacity="0.5"/>
+</pattern>
+<rect width="100%" height="100%" fill="url(#grid)" />
+
+<!-- ================= BANNER TITLE ================= -->
+<g id="main-title">
+  <rect x="30" y="30" width="1100" height="84" rx="14" ry="14" fill="url(#header-grad)" stroke="#38BDF8" stroke-width="1.8" filter="url(#card-shadow)" />
+  <circle cx="72" cy="72" r="24" fill="#0284C7" />
+  <text x="72" y="80" font-size="24" text-anchor="middle">🥑</text>
+  <text x="114" y="63" font-size="21" font-weight="800" fill="#F8FAFC" letter-spacing="0.5">VEGEAI MASTER DATABASE ARCHITECTURE v2.2</text>
+  <text x="114" y="88" font-size="12.5" font-weight="500" fill="#94A3B8">SWP391 — The Vegan Crocodile | Sơ đồ Crow&apos;s Foot ERD chuẩn Enterprise (Zero-Overlap Highway)</text>
+</g>
+
+<!-- ================= LEGEND BANNER (DUAL CROW FOOT & ZONES) ================= -->
+<g id="diagram-legend">
+  <rect x="1260" y="30" width="1310" height="84" rx="14" ry="14" fill="url(#header-grad)" stroke="#475569" stroke-width="1.5" filter="url(#card-shadow)" />
+  
+  <!-- Row 1: Crow's Foot Notation Standard -->
+  <text x="1285" y="52" font-size="11.5" font-weight="700" fill="#94A3B8">KÝ HIỆU CROW&apos;S FOOT:</text>
+  
+  <!-- 1..1 -->
+  <g transform="translate(1430, 48)">
+    <line x1="0" y1="0" x2="25" y2="0" stroke="#CBD5E1" stroke-width="1.8"/>
+    <line x1="15" y1="-6" x2="15" y2="6" stroke="#CBD5E1" stroke-width="1.8"/>
+    <line x1="22" y1="-6" x2="22" y2="6" stroke="#CBD5E1" stroke-width="1.8"/>
+    <text x="32" y="4" font-size="11" font-weight="600" fill="#E2E8F0">Đúng 1 (1..1)</text>
+  </g>
+
+  <!-- 0..1 -->
+  <g transform="translate(1570, 48)">
+    <line x1="0" y1="0" x2="28" y2="0" stroke="#CBD5E1" stroke-width="1.8"/>
+    <circle cx="12" cy="0" r="4.5" fill="#0B0F17" stroke="#CBD5E1" stroke-width="1.8"/>
+    <line x1="22" y1="-6" x2="22" y2="6" stroke="#CBD5E1" stroke-width="1.8"/>
+    <text x="35" y="4" font-size="11" font-weight="600" fill="#E2E8F0">0 hoặc 1 (0..1)</text>
+  </g>
+
+  <!-- 1..N -->
+  <g transform="translate(1725, 48)">
+    <line x1="0" y1="0" x2="28" y2="0" stroke="#CBD5E1" stroke-width="1.8"/>
+    <line x1="28" y1="0" x2="16" y2="-6" stroke="#CBD5E1" stroke-width="1.8"/>
+    <line x1="28" y1="0" x2="16" y2="6" stroke="#CBD5E1" stroke-width="1.8"/>
+    <line x1="10" y1="-6" x2="10" y2="6" stroke="#CBD5E1" stroke-width="1.8"/>
+    <text x="35" y="4" font-size="11" font-weight="600" fill="#E2E8F0">1 hoặc nhiều (1..N)</text>
+  </g>
+
+  <!-- 0..N -->
+  <g transform="translate(1910, 48)">
+    <line x1="0" y1="0" x2="30" y2="0" stroke="#CBD5E1" stroke-width="1.8"/>
+    <line x1="30" y1="0" x2="18" y2="-6" stroke="#CBD5E1" stroke-width="1.8"/>
+    <line x1="30" y1="0" x2="18" y2="6" stroke="#CBD5E1" stroke-width="1.8"/>
+    <circle cx="10" cy="0" r="4.5" fill="#0B0F17" stroke="#CBD5E1" stroke-width="1.8"/>
+    <text x="38" y="4" font-size="11" font-weight="600" fill="#E2E8F0">0 hoặc nhiều (0..N)</text>
+  </g>
+
+  <!-- Row 2: Subsystem Colors -->
+  <text x="1285" y="86" font-size="11.5" font-weight="700" fill="#94A3B8">PHÂN HỆ NGHIỆP VỤ:</text>
+  
+  <circle cx="1440" cy="82" r="6" fill="#818CF8" />
+  <text x="1453" y="86" font-size="11" font-weight="600" fill="#E2E8F0">1. Tài khoản</text>
+
+  <circle cx="1565" cy="82" r="6" fill="#38BDF8" />
+  <text x="1578" y="86" font-size="11" font-weight="600" fill="#E2E8F0">2. Công thức &amp; Map</text>
+
+  <circle cx="1735" cy="82" r="6" fill="#34D399" />
+  <text x="1748" y="86" font-size="11" font-weight="600" fill="#E2E8F0">3. Kho &amp; Vision AI</text>
+
+  <circle cx="1905" cy="82" r="6" fill="#F472B6" />
+  <text x="1918" y="86" font-size="11" font-weight="600" fill="#E2E8F0">4. Video &amp; Social</text>
+
+  <circle cx="2065" cy="82" r="6" fill="#FBBF24" />
+  <text x="2078" y="86" font-size="11" font-weight="600" fill="#E2E8F0">5. Lịch ăn &amp; Copilot</text>
+
+  <circle cx="2230" cy="82" r="6" fill="#EF4444" />
+  <text x="2243" y="86" font-size="11" font-weight="600" fill="#EF4444">Kiểm duyệt AI</text>
+</g>
+
+<!-- ================= 5 FUNCTIONAL ZONES ================= -->
+
+<!-- Zone: PHÂN HỆ 1: TÀI KHOẢN, XÁC THỰC &amp; SỨC KHỎE -->
+<g class="zone-boundary" id="zone-1">
+  <rect x="30" y="135" width="1100" height="890" rx="18" ry="18" fill="rgba(99, 102, 241, 0.04)" stroke="#4338CA" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.95" />
+  <rect x="54" y="121" width="384" height="28" rx="14" ry="14" fill="#0F172A" stroke="#4338CA" stroke-width="1.5" />
+  <circle cx="70" cy="135" r="5" fill="#818CF8" />
+  <text x="84" y="139" font-size="11.5" font-weight="700" fill="#818CF8">PHÂN HỆ 1: TÀI KHOẢN, XÁC THỰC &amp; SỨC KHỎE</text>
+</g>
+
+<!-- Zone: PHÂN HỆ 2: CÔNG THỨC &amp; BẢN ĐỒ ĐỊA ĐIỂM CHAY (MAP API) -->
+<g class="zone-boundary" id="zone-2">
+  <rect x="30" y="1045" width="1100" height="790" rx="18" ry="18" fill="rgba(56, 189, 248, 0.04)" stroke="#0284C7" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.95" />
+  <rect x="54" y="1031" width="483" height="28" rx="14" ry="14" fill="#0F172A" stroke="#0284C7" stroke-width="1.5" />
+  <circle cx="70" cy="1045" r="5" fill="#38BDF8" />
+  <text x="84" y="1049" font-size="11.5" font-weight="700" fill="#38BDF8">PHÂN HỆ 2: CÔNG THỨC &amp; BẢN ĐỒ ĐỊA ĐIỂM CHAY (MAP API)</text>
+</g>
+
+<!-- Zone: PHÂN HỆ 3: KHO NGUYÊN LIỆU &amp; VISION AI QUÉT TỦ LẠNH -->
+<g class="zone-boundary" id="zone-3">
+  <rect x="30" y="1855" width="1100" height="790" rx="18" ry="18" fill="rgba(52, 211, 153, 0.04)" stroke="#059669" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.95" />
+  <rect x="54" y="1841" width="466" height="28" rx="14" ry="14" fill="#0F172A" stroke="#059669" stroke-width="1.5" />
+  <circle cx="70" cy="1855" r="5" fill="#34D399" />
+  <text x="84" y="1859" font-size="11.5" font-weight="700" fill="#34D399">PHÂN HỆ 3: KHO NGUYÊN LIỆU &amp; VISION AI QUÉT TỦ LẠNH</text>
+</g>
+
+<!-- Zone: PHÂN HỆ 4: TRUYỀN THÔNG, BÀI ĐĂNG, VIDEO &amp; KIỂM DUYỆT AI -->
+<g class="zone-boundary" id="zone-4">
+  <rect x="1260" y="135" width="1310" height="1140" rx="18" ry="18" fill="rgba(244, 114, 182, 0.04)" stroke="#DB2777" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.95" />
+  <rect x="1284" y="121" width="507" height="28" rx="14" ry="14" fill="#0F172A" stroke="#DB2777" stroke-width="1.5" />
+  <circle cx="1300" cy="135" r="5" fill="#F472B6" />
+  <text x="1314" y="139" font-size="11.5" font-weight="700" fill="#F472B6">PHÂN HỆ 4: TRUYỀN THÔNG, BÀI ĐĂNG, VIDEO &amp; KIỂM DUYỆT AI</text>
+</g>
+
+<!-- Zone: PHÂN HỆ 5: LỊCH ĂN DINH DƯỠNG &amp; TRỢ LÝ AI COPILOT -->
+<g class="zone-boundary" id="zone-5">
+  <rect x="1260" y="1295" width="1310" height="1350" rx="18" ry="18" fill="rgba(251, 191, 36, 0.04)" stroke="#D97706" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.95" />
+  <rect x="1284" y="1281" width="450" height="28" rx="14" ry="14" fill="#0F172A" stroke="#D97706" stroke-width="1.5" />
+  <circle cx="1300" cy="1295" r="5" fill="#FBBF24" />
+  <text x="1314" y="1299" font-size="11.5" font-weight="700" fill="#FBBF24">PHÂN HỆ 5: LỊCH ĂN DINH DƯỠNG &amp; TRỢ LÝ AI COPILOT</text>
+</g>
+
+<!-- ================= RELATIONSHIP POLYLINES & CROW'S FEET ================= -->
+<!-- Rel: roles -> accounts (🔑 phân quyền) -->
+<g class="rel-group" data-from="roles" data-to="accounts">
+  <polyline points="230,200 230,170 440,170 440,200" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="230,200 230,170 440,170 440,200" fill="none" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="223.00" y1="192.00" x2="237.00" y2="192.00" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="223.00" y1="185.00" x2="237.00" y2="185.00" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="440.00" y1="200.00" x2="440.00" y2="186.00" stroke="#818CF8" stroke-width="1.8" />
+<line x1="440.00" y1="200.00" x2="432.50" y2="186.00" stroke="#818CF8" stroke-width="1.8" />
+<line x1="440.00" y1="200.00" x2="447.50" y2="186.00" stroke="#818CF8" stroke-width="1.8" />
+<circle cx="440.00" cy="177.00" r="4.5" fill="#0B0F17" stroke="#818CF8" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> accounts (👤 Admin tạo tài khoản) -->
+<g class="rel-group" data-from="accounts" data-to="accounts">
+  <polyline points="500,200 500,145 600,145 600,200" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="500,200 500,145 600,145 600,200" fill="none" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="493.00" y1="192.00" x2="507.00" y2="192.00" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="500.00" cy="182.00" r="4.5" fill="#0B0F17" stroke="#818CF8" stroke-width="1.8" />
+<line x1="600.00" y1="200.00" x2="600.00" y2="186.00" stroke="#818CF8" stroke-width="1.8" />
+<line x1="600.00" y1="200.00" x2="592.50" y2="186.00" stroke="#818CF8" stroke-width="1.8" />
+<line x1="600.00" y1="200.00" x2="607.50" y2="186.00" stroke="#818CF8" stroke-width="1.8" />
+<circle cx="600.00" cy="177.00" r="4.5" fill="#0B0F17" stroke="#818CF8" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> user_health_profiles (⚖️ hồ sơ BMI (1-1)) -->
+<g class="rel-group" data-from="accounts" data-to="user_health_profiles">
+  <polyline points="640,200 640,170 840,170 840,200" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="640,200 640,170 840,170 840,200" fill="none" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="633.00" y1="192.00" x2="647.00" y2="192.00" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="633.00" y1="185.00" x2="647.00" y2="185.00" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="833.00" y1="192.00" x2="847.00" y2="192.00" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="840.00" cy="182.00" r="4.5" fill="#0B0F17" stroke="#818CF8" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> otp_verifications (📱 xác thực OTP) -->
+<g class="rel-group" data-from="accounts" data-to="otp_verifications">
+  <polyline points="500,480 500,525 780,525" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="500,480 500,525 780,525" fill="none" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="507.00" y1="488.00" x2="493.00" y2="488.00" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="500.00" cy="498.00" r="4.5" fill="#0B0F17" stroke="#818CF8" stroke-width="1.8" />
+<line x1="780.00" y1="525.00" x2="766.00" y2="525.00" stroke="#818CF8" stroke-width="1.8" />
+<line x1="780.00" y1="525.00" x2="766.00" y2="532.50" stroke="#818CF8" stroke-width="1.8" />
+<line x1="780.00" y1="525.00" x2="766.00" y2="517.50" stroke="#818CF8" stroke-width="1.8" />
+<circle cx="757.00" cy="525.00" r="4.5" fill="#0B0F17" stroke="#818CF8" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> refresh_tokens (🔄 sở hữu phiên) -->
+<g class="rel-group" data-from="accounts" data-to="refresh_tokens">
+  <polyline points="560,480 560,780 780,780" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="560,480 560,780 780,780" fill="none" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="567.00" y1="488.00" x2="553.00" y2="488.00" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="567.00" y1="495.00" x2="553.00" y2="495.00" stroke="#818CF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="780.00" y1="780.00" x2="766.00" y2="780.00" stroke="#818CF8" stroke-width="1.8" />
+<line x1="780.00" y1="780.00" x2="766.00" y2="787.50" stroke="#818CF8" stroke-width="1.8" />
+<line x1="780.00" y1="780.00" x2="766.00" y2="772.50" stroke="#818CF8" stroke-width="1.8" />
+<circle cx="757.00" cy="780.00" r="4.5" fill="#0B0F17" stroke="#818CF8" stroke-width="1.8" />
+</g>
+<!-- Rel: categories -> recipes (📂 phân loại món) -->
+<g class="rel-group" data-from="categories" data-to="recipes">
+  <polyline points="260,1110 260,1080 440,1080 440,1110" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="260,1110 260,1080 440,1080 440,1110" fill="none" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="253.00" y1="1102.00" x2="267.00" y2="1102.00" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="253.00" y1="1095.00" x2="267.00" y2="1095.00" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="440.00" y1="1110.00" x2="440.00" y2="1096.00" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="440.00" y1="1110.00" x2="432.50" y2="1096.00" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="440.00" y1="1110.00" x2="447.50" y2="1096.00" stroke="#38BDF8" stroke-width="1.8" />
+<circle cx="440.00" cy="1087.00" r="4.5" fill="#0B0F17" stroke="#38BDF8" stroke-width="1.8" />
+</g>
+<!-- Rel: recipes -> recipe_ingredients (🍲 chứa nguyên liệu) -->
+<g class="rel-group" data-from="recipes" data-to="recipe_ingredients">
+  <polyline points="600,1110 600,1080 850,1080 850,1110" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="600,1110 600,1080 850,1080 850,1110" fill="none" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="593.00" y1="1102.00" x2="607.00" y2="1102.00" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="593.00" y1="1095.00" x2="607.00" y2="1095.00" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="850.00" y1="1110.00" x2="850.00" y2="1096.00" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="850.00" y1="1110.00" x2="842.50" y2="1096.00" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="850.00" y1="1110.00" x2="857.50" y2="1096.00" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="843.00" y1="1090.00" x2="857.00" y2="1090.00" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+</g>
+<!-- Rel: ingredients -> recipe_ingredients (⚖️ định lượng món) -->
+<g class="rel-group" data-from="ingredients" data-to="recipe_ingredients">
+  <polyline points="195,1920 195,1860 740,1860 740,1195 780,1195" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="195,1920 195,1860 740,1860 740,1195 780,1195" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="188.00" y1="1912.00" x2="202.00" y2="1912.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="188.00" y1="1905.00" x2="202.00" y2="1905.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="780.00" y1="1195.00" x2="766.00" y2="1195.00" stroke="#34D399" stroke-width="1.8" />
+<line x1="780.00" y1="1195.00" x2="766.00" y2="1202.50" stroke="#34D399" stroke-width="1.8" />
+<line x1="780.00" y1="1195.00" x2="766.00" y2="1187.50" stroke="#34D399" stroke-width="1.8" />
+<circle cx="757.00" cy="1195.00" r="4.5" fill="#0B0F17" stroke="#34D399" stroke-width="1.8" />
+</g>
+<!-- Rel: vegan_shops -> shop_menu_items (📍 menu quán chay) -->
+<g class="rel-group" data-from="vegan_shops" data-to="shop_menu_items">
+  <polyline points="280,1430 280,1400 460,1400 460,1470" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="280,1430 280,1400 460,1400 460,1470" fill="none" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="273.00" y1="1422.00" x2="287.00" y2="1422.00" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="273.00" y1="1415.00" x2="287.00" y2="1415.00" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+<line x1="460.00" y1="1470.00" x2="460.00" y2="1456.00" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="460.00" y1="1470.00" x2="452.50" y2="1456.00" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="460.00" y1="1470.00" x2="467.50" y2="1456.00" stroke="#38BDF8" stroke-width="1.8" />
+<circle cx="460.00" cy="1447.00" r="4.5" fill="#0B0F17" stroke="#38BDF8" stroke-width="1.8" />
+</g>
+<!-- Rel: recipes -> shop_menu_items (🍽️ món tương ứng) -->
+<g class="rel-group" data-from="recipes" data-to="shop_menu_items">
+  <polyline points="530,1324 530,1470" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="530,1324 530,1470" fill="none" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="537.00" y1="1332.00" x2="523.00" y2="1332.00" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="530.00" cy="1342.00" r="4.5" fill="#0B0F17" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="530.00" y1="1470.00" x2="530.00" y2="1456.00" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="530.00" y1="1470.00" x2="522.50" y2="1456.00" stroke="#38BDF8" stroke-width="1.8" />
+<line x1="530.00" y1="1470.00" x2="537.50" y2="1456.00" stroke="#38BDF8" stroke-width="1.8" />
+<circle cx="530.00" cy="1447.00" r="4.5" fill="#0B0F17" stroke="#38BDF8" stroke-width="1.8" />
+</g>
+<!-- Rel: ingredients -> user_pantries (📦 lưu trữ tủ lạnh) -->
+<g class="rel-group" data-from="ingredients" data-to="user_pantries">
+  <polyline points="260,1920 260,1885 460,1885 460,1920" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="260,1920 260,1885 460,1885 460,1920" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="253.00" y1="1912.00" x2="267.00" y2="1912.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="253.00" y1="1905.00" x2="267.00" y2="1905.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="460.00" y1="1920.00" x2="460.00" y2="1906.00" stroke="#34D399" stroke-width="1.8" />
+<line x1="460.00" y1="1920.00" x2="452.50" y2="1906.00" stroke="#34D399" stroke-width="1.8" />
+<line x1="460.00" y1="1920.00" x2="467.50" y2="1906.00" stroke="#34D399" stroke-width="1.8" />
+<circle cx="460.00" cy="1897.00" r="4.5" fill="#0B0F17" stroke="#34D399" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> fridge_scans (📸 chụp ảnh tủ lạnh) -->
+<g class="rel-group" data-from="accounts" data-to="fridge_scans">
+  <polyline points="390,430 30,430 30,2285 70,2285" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="390,430 30,430 30,2285 70,2285" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="382.00" y1="437.00" x2="382.00" y2="423.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="375.00" y1="437.00" x2="375.00" y2="423.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="70.00" y1="2285.00" x2="56.00" y2="2285.00" stroke="#34D399" stroke-width="1.8" />
+<line x1="70.00" y1="2285.00" x2="56.00" y2="2292.50" stroke="#34D399" stroke-width="1.8" />
+<line x1="70.00" y1="2285.00" x2="56.00" y2="2277.50" stroke="#34D399" stroke-width="1.8" />
+<circle cx="47.00" cy="2285.00" r="4.5" fill="#0B0F17" stroke="#34D399" stroke-width="1.8" />
+</g>
+<!-- Rel: fridge_scans -> detected_ingredients (🤖 Vision AI nhận diện &amp; độ tươi) -->
+<g class="rel-group" data-from="fridge_scans" data-to="detected_ingredients">
+  <polyline points="250,2240 250,2185 470,2185 470,2240" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="250,2240 250,2185 470,2185 470,2240" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="243.00" y1="2232.00" x2="257.00" y2="2232.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="243.00" y1="2225.00" x2="257.00" y2="2225.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="470.00" y1="2240.00" x2="470.00" y2="2226.00" stroke="#34D399" stroke-width="1.8" />
+<line x1="470.00" y1="2240.00" x2="462.50" y2="2226.00" stroke="#34D399" stroke-width="1.8" />
+<line x1="470.00" y1="2240.00" x2="477.50" y2="2226.00" stroke="#34D399" stroke-width="1.8" />
+<line x1="463.00" y1="2220.00" x2="477.00" y2="2220.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+</g>
+<!-- Rel: detected_ingredients -> user_pantries (✅ xác nhận lưu kho) -->
+<g class="rel-group" data-from="detected_ingredients" data-to="user_pantries">
+  <polyline points="530,2240 530,2092" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="530,2240 530,2092" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7,5" opacity="0.9" />
+<line x1="523.00" y1="2232.00" x2="537.00" y2="2232.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="523.00" y1="2225.00" x2="537.00" y2="2225.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<polygon points="0,0 -8,-5 -8,5" fill="#34D399" transform="translate(530,2092) rotate(-90)" />
+</g>
+<!-- Rel: ingredients -> detected_ingredients (🔍 đối chiếu master) -->
+<g class="rel-group" data-from="ingredients" data-to="detected_ingredients">
+  <polyline points="180,2068 180,2160 360,2160 360,2325 400,2325" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="180,2068 180,2160 360,2160 360,2325 400,2325" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="187.00" y1="2076.00" x2="173.00" y2="2076.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="180.00" cy="2086.00" r="4.5" fill="#0B0F17" stroke="#34D399" stroke-width="1.8" />
+<line x1="400.00" y1="2325.00" x2="386.00" y2="2325.00" stroke="#34D399" stroke-width="1.8" />
+<line x1="400.00" y1="2325.00" x2="386.00" y2="2332.50" stroke="#34D399" stroke-width="1.8" />
+<line x1="400.00" y1="2325.00" x2="386.00" y2="2317.50" stroke="#34D399" stroke-width="1.8" />
+<circle cx="377.00" cy="2325.00" r="4.5" fill="#0B0F17" stroke="#34D399" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> user_pantries (🧊 quản lý tủ lạnh) -->
+<g class="rel-group" data-from="accounts" data-to="user_pantries">
+  <polyline points="670,335 700,335 700,1965 660,1965" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="670,335 700,335 700,1965 660,1965" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="678.00" y1="328.00" x2="678.00" y2="342.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="685.00" y1="328.00" x2="685.00" y2="342.00" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" />
+<line x1="660.00" y1="1965.00" x2="674.00" y2="1965.00" stroke="#34D399" stroke-width="1.8" />
+<line x1="660.00" y1="1965.00" x2="674.00" y2="1957.50" stroke="#34D399" stroke-width="1.8" />
+<line x1="660.00" y1="1965.00" x2="674.00" y2="1972.50" stroke="#34D399" stroke-width="1.8" />
+<circle cx="683.00" cy="1965.00" r="4.5" fill="#0B0F17" stroke="#34D399" stroke-width="1.8" />
+</g>
+<!-- Rel: videos -> video_summaries (🧠 AI tóm tắt STT (1-1)) -->
+<g class="rel-group" data-from="videos" data-to="video_summaries">
+  <polyline points="1520,200 1520,165 1780,165 1780,200" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1520,200 1520,165 1780,165 1780,200" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1513.00" y1="192.00" x2="1527.00" y2="192.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1513.00" y1="185.00" x2="1527.00" y2="185.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1773.00" y1="192.00" x2="1787.00" y2="192.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="1780.00" cy="182.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: videos -> blogs (🎬 nhúng video vào blog) -->
+<g class="rel-group" data-from="videos" data-to="blogs">
+  <polyline points="1450,414 1450,550" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1450,414 1450,550" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1457.00" y1="422.00" x2="1443.00" y2="422.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="1450.00" cy="432.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1450.00" y1="550.00" x2="1450.00" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1450.00" y1="550.00" x2="1442.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1450.00" y1="550.00" x2="1457.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="1450.00" cy="527.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: blogs -> comments (💬 bình luận blog) -->
+<g class="rel-group" data-from="blogs" data-to="comments">
+  <polyline points="1540,550 1540,490 1760,490 1760,550" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1540,550 1540,490 1760,490 1760,550" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1533.00" y1="542.00" x2="1547.00" y2="542.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1533.00" y1="535.00" x2="1547.00" y2="535.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1760.00" y1="550.00" x2="1760.00" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1760.00" y1="550.00" x2="1752.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1760.00" y1="550.00" x2="1767.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="1760.00" cy="527.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: comments -> comments (↩️ trả lời con) -->
+<g class="rel-group" data-from="comments" data-to="comments">
+  <polyline points="1790,550 1790,505 1890,505 1890,550" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1790,550 1790,505 1890,505 1890,550" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1783.00" y1="542.00" x2="1797.00" y2="542.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="1790.00" cy="532.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1890.00" y1="550.00" x2="1890.00" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1890.00" y1="550.00" x2="1882.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1890.00" y1="550.00" x2="1897.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="1890.00" cy="527.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: blogs -> votes (⭐ đánh giá blog) -->
+<g class="rel-group" data-from="blogs" data-to="votes">
+  <polyline points="1590,640 1650,640 1650,475 2050,475 2050,595 2110,595" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1590,640 1650,640 1650,475 2050,475 2050,595 2110,595" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1598.00" y1="633.00" x2="1598.00" y2="647.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1605.00" y1="633.00" x2="1605.00" y2="647.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="2110.00" y1="595.00" x2="2096.00" y2="595.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="2110.00" y1="595.00" x2="2096.00" y2="602.50" stroke="#F472B6" stroke-width="1.8" />
+<line x1="2110.00" y1="595.00" x2="2096.00" y2="587.50" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="2087.00" cy="595.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: videos -> comments (💬 bình luận video) -->
+<g class="rel-group" data-from="videos" data-to="comments">
+  <polyline points="1580,285 1660,285 1660,380 1910,380 1910,550" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1580,285 1660,285 1660,380 1910,380 1910,550" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7,5" opacity="0.9" />
+<line x1="1588.00" y1="278.00" x2="1588.00" y2="292.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1595.00" y1="278.00" x2="1595.00" y2="292.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1910.00" y1="550.00" x2="1910.00" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1910.00" y1="550.00" x2="1902.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1910.00" y1="550.00" x2="1917.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="1910.00" cy="527.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: videos -> votes (⭐ đánh giá video) -->
+<g class="rel-group" data-from="videos" data-to="votes">
+  <polyline points="1580,315 1640,315 1640,350 2210,350 2210,550" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1580,315 1640,315 1640,350 2210,350 2210,550" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7,5" opacity="0.9" />
+<line x1="1588.00" y1="308.00" x2="1588.00" y2="322.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1595.00" y1="308.00" x2="1595.00" y2="322.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="2210.00" y1="550.00" x2="2210.00" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="2210.00" y1="550.00" x2="2202.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="2210.00" y1="550.00" x2="2217.50" y2="536.00" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="2210.00" cy="527.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: blogs -> ai_moderation_logs (🛡️ kiểm duyệt blog) -->
+<g class="rel-group" data-from="blogs" data-to="ai_moderation_logs">
+  <polyline points="1480,786 1480,935 1710,935" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1480,786 1480,935 1710,935" fill="none" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1487.00" y1="794.00" x2="1473.00" y2="794.00" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="1480.00" cy="804.00" r="4.5" fill="#0B0F17" stroke="#EF4444" stroke-width="1.8" />
+<line x1="1710.00" y1="935.00" x2="1696.00" y2="935.00" stroke="#EF4444" stroke-width="1.8" />
+<line x1="1710.00" y1="935.00" x2="1696.00" y2="942.50" stroke="#EF4444" stroke-width="1.8" />
+<line x1="1710.00" y1="935.00" x2="1696.00" y2="927.50" stroke="#EF4444" stroke-width="1.8" />
+<circle cx="1687.00" cy="935.00" r="4.5" fill="#0B0F17" stroke="#EF4444" stroke-width="1.8" />
+</g>
+<!-- Rel: comments -> ai_moderation_logs (🛡️ kiểm duyệt comment) -->
+<g class="rel-group" data-from="comments" data-to="ai_moderation_logs">
+  <polyline points="1845,742 1845,890" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1845,742 1845,890" fill="none" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1852.00" y1="750.00" x2="1838.00" y2="750.00" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="1845.00" cy="760.00" r="4.5" fill="#0B0F17" stroke="#EF4444" stroke-width="1.8" />
+<line x1="1845.00" y1="890.00" x2="1845.00" y2="876.00" stroke="#EF4444" stroke-width="1.8" />
+<line x1="1845.00" y1="890.00" x2="1837.50" y2="876.00" stroke="#EF4444" stroke-width="1.8" />
+<line x1="1845.00" y1="890.00" x2="1852.50" y2="876.00" stroke="#EF4444" stroke-width="1.8" />
+<circle cx="1845.00" cy="867.00" r="4.5" fill="#0B0F17" stroke="#EF4444" stroke-width="1.8" />
+</g>
+<!-- Rel: videos -> ai_moderation_logs (🛡️ kiểm duyệt video) -->
+<g class="rel-group" data-from="videos" data-to="ai_moderation_logs">
+  <polyline points="1580,345 2045,345 2045,980 2000,980" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1580,345 2045,345 2045,980 2000,980" fill="none" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1588.00" y1="338.00" x2="1588.00" y2="352.00" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="1598.00" cy="345.00" r="4.5" fill="#0B0F17" stroke="#EF4444" stroke-width="1.8" />
+<line x1="2000.00" y1="980.00" x2="2014.00" y2="980.00" stroke="#EF4444" stroke-width="1.8" />
+<line x1="2000.00" y1="980.00" x2="2014.00" y2="972.50" stroke="#EF4444" stroke-width="1.8" />
+<line x1="2000.00" y1="980.00" x2="2014.00" y2="987.50" stroke="#EF4444" stroke-width="1.8" />
+<circle cx="2023.00" cy="980.00" r="4.5" fill="#0B0F17" stroke="#EF4444" stroke-width="1.8" />
+</g>
+<!-- Rel: meal_plans -> meal_plan_items (🥗 sắp xếp lịch ăn 7 ngày) -->
+<g class="rel-group" data-from="meal_plans" data-to="meal_plan_items">
+  <polyline points="1530,1390 1530,1345 1780,1345 1780,1390" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1530,1390 1530,1345 1780,1345 1780,1390" fill="none" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1523.00" y1="1382.00" x2="1537.00" y2="1382.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1523.00" y1="1375.00" x2="1537.00" y2="1375.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1780.00" y1="1390.00" x2="1780.00" y2="1376.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1780.00" y1="1390.00" x2="1772.50" y2="1376.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1780.00" y1="1390.00" x2="1787.50" y2="1376.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1773.00" y1="1370.00" x2="1787.00" y2="1370.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+</g>
+<!-- Rel: ai_chatbot_sessions -> ai_chatbot_messages (💬 tin nhắn Copilot) -->
+<g class="rel-group" data-from="ai_chatbot_sessions" data-to="ai_chatbot_messages">
+  <polyline points="1530,1920 1530,1860 1780,1860 1780,1920" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="1530,1920 1530,1860 1780,1860 1780,1920" fill="none" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="1523.00" y1="1912.00" x2="1537.00" y2="1912.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1523.00" y1="1905.00" x2="1537.00" y2="1905.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1780.00" y1="1920.00" x2="1780.00" y2="1906.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1780.00" y1="1920.00" x2="1772.50" y2="1906.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1780.00" y1="1920.00" x2="1787.50" y2="1906.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1773.00" y1="1900.00" x2="1787.00" y2="1900.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+</g>
+<!-- Rel: accounts -> videos (📹 đăng video) -->
+<g class="rel-group" data-from="accounts" data-to="videos">
+  <polyline points="530,200 530,165 1270,165 1270,245 1330,245" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="530,200 530,165 1270,165 1270,245 1330,245" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="523.00" y1="192.00" x2="537.00" y2="192.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="523.00" y1="185.00" x2="537.00" y2="185.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1330.00" y1="245.00" x2="1316.00" y2="245.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="245.00" x2="1316.00" y2="252.50" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="245.00" x2="1316.00" y2="237.50" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="1307.00" cy="245.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> blogs (✍️ viết bài blog) -->
+<g class="rel-group" data-from="accounts" data-to="blogs">
+  <polyline points="670,445 1250,445 1250,595 1330,595" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="670,445 1250,445 1250,595 1330,595" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="678.00" y1="438.00" x2="678.00" y2="452.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="685.00" y1="438.00" x2="685.00" y2="452.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1330.00" y1="595.00" x2="1316.00" y2="595.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="595.00" x2="1316.00" y2="602.50" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="595.00" x2="1316.00" y2="587.50" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="1307.00" cy="595.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> ai_moderation_logs (⚖️ Admin xử lý cờ) -->
+<g class="rel-group" data-from="accounts" data-to="ai_moderation_logs">
+  <polyline points="670,470 730,470 730,705 1290,705 1290,1040 1710,1040" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="670,470 730,470 730,705 1290,705 1290,1040 1710,1040" fill="none" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="678.00" y1="463.00" x2="678.00" y2="477.00" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="688.00" cy="470.00" r="4.5" fill="#0B0F17" stroke="#EF4444" stroke-width="1.8" />
+<line x1="1710.00" y1="1040.00" x2="1696.00" y2="1040.00" stroke="#EF4444" stroke-width="1.8" />
+<line x1="1710.00" y1="1040.00" x2="1696.00" y2="1047.50" stroke="#EF4444" stroke-width="1.8" />
+<line x1="1710.00" y1="1040.00" x2="1696.00" y2="1032.50" stroke="#EF4444" stroke-width="1.8" />
+<circle cx="1687.00" cy="1040.00" r="4.5" fill="#0B0F17" stroke="#EF4444" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> meal_plans (📅 lập kế hoạch tuần) -->
+<g class="rel-group" data-from="accounts" data-to="meal_plans">
+  <polyline points="670,410 715,410 715,910 1230,910 1230,1435 1330,1435" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="670,410 715,410 715,910 1230,910 1230,1435 1330,1435" fill="none" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="678.00" y1="403.00" x2="678.00" y2="417.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<line x1="685.00" y1="403.00" x2="685.00" y2="417.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1330.00" y1="1435.00" x2="1316.00" y2="1435.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1330.00" y1="1435.00" x2="1316.00" y2="1442.50" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1330.00" y1="1435.00" x2="1316.00" y2="1427.50" stroke="#FBBF24" stroke-width="1.8" />
+<circle cx="1307.00" cy="1435.00" r="4.5" fill="#0B0F17" stroke="#FBBF24" stroke-width="1.8" />
+</g>
+<!-- Rel: accounts -> ai_chatbot_sessions (🤖 phiên chat Copilot) -->
+<g class="rel-group" data-from="accounts" data-to="ai_chatbot_sessions">
+  <polyline points="670,380 700,380 700,940 1210,940 1210,1965 1330,1965" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="670,380 700,380 700,940 1210,940 1210,1965 1330,1965" fill="none" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="678.00" y1="373.00" x2="678.00" y2="387.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="688.00" cy="380.00" r="4.5" fill="#0B0F17" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1330.00" y1="1965.00" x2="1316.00" y2="1965.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1330.00" y1="1965.00" x2="1316.00" y2="1972.50" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1330.00" y1="1965.00" x2="1316.00" y2="1957.50" stroke="#FBBF24" stroke-width="1.8" />
+<circle cx="1307.00" cy="1965.00" r="4.5" fill="#0B0F17" stroke="#FBBF24" stroke-width="1.8" />
+</g>
+<!-- Rel: categories -> blogs (🏷️ chủ đề blog) -->
+<g class="rel-group" data-from="categories" data-to="blogs">
+  <polyline points="190,1110 190,1055 1190,1055 1190,640 1330,640" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="190,1110 190,1055 1190,1055 1190,640 1330,640" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="183.00" y1="1102.00" x2="197.00" y2="1102.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="183.00" y1="1095.00" x2="197.00" y2="1095.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1330.00" y1="640.00" x2="1316.00" y2="640.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="640.00" x2="1316.00" y2="647.50" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="640.00" x2="1316.00" y2="632.50" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="1307.00" cy="640.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: recipes -> blogs (📖 gắn công thức) -->
+<g class="rel-group" data-from="recipes" data-to="blogs">
+  <polyline points="670,1260 1170,1260 1170,685 1330,685" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="670,1260 1170,1260 1170,685 1330,685" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="678.00" y1="1253.00" x2="678.00" y2="1267.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="688.00" cy="1260.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="685.00" x2="1316.00" y2="685.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="685.00" x2="1316.00" y2="692.50" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="685.00" x2="1316.00" y2="677.50" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="1307.00" cy="685.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: recipes -> videos (🍳 video hướng dẫn) -->
+<g class="rel-group" data-from="recipes" data-to="videos">
+  <polyline points="670,1285 1150,1285 1150,285 1330,285" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="670,1285 1150,1285 1150,285 1330,285" fill="none" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="678.00" y1="1278.00" x2="678.00" y2="1292.00" stroke="#F472B6" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="688.00" cy="1285.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="285.00" x2="1316.00" y2="285.00" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="285.00" x2="1316.00" y2="292.50" stroke="#F472B6" stroke-width="1.8" />
+<line x1="1330.00" y1="285.00" x2="1316.00" y2="277.50" stroke="#F472B6" stroke-width="1.8" />
+<circle cx="1307.00" cy="285.00" r="4.5" fill="#0B0F17" stroke="#F472B6" stroke-width="1.8" />
+</g>
+<!-- Rel: recipes -> meal_plan_items (🍲 món được chọn) -->
+<g class="rel-group" data-from="recipes" data-to="meal_plan_items">
+  <polyline points="670,1310 1160,1310 1160,1620 1800,1620 1800,1582" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="670,1310 1160,1310 1160,1620 1800,1620 1800,1582" fill="none" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"  opacity="0.9" />
+<line x1="678.00" y1="1303.00" x2="678.00" y2="1317.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<line x1="685.00" y1="1303.00" x2="685.00" y2="1317.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<line x1="1800.00" y1="1582.00" x2="1800.00" y2="1596.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1800.00" y1="1582.00" x2="1807.50" y2="1596.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1800.00" y1="1582.00" x2="1792.50" y2="1596.00" stroke="#FBBF24" stroke-width="1.8" />
+<circle cx="1800.00" cy="1605.00" r="4.5" fill="#0B0F17" stroke="#FBBF24" stroke-width="1.8" />
+</g>
+<!-- Rel: recipes -> meal_plan_items (🔄 món AI thay thế) -->
+<g class="rel-group" data-from="recipes" data-to="meal_plan_items">
+  <polyline points="640,1324 640,1335 1180,1335 1180,1650 1860,1650 1860,1582" fill="none" stroke="#0B0F17" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+  <polyline class="rel-line" points="640,1324 640,1335 1180,1335 1180,1650 1860,1650 1860,1582" fill="none" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7,5" opacity="0.9" />
+<line x1="647.00" y1="1332.00" x2="633.00" y2="1332.00" stroke="#FBBF24" stroke-width="1.8" stroke-linecap="round" />
+<circle cx="640.00" cy="1342.00" r="4.5" fill="#0B0F17" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1860.00" y1="1582.00" x2="1860.00" y2="1596.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1860.00" y1="1582.00" x2="1867.50" y2="1596.00" stroke="#FBBF24" stroke-width="1.8" />
+<line x1="1860.00" y1="1582.00" x2="1852.50" y2="1596.00" stroke="#FBBF24" stroke-width="1.8" />
+<circle cx="1860.00" cy="1605.00" r="4.5" fill="#0B0F17" stroke="#FBBF24" stroke-width="1.8" />
+</g>
+
+<!-- ================= ENTITY CARDS ================= -->
+
+<g class="entity-card" data-id="roles" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="70" y="200" width="230" height="82" rx="10" ry="10" fill="#131B2E" stroke="#4338CA" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 70 210 Q 70 200 80 200 L 290 200 Q 300 200 300 210 L 300 234 L 70 234 Z" fill="#1E293B" stroke="#4338CA" stroke-width="1.5" />
+  <circle cx="88" cy="217" r="4.5" fill="#818CF8" />
+  <text x="100" y="222" font-size="13.5" font-weight="700" fill="#F8FAFC">roles</text>
+  <line x1="70" y1="234" x2="300" y2="234" stroke="#4338CA" stroke-width="1" />
+  <g class="field-row">
+    <rect x="78" y="237" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="89" y="245" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="107" y="245" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">bigint</text>
+    <text x="290" y="245" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">id</text>
+  </g>
+  <g class="field-row"><title>ROLE_GUEST, ROLE_MEMBER, ROLE_ADMIN</title><rect x="71" y="256" width="228" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="78" y="259" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="89" y="267" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="107" y="267" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="290" y="267" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">role_name</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="accounts" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="390" y="200" width="280" height="280" rx="10" ry="10" fill="#131B2E" stroke="#4338CA" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 390 210 Q 390 200 400 200 L 660 200 Q 670 200 670 210 L 670 234 L 390 234 Z" fill="#1E293B" stroke="#4338CA" stroke-width="1.5" />
+  <circle cx="408" cy="217" r="4.5" fill="#818CF8" />
+  <text x="420" y="222" font-size="13.5" font-weight="700" fill="#F8FAFC">accounts</text>
+  <line x1="390" y1="234" x2="670" y2="234" stroke="#4338CA" stroke-width="1" />
+  <g class="field-row">
+    <rect x="398" y="237" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="409" y="245" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="427" y="245" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="660" y="245" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row"><rect x="391" y="256" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="398" y="259" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="409" y="267" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="427" y="267" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">bigint</text>
+    <text x="660" y="267" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">role_id</text>
+  </g>
+  <g class="field-row"><title>Self FK: Admin tạo user/admin</title>
+    <rect x="398" y="281" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="409" y="289" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="427" y="289" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="660" y="289" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">created_by</text>
+  </g>
+  <g class="field-row"><rect x="391" y="300" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="398" y="303" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="409" y="311" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="427" y="311" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="660" y="311" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">username</text>
+  </g>
+  <g class="field-row"><title>BCrypt / Argon2</title>
+    <text x="402" y="333" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="660" y="333" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">password_hash</text>
+  </g>
+  <g class="field-row"><rect x="391" y="344" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="398" y="347" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="409" y="355" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="427" y="355" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="660" y="355" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">email</text>
+  </g>
+  <g class="field-row">
+    <text x="402" y="377" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="660" y="377" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">full_name</text>
+  </g>
+  <g class="field-row"><rect x="391" y="388" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="398" y="391" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="409" y="399" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="427" y="399" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="660" y="399" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">phone_number</text>
+  </g>
+  <g class="field-row"><title>ACTIVE, PENDING, LOCKED</title>
+    <text x="402" y="421" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="660" y="421" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">status</text>
+  </g>
+  <g class="field-row"><rect x="391" y="432" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="402" y="443" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">timestamp</text>
+    <text x="660" y="443" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">created_at</text>
+  </g>
+  <g class="field-row">
+    <text x="402" y="465" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">timestamp</text>
+    <text x="660" y="465" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">updated_at</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="user_health_profiles" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="780" y="200" width="280" height="214" rx="10" ry="10" fill="#131B2E" stroke="#4338CA" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 780 210 Q 780 200 790 200 L 1050 200 Q 1060 200 1060 210 L 1060 234 L 780 234 Z" fill="#1E293B" stroke="#4338CA" stroke-width="1.5" />
+  <circle cx="798" cy="217" r="4.5" fill="#818CF8" />
+  <text x="810" y="222" font-size="13.5" font-weight="700" fill="#F8FAFC">user_health_profiles</text>
+  <line x1="780" y1="234" x2="1060" y2="234" stroke="#4338CA" stroke-width="1" />
+  <g class="field-row">
+    <rect x="788" y="237" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="799" y="245" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="817" y="245" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1050" y="245" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">profile_id</text>
+  </g>
+  <g class="field-row"><title>FK Unique (1-1 hồ sơ sức khỏe)</title><rect x="781" y="256" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="788" y="259" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="799" y="267" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="817" y="267" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1050" y="267" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row">
+    <text x="792" y="289" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="1050" y="289" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">height_cm</text>
+  </g>
+  <g class="field-row"><rect x="781" y="300" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="792" y="311" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="1050" y="311" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">weight_kg</text>
+  </g>
+  <g class="field-row"><title>Deterministic: kg / (height/100)^2</title>
+    <text x="792" y="333" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="1050" y="333" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">bmi</text>
+  </g>
+  <g class="field-row"><title>WEIGHT_LOSS, MUSCLE, DETOX</title><rect x="781" y="344" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="792" y="355" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1050" y="355" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">health_goal</text>
+  </g>
+  <g class="field-row"><title>Gluten, Đậu phộng, Đậu nành...</title>
+    <text x="792" y="377" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">text</text>
+    <text x="1050" y="377" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">allergies</text>
+  </g>
+  <g class="field-row"><rect x="781" y="388" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="792" y="399" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1050" y="399" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">activity_level</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="otp_verifications" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="780" y="480" width="260" height="192" rx="10" ry="10" fill="#131B2E" stroke="#4338CA" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 780 490 Q 780 480 790 480 L 1030 480 Q 1040 480 1040 490 L 1040 514 L 780 514 Z" fill="#1E293B" stroke="#4338CA" stroke-width="1.5" />
+  <circle cx="798" cy="497" r="4.5" fill="#818CF8" />
+  <text x="810" y="502" font-size="13.5" font-weight="700" fill="#F8FAFC">otp_verifications</text>
+  <line x1="780" y1="514" x2="1040" y2="514" stroke="#4338CA" stroke-width="1" />
+  <g class="field-row">
+    <rect x="788" y="517" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="799" y="525" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="817" y="525" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1030" y="525" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">id</text>
+  </g>
+  <g class="field-row"><title>Nullable khi đăng ký mới</title><rect x="781" y="536" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="788" y="539" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="799" y="547" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="817" y="547" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1030" y="547" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row"><title>Email / SĐT nhận mã</title>
+    <text x="792" y="569" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1030" y="569" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">recipient</text>
+  </g>
+  <g class="field-row"><title>Mã OTP 6 chữ số</title><rect x="781" y="580" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="792" y="591" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1030" y="591" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">otp_code</text>
+  </g>
+  <g class="field-row"><title>REGISTER, RESET_PW, 2FA</title>
+    <text x="792" y="613" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1030" y="613" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">purpose</text>
+  </g>
+  <g class="field-row"><rect x="781" y="624" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="792" y="635" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">timestamp</text>
+    <text x="1030" y="635" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">expires_at</text>
+  </g>
+  <g class="field-row">
+    <text x="792" y="657" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">boolean</text>
+    <text x="1030" y="657" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">used</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="refresh_tokens" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="780" y="735" width="260" height="148" rx="10" ry="10" fill="#131B2E" stroke="#4338CA" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 780 745 Q 780 735 790 735 L 1030 735 Q 1040 735 1040 745 L 1040 769 L 780 769 Z" fill="#1E293B" stroke="#4338CA" stroke-width="1.5" />
+  <circle cx="798" cy="752" r="4.5" fill="#818CF8" />
+  <text x="810" y="757" font-size="13.5" font-weight="700" fill="#F8FAFC">refresh_tokens</text>
+  <line x1="780" y1="769" x2="1040" y2="769" stroke="#4338CA" stroke-width="1" />
+  <g class="field-row">
+    <rect x="788" y="772" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="799" y="780" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="817" y="780" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1030" y="780" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">id</text>
+  </g>
+  <g class="field-row"><rect x="781" y="791" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="788" y="794" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="799" y="802" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="817" y="802" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1030" y="802" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row">
+    <rect x="788" y="816" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="799" y="824" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="817" y="824" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1030" y="824" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">token</text>
+  </g>
+  <g class="field-row"><rect x="781" y="835" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="792" y="846" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">timestamp</text>
+    <text x="1030" y="846" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">expires_at</text>
+  </g>
+  <g class="field-row">
+    <text x="792" y="868" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">boolean</text>
+    <text x="1030" y="868" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">revoked</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="categories" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="70" y="1110" width="240" height="148" rx="10" ry="10" fill="#131B2E" stroke="#0284C7" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 70 1120 Q 70 1110 80 1110 L 300 1110 Q 310 1110 310 1120 L 310 1144 L 70 1144 Z" fill="#1E293B" stroke="#0284C7" stroke-width="1.5" />
+  <circle cx="88" cy="1127" r="4.5" fill="#38BDF8" />
+  <text x="100" y="1132" font-size="13.5" font-weight="700" fill="#F8FAFC">categories</text>
+  <line x1="70" y1="1144" x2="310" y2="1144" stroke="#0284C7" stroke-width="1" />
+  <g class="field-row">
+    <rect x="78" y="1147" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="89" y="1155" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="107" y="1155" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">bigint</text>
+    <text x="300" y="1155" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">category_id</text>
+  </g>
+  <g class="field-row"><rect x="71" y="1166" width="238" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="78" y="1169" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="89" y="1177" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="107" y="1177" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="300" y="1177" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">name</text>
+  </g>
+  <g class="field-row">
+    <rect x="78" y="1191" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="89" y="1199" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="107" y="1199" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="300" y="1199" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">slug</text>
+  </g>
+  <g class="field-row"><title>FOOD_TYPE, RECIPE_STYLE</title><rect x="71" y="1210" width="238" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="82" y="1221" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="300" y="1221" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">type</text>
+  </g>
+  <g class="field-row">
+    <text x="82" y="1243" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">text</text>
+    <text x="300" y="1243" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">description</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="recipes" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="390" y="1110" width="280" height="214" rx="10" ry="10" fill="#131B2E" stroke="#0284C7" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 390 1120 Q 390 1110 400 1110 L 660 1110 Q 670 1110 670 1120 L 670 1144 L 390 1144 Z" fill="#1E293B" stroke="#0284C7" stroke-width="1.5" />
+  <circle cx="408" cy="1127" r="4.5" fill="#38BDF8" />
+  <text x="420" y="1132" font-size="13.5" font-weight="700" fill="#F8FAFC">recipes</text>
+  <line x1="390" y1="1144" x2="670" y2="1144" stroke="#0284C7" stroke-width="1" />
+  <g class="field-row">
+    <rect x="398" y="1147" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="409" y="1155" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="427" y="1155" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="660" y="1155" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">recipe_id</text>
+  </g>
+  <g class="field-row"><rect x="391" y="1166" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="398" y="1169" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="409" y="1177" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="427" y="1177" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">bigint</text>
+    <text x="660" y="1177" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">category_id</text>
+  </g>
+  <g class="field-row">
+    <text x="402" y="1199" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="660" y="1199" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">title</text>
+  </g>
+  <g class="field-row"><rect x="391" y="1210" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="402" y="1221" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">text</text>
+    <text x="660" y="1221" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">instructions</text>
+  </g>
+  <g class="field-row">
+    <text x="402" y="1243" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">int</text>
+    <text x="660" y="1243" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">prep_time_minutes</text>
+  </g>
+  <g class="field-row"><rect x="391" y="1254" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="402" y="1265" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">int</text>
+    <text x="660" y="1265" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">cook_time_minutes</text>
+  </g>
+  <g class="field-row">
+    <text x="402" y="1287" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">int</text>
+    <text x="660" y="1287" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">calories_per_serving</text>
+  </g>
+  <g class="field-row"><title>EASY, MEDIUM, HARD</title><rect x="391" y="1298" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="402" y="1309" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="660" y="1309" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">difficulty</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="recipe_ingredients" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="780" y="1110" width="270" height="126" rx="10" ry="10" fill="#131B2E" stroke="#0284C7" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 780 1120 Q 780 1110 790 1110 L 1040 1110 Q 1050 1110 1050 1120 L 1050 1144 L 780 1144 Z" fill="#1E293B" stroke="#0284C7" stroke-width="1.5" />
+  <circle cx="798" cy="1127" r="4.5" fill="#38BDF8" />
+  <text x="810" y="1132" font-size="13.5" font-weight="700" fill="#F8FAFC">recipe_ingredients</text>
+  <line x1="780" y1="1144" x2="1050" y2="1144" stroke="#0284C7" stroke-width="1" />
+  <g class="field-row">
+    <rect x="788" y="1147" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="799" y="1155" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <rect x="813" y="1147" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="824" y="1155" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="842" y="1155" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1040" y="1155" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">recipe_id</text>
+  </g>
+  <g class="field-row"><rect x="781" y="1166" width="268" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="788" y="1169" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="799" y="1177" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <rect x="813" y="1169" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="824" y="1177" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="842" y="1177" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">bigint</text>
+    <text x="1040" y="1177" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">ingredient_id</text>
+  </g>
+  <g class="field-row">
+    <text x="792" y="1199" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="1040" y="1199" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">quantity</text>
+  </g>
+  <g class="field-row"><title>g, ml, quả, thìa</title><rect x="781" y="1210" width="268" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="792" y="1221" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1040" y="1221" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">unit</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="vegan_shops" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="70" y="1430" width="270" height="280" rx="10" ry="10" fill="#131B2E" stroke="#0284C7" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 70 1440 Q 70 1430 80 1430 L 330 1430 Q 340 1430 340 1440 L 340 1464 L 70 1464 Z" fill="#1E293B" stroke="#0284C7" stroke-width="1.5" />
+  <circle cx="88" cy="1447" r="4.5" fill="#38BDF8" />
+  <text x="100" y="1452" font-size="13.5" font-weight="700" fill="#F8FAFC">vegan_shops</text>
+  <line x1="70" y1="1464" x2="340" y2="1464" stroke="#0284C7" stroke-width="1" />
+  <g class="field-row">
+    <rect x="78" y="1467" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="89" y="1475" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="107" y="1475" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="330" y="1475" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">shop_id</text>
+  </g>
+  <g class="field-row"><rect x="71" y="1486" width="268" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="82" y="1497" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="330" y="1497" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">name</text>
+  </g>
+  <g class="field-row">
+    <text x="82" y="1519" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="330" y="1519" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">address</text>
+  </g>
+  <g class="field-row"><title>Lọc nhanh Quận/Huyện</title><rect x="71" y="1530" width="268" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="82" y="1541" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="330" y="1541" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">district</text>
+  </g>
+  <g class="field-row"><title>Tỉnh / Thành phố</title>
+    <text x="82" y="1563" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="330" y="1563" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">city</text>
+  </g>
+  <g class="field-row"><title>GPS Lat cho Map Pin</title><rect x="71" y="1574" width="268" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="82" y="1585" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="330" y="1585" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">latitude</text>
+  </g>
+  <g class="field-row"><title>GPS Lon cho Map Pin</title>
+    <text x="82" y="1607" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="330" y="1607" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">longitude</text>
+  </g>
+  <g class="field-row"><title>Google Place ID</title><rect x="71" y="1618" width="268" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="82" y="1629" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="330" y="1629" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">place_id</text>
+  </g>
+  <g class="field-row"><title>Link chỉ đường Map</title>
+    <text x="82" y="1651" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="330" y="1651" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">map_url</text>
+  </g>
+  <g class="field-row"><rect x="71" y="1662" width="268" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="82" y="1673" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="330" y="1673" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">phone_number</text>
+  </g>
+  <g class="field-row">
+    <text x="82" y="1695" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="330" y="1695" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">rating_average</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="shop_menu_items" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="400" y="1470" width="260" height="148" rx="10" ry="10" fill="#131B2E" stroke="#0284C7" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 400 1480 Q 400 1470 410 1470 L 650 1470 Q 660 1470 660 1480 L 660 1504 L 400 1504 Z" fill="#1E293B" stroke="#0284C7" stroke-width="1.5" />
+  <circle cx="418" cy="1487" r="4.5" fill="#38BDF8" />
+  <text x="430" y="1492" font-size="13.5" font-weight="700" fill="#F8FAFC">shop_menu_items</text>
+  <line x1="400" y1="1504" x2="660" y2="1504" stroke="#0284C7" stroke-width="1" />
+  <g class="field-row">
+    <rect x="408" y="1507" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="419" y="1515" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="437" y="1515" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="650" y="1515" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">item_id</text>
+  </g>
+  <g class="field-row"><rect x="401" y="1526" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="408" y="1529" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="419" y="1537" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="437" y="1537" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="650" y="1537" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">shop_id</text>
+  </g>
+  <g class="field-row"><title>Nullable: Món đối ứng</title>
+    <rect x="408" y="1551" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="419" y="1559" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="437" y="1559" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="650" y="1559" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">recipe_id</text>
+  </g>
+  <g class="field-row"><rect x="401" y="1570" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="412" y="1581" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="650" y="1581" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">item_name</text>
+  </g>
+  <g class="field-row">
+    <text x="412" y="1603" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="650" y="1603" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">price</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="ingredients" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="70" y="1920" width="250" height="148" rx="10" ry="10" fill="#131B2E" stroke="#059669" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 70 1930 Q 70 1920 80 1920 L 310 1920 Q 320 1920 320 1930 L 320 1954 L 70 1954 Z" fill="#1E293B" stroke="#059669" stroke-width="1.5" />
+  <circle cx="88" cy="1937" r="4.5" fill="#34D399" />
+  <text x="100" y="1942" font-size="13.5" font-weight="700" fill="#F8FAFC">ingredients</text>
+  <line x1="70" y1="1954" x2="320" y2="1954" stroke="#059669" stroke-width="1" />
+  <g class="field-row">
+    <rect x="78" y="1957" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="89" y="1965" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="107" y="1965" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">bigint</text>
+    <text x="310" y="1965" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">ingredient_id</text>
+  </g>
+  <g class="field-row"><rect x="71" y="1976" width="248" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="78" y="1979" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="89" y="1987" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="107" y="1987" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="310" y="1987" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">name</text>
+  </g>
+  <g class="field-row"><title>Rau củ, Nấm, Đậu hạt...</title>
+    <text x="82" y="2009" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="310" y="2009" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">category</text>
+  </g>
+  <g class="field-row"><rect x="71" y="2020" width="248" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="82" y="2031" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="310" y="2031" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">unit</text>
+  </g>
+  <g class="field-row">
+    <text x="82" y="2053" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="310" y="2053" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">calories_per_unit</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="user_pantries" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="400" y="1920" width="260" height="170" rx="10" ry="10" fill="#131B2E" stroke="#059669" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 400 1930 Q 400 1920 410 1920 L 650 1920 Q 660 1920 660 1930 L 660 1954 L 400 1954 Z" fill="#1E293B" stroke="#059669" stroke-width="1.5" />
+  <circle cx="418" cy="1937" r="4.5" fill="#34D399" />
+  <text x="430" y="1942" font-size="13.5" font-weight="700" fill="#F8FAFC">user_pantries</text>
+  <line x1="400" y1="1954" x2="660" y2="1954" stroke="#059669" stroke-width="1" />
+  <g class="field-row">
+    <rect x="408" y="1957" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="419" y="1965" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="437" y="1965" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="650" y="1965" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">pantry_id</text>
+  </g>
+  <g class="field-row"><rect x="401" y="1976" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="408" y="1979" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="419" y="1987" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="437" y="1987" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="650" y="1987" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row">
+    <rect x="408" y="2001" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="419" y="2009" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="437" y="2009" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">bigint</text>
+    <text x="650" y="2009" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">ingredient_id</text>
+  </g>
+  <g class="field-row"><rect x="401" y="2020" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="412" y="2031" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="650" y="2031" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">quantity</text>
+  </g>
+  <g class="field-row">
+    <text x="412" y="2053" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="650" y="2053" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">unit</text>
+  </g>
+  <g class="field-row"><rect x="401" y="2064" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="412" y="2075" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">date</text>
+    <text x="650" y="2075" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">expiry_date</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="fridge_scans" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="70" y="2240" width="250" height="170" rx="10" ry="10" fill="#131B2E" stroke="#059669" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 70 2250 Q 70 2240 80 2240 L 310 2240 Q 320 2240 320 2250 L 320 2274 L 70 2274 Z" fill="#1E293B" stroke="#059669" stroke-width="1.5" />
+  <circle cx="88" cy="2257" r="4.5" fill="#34D399" />
+  <text x="100" y="2262" font-size="13.5" font-weight="700" fill="#F8FAFC">fridge_scans</text>
+  <line x1="70" y1="2274" x2="320" y2="2274" stroke="#059669" stroke-width="1" />
+  <g class="field-row">
+    <rect x="78" y="2277" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="89" y="2285" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="107" y="2285" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="310" y="2285" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">scan_id</text>
+  </g>
+  <g class="field-row"><rect x="71" y="2296" width="248" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="78" y="2299" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="89" y="2307" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="107" y="2307" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="310" y="2307" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row"><title>URL ảnh chụp Cloud</title>
+    <text x="82" y="2329" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="310" y="2329" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">image_url</text>
+  </g>
+  <g class="field-row"><title>SLA AI xử lý ~3s</title><rect x="71" y="2340" width="248" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="82" y="2351" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">int</text>
+    <text x="310" y="2351" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">duration_ms</text>
+  </g>
+  <g class="field-row"><title>PROCESSING, SUCCESS, FAILED</title>
+    <text x="82" y="2373" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="310" y="2373" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">status</text>
+  </g>
+  <g class="field-row"><rect x="71" y="2384" width="248" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="82" y="2395" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">timestamp</text>
+    <text x="310" y="2395" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">scanned_at</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="detected_ingredients" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="400" y="2240" width="280" height="192" rx="10" ry="10" fill="#131B2E" stroke="#059669" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 400 2250 Q 400 2240 410 2240 L 670 2240 Q 680 2240 680 2250 L 680 2274 L 400 2274 Z" fill="#1E293B" stroke="#059669" stroke-width="1.5" />
+  <circle cx="418" cy="2257" r="4.5" fill="#34D399" />
+  <text x="430" y="2262" font-size="13.5" font-weight="700" fill="#F8FAFC">detected_ingredients</text>
+  <line x1="400" y1="2274" x2="680" y2="2274" stroke="#059669" stroke-width="1" />
+  <g class="field-row">
+    <rect x="408" y="2277" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="419" y="2285" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="437" y="2285" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="670" y="2285" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">detected_id</text>
+  </g>
+  <g class="field-row"><rect x="401" y="2296" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="408" y="2299" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="419" y="2307" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="437" y="2307" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="670" y="2307" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">scan_id</text>
+  </g>
+  <g class="field-row"><title>Nullable: Khớp từ điển Master</title>
+    <rect x="408" y="2321" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="419" y="2329" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="437" y="2329" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">bigint</text>
+    <text x="670" y="2329" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">ingredient_id</text>
+  </g>
+  <g class="field-row"><title>Nhãn Vision AI phát hiện</title><rect x="401" y="2340" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="412" y="2351" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="670" y="2351" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">raw_label</text>
+  </g>
+  <g class="field-row"><title>0.00 .. 1.00</title>
+    <text x="412" y="2373" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="670" y="2373" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">confidence</text>
+  </g>
+  <g class="field-row"><title>FRESH, EXPIRING, SPOILED</title><rect x="401" y="2384" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="412" y="2395" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="670" y="2395" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">freshness_status</text>
+  </g>
+  <g class="field-row"><title>User tick duyệt vào tủ lạnh</title>
+    <text x="412" y="2417" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">boolean</text>
+    <text x="670" y="2417" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">is_confirmed</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="videos" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="1330" y="200" width="250" height="214" rx="10" ry="10" fill="#131B2E" stroke="#DB2777" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 1330 210 Q 1330 200 1340 200 L 1570 200 Q 1580 200 1580 210 L 1580 234 L 1330 234 Z" fill="#1E293B" stroke="#DB2777" stroke-width="1.5" />
+  <circle cx="1348" cy="217" r="4.5" fill="#F472B6" />
+  <text x="1360" y="222" font-size="13.5" font-weight="700" fill="#F8FAFC">videos</text>
+  <line x1="1330" y1="234" x2="1580" y2="234" stroke="#DB2777" stroke-width="1" />
+  <g class="field-row">
+    <rect x="1338" y="237" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="1349" y="245" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="1367" y="245" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1570" y="245" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">video_id</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="256" width="248" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1338" y="259" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1349" y="267" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1367" y="267" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1570" y="267" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row"><title>Nullable: Video từ công thức</title>
+    <rect x="1338" y="281" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1349" y="289" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1367" y="289" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1570" y="289" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">recipe_id</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="300" width="248" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1342" y="311" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1570" y="311" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">title</text>
+  </g>
+  <g class="field-row">
+    <text x="1342" y="333" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1570" y="333" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">video_url</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="344" width="248" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1342" y="355" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">int</text>
+    <text x="1570" y="355" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">duration_seconds</text>
+  </g>
+  <g class="field-row"><title>APPROVED, FLAGGED</title>
+    <text x="1342" y="377" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1570" y="377" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">status</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="388" width="248" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1342" y="399" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">boolean</text>
+    <text x="1570" y="399" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">is_deleted</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="video_summaries" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="1710" y="200" width="260" height="126" rx="10" ry="10" fill="#131B2E" stroke="#DB2777" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 1710 210 Q 1710 200 1720 200 L 1960 200 Q 1970 200 1970 210 L 1970 234 L 1710 234 Z" fill="#1E293B" stroke="#DB2777" stroke-width="1.5" />
+  <circle cx="1728" cy="217" r="4.5" fill="#F472B6" />
+  <text x="1740" y="222" font-size="13.5" font-weight="700" fill="#F8FAFC">video_summaries</text>
+  <line x1="1710" y1="234" x2="1970" y2="234" stroke="#DB2777" stroke-width="1" />
+  <g class="field-row">
+    <rect x="1718" y="237" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="1729" y="245" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="1747" y="245" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1960" y="245" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">summary_id</text>
+  </g>
+  <g class="field-row"><title>FK Unique (1-1 AI tóm tắt)</title><rect x="1711" y="256" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1718" y="259" width="22" height="15" rx="3.5" ry="3.5" fill="#6B21A8" />
+    <text x="1729" y="267" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#F3E8FF">UK</text>
+    <text x="1747" y="267" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1960" y="267" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">video_id</text>
+  </g>
+  <g class="field-row">
+    <text x="1722" y="289" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">text</text>
+    <text x="1960" y="289" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">summarized_steps</text>
+  </g>
+  <g class="field-row"><rect x="1711" y="300" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1722" y="311" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">text</text>
+    <text x="1960" y="311" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">key_ingredients</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="blogs" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="1330" y="550" width="260" height="236" rx="10" ry="10" fill="#131B2E" stroke="#DB2777" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 1330 560 Q 1330 550 1340 550 L 1580 550 Q 1590 550 1590 560 L 1590 584 L 1330 584 Z" fill="#1E293B" stroke="#DB2777" stroke-width="1.5" />
+  <circle cx="1348" cy="567" r="4.5" fill="#F472B6" />
+  <text x="1360" y="572" font-size="13.5" font-weight="700" fill="#F8FAFC">blogs</text>
+  <line x1="1330" y1="584" x2="1590" y2="584" stroke="#DB2777" stroke-width="1" />
+  <g class="field-row">
+    <rect x="1338" y="587" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="1349" y="595" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="1367" y="595" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1580" y="595" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">blog_id</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="606" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1338" y="609" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1349" y="617" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1367" y="617" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1580" y="617" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row"><title>Nullable</title>
+    <rect x="1338" y="631" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1349" y="639" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1367" y="639" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1580" y="639" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">recipe_id</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="650" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1338" y="653" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1349" y="661" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1367" y="661" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">bigint</text>
+    <text x="1580" y="661" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">category_id</text>
+  </g>
+  <g class="field-row"><title>Nullable: Nhúng video nấu ăn</title>
+    <rect x="1338" y="675" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1349" y="683" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1367" y="683" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1580" y="683" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">video_id</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="694" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1342" y="705" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1580" y="705" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">title</text>
+  </g>
+  <g class="field-row">
+    <text x="1342" y="727" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">text</text>
+    <text x="1580" y="727" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">content</text>
+  </g>
+  <g class="field-row"><title>APPROVED, FLAGGED</title><rect x="1331" y="738" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1342" y="749" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1580" y="749" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">status</text>
+  </g>
+  <g class="field-row">
+    <text x="1342" y="771" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">boolean</text>
+    <text x="1580" y="771" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">is_deleted</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="comments" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="1710" y="550" width="260" height="192" rx="10" ry="10" fill="#131B2E" stroke="#DB2777" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 1710 560 Q 1710 550 1720 550 L 1960 550 Q 1970 550 1970 560 L 1970 584 L 1710 584 Z" fill="#1E293B" stroke="#DB2777" stroke-width="1.5" />
+  <circle cx="1728" cy="567" r="4.5" fill="#F472B6" />
+  <text x="1740" y="572" font-size="13.5" font-weight="700" fill="#F8FAFC">comments</text>
+  <line x1="1710" y1="584" x2="1970" y2="584" stroke="#DB2777" stroke-width="1" />
+  <g class="field-row">
+    <rect x="1718" y="587" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="1729" y="595" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="1747" y="595" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1960" y="595" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">comment_id</text>
+  </g>
+  <g class="field-row"><rect x="1711" y="606" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1718" y="609" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1729" y="617" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1747" y="617" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1960" y="617" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row"><title>BLOG, VIDEO</title>
+    <text x="1722" y="639" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1960" y="639" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">target_type</text>
+  </g>
+  <g class="field-row"><rect x="1711" y="650" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1722" y="661" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1960" y="661" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">target_id</text>
+  </g>
+  <g class="field-row"><title>Nullable: Trả lời con</title>
+    <rect x="1718" y="675" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1729" y="683" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1747" y="683" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1960" y="683" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">parent_id</text>
+  </g>
+  <g class="field-row"><rect x="1711" y="694" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1722" y="705" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">text</text>
+    <text x="1960" y="705" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">content</text>
+  </g>
+  <g class="field-row">
+    <text x="1722" y="727" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">boolean</text>
+    <text x="1960" y="727" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">is_deleted</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="votes" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="2110" y="550" width="230" height="148" rx="10" ry="10" fill="#131B2E" stroke="#DB2777" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 2110 560 Q 2110 550 2120 550 L 2330 550 Q 2340 550 2340 560 L 2340 584 L 2110 584 Z" fill="#1E293B" stroke="#DB2777" stroke-width="1.5" />
+  <circle cx="2128" cy="567" r="4.5" fill="#F472B6" />
+  <text x="2140" y="572" font-size="13.5" font-weight="700" fill="#F8FAFC">votes</text>
+  <line x1="2110" y1="584" x2="2340" y2="584" stroke="#DB2777" stroke-width="1" />
+  <g class="field-row">
+    <rect x="2118" y="587" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="2129" y="595" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="2147" y="595" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="2330" y="595" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">vote_id</text>
+  </g>
+  <g class="field-row"><rect x="2111" y="606" width="228" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="2118" y="609" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="2129" y="617" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="2147" y="617" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="2330" y="617" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row"><title>BLOG, VIDEO</title>
+    <text x="2122" y="639" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="2330" y="639" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">target_type</text>
+  </g>
+  <g class="field-row"><rect x="2111" y="650" width="228" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="2122" y="661" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="2330" y="661" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">target_id</text>
+  </g>
+  <g class="field-row"><title>1..5 sao</title>
+    <text x="2122" y="683" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">smallint</text>
+    <text x="2330" y="683" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">score</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="ai_moderation_logs" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="1710" y="890" width="290" height="258" rx="10" ry="10" fill="#131B2E" stroke="#DB2777" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 1710 900 Q 1710 890 1720 890 L 1990 890 Q 2000 890 2000 900 L 2000 924 L 1710 924 Z" fill="#1E293B" stroke="#DB2777" stroke-width="1.5" />
+  <circle cx="1728" cy="907" r="4.5" fill="#F472B6" />
+  <text x="1740" y="912" font-size="13.5" font-weight="700" fill="#F8FAFC">ai_moderation_logs</text>
+  <line x1="1710" y1="924" x2="2000" y2="924" stroke="#DB2777" stroke-width="1" />
+  <g class="field-row">
+    <rect x="1718" y="927" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="1729" y="935" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="1747" y="935" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="935" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">log_id</text>
+  </g>
+  <g class="field-row"><title>BLOG, VIDEO, COMMENT</title><rect x="1711" y="946" width="288" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1722" y="957" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1990" y="957" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">content_type</text>
+  </g>
+  <g class="field-row">
+    <text x="1722" y="979" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="979" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">content_id</text>
+  </g>
+  <g class="field-row"><title>Nullable: FK Blog vi phạm</title><rect x="1711" y="990" width="288" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1718" y="993" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1729" y="1001" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1747" y="1001" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="1001" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">blog_id</text>
+  </g>
+  <g class="field-row"><title>Nullable: FK Video vi phạm</title>
+    <rect x="1718" y="1015" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1729" y="1023" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1747" y="1023" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="1023" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">video_id</text>
+  </g>
+  <g class="field-row"><title>Nullable: FK Comment vi phạm</title><rect x="1711" y="1034" width="288" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1718" y="1037" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1729" y="1045" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1747" y="1045" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="1045" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">comment_id</text>
+  </g>
+  <g class="field-row">
+    <text x="1722" y="1067" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1990" y="1067" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">violation_type</text>
+  </g>
+  <g class="field-row"><rect x="1711" y="1078" width="288" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1722" y="1089" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="1990" y="1089" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">ai_confidence_score</text>
+  </g>
+  <g class="field-row"><title>PENDING, APPROVED, REMOVED</title>
+    <text x="1722" y="1111" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1990" y="1111" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">status</text>
+  </g>
+  <g class="field-row"><title>Nullable: Admin duyệt cờ</title><rect x="1711" y="1122" width="288" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1718" y="1125" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1729" y="1133" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1747" y="1133" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="1133" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">reviewed_by</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="meal_plans" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="1330" y="1390" width="260" height="192" rx="10" ry="10" fill="#131B2E" stroke="#D97706" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 1330 1400 Q 1330 1390 1340 1390 L 1580 1390 Q 1590 1390 1590 1400 L 1590 1424 L 1330 1424 Z" fill="#1E293B" stroke="#D97706" stroke-width="1.5" />
+  <circle cx="1348" cy="1407" r="4.5" fill="#FBBF24" />
+  <text x="1360" y="1412" font-size="13.5" font-weight="700" fill="#F8FAFC">meal_plans</text>
+  <line x1="1330" y1="1424" x2="1590" y2="1424" stroke="#D97706" stroke-width="1" />
+  <g class="field-row">
+    <rect x="1338" y="1427" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="1349" y="1435" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="1367" y="1435" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1580" y="1435" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">plan_id</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="1446" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1338" y="1449" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1349" y="1457" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1367" y="1457" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1580" y="1457" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row"><title>Thực đơn tuần</title>
+    <text x="1342" y="1479" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1580" y="1479" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">plan_name</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="1490" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1342" y="1501" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">date</text>
+    <text x="1580" y="1501" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">start_date</text>
+  </g>
+  <g class="field-row">
+    <text x="1342" y="1523" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">date</text>
+    <text x="1580" y="1523" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">end_date</text>
+  </g>
+  <g class="field-row"><rect x="1331" y="1534" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1342" y="1545" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">decimal</text>
+    <text x="1580" y="1545" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">target_calories</text>
+  </g>
+  <g class="field-row">
+    <text x="1342" y="1567" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">boolean</text>
+    <text x="1580" y="1567" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">generated_by_ai</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="meal_plan_items" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="1720" y="1390" width="280" height="192" rx="10" ry="10" fill="#131B2E" stroke="#D97706" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 1720 1400 Q 1720 1390 1730 1390 L 1990 1390 Q 2000 1390 2000 1400 L 2000 1424 L 1720 1424 Z" fill="#1E293B" stroke="#D97706" stroke-width="1.5" />
+  <circle cx="1738" cy="1407" r="4.5" fill="#FBBF24" />
+  <text x="1750" y="1412" font-size="13.5" font-weight="700" fill="#F8FAFC">meal_plan_items</text>
+  <line x1="1720" y1="1424" x2="2000" y2="1424" stroke="#D97706" stroke-width="1" />
+  <g class="field-row">
+    <rect x="1728" y="1427" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="1739" y="1435" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="1757" y="1435" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="1435" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">item_id</text>
+  </g>
+  <g class="field-row"><rect x="1721" y="1446" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1728" y="1449" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1739" y="1457" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1757" y="1457" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="1457" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">plan_id</text>
+  </g>
+  <g class="field-row">
+    <rect x="1728" y="1471" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1739" y="1479" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1757" y="1479" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="1479" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">recipe_id</text>
+  </g>
+  <g class="field-row"><rect x="1721" y="1490" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1732" y="1501" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">date</text>
+    <text x="1990" y="1501" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">plan_date</text>
+  </g>
+  <g class="field-row"><title>BREAKFAST, LUNCH, DINNER, SNACK</title>
+    <text x="1732" y="1523" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1990" y="1523" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">meal_type</text>
+  </g>
+  <g class="field-row"><title>Tick ăn -&gt; streak chay</title><rect x="1721" y="1534" width="278" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1732" y="1545" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">boolean</text>
+    <text x="1990" y="1545" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">is_eaten</text>
+  </g>
+  <g class="field-row"><title>Nullable: AI đổi món tương đương</title>
+    <rect x="1728" y="1559" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1739" y="1567" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1757" y="1567" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1990" y="1567" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">swapped_recipe_id</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="ai_chatbot_sessions" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="1330" y="1920" width="260" height="126" rx="10" ry="10" fill="#131B2E" stroke="#D97706" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 1330 1930 Q 1330 1920 1340 1920 L 1580 1920 Q 1590 1920 1590 1930 L 1590 1954 L 1330 1954 Z" fill="#1E293B" stroke="#D97706" stroke-width="1.5" />
+  <circle cx="1348" cy="1937" r="4.5" fill="#FBBF24" />
+  <text x="1360" y="1942" font-size="13.5" font-weight="700" fill="#F8FAFC">ai_chatbot_sessions</text>
+  <line x1="1330" y1="1954" x2="1590" y2="1954" stroke="#D97706" stroke-width="1" />
+  <g class="field-row">
+    <rect x="1338" y="1957" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="1349" y="1965" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="1367" y="1965" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1580" y="1965" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">session_id</text>
+  </g>
+  <g class="field-row"><title>Nullable: Khách dùng thử 3 câu</title><rect x="1331" y="1976" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1338" y="1979" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1349" y="1987" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1367" y="1987" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1580" y="1987" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">account_id</text>
+  </g>
+  <g class="field-row"><title>Đếm quota 3 câu khách</title>
+    <text x="1342" y="2009" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1580" y="2009" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">ip_address</text>
+  </g>
+  <g class="field-row"><title>GUEST, AUTHORIZED</title><rect x="1331" y="2020" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1342" y="2031" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1580" y="2031" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">user_type</text>
+  </g>
+</g>
+
+<g class="entity-card" data-id="ai_chatbot_messages" filter="url(#card-shadow)">
+  <!-- Main Card Body -->
+  <rect x="1720" y="1920" width="260" height="126" rx="10" ry="10" fill="#131B2E" stroke="#D97706" stroke-width="1.5" />
+  
+  <!-- Card Header -->
+  <path d="M 1720 1930 Q 1720 1920 1730 1920 L 1970 1920 Q 1980 1920 1980 1930 L 1980 1954 L 1720 1954 Z" fill="#1E293B" stroke="#D97706" stroke-width="1.5" />
+  <circle cx="1738" cy="1937" r="4.5" fill="#FBBF24" />
+  <text x="1750" y="1942" font-size="13.5" font-weight="700" fill="#F8FAFC">ai_chatbot_messages</text>
+  <line x1="1720" y1="1954" x2="1980" y2="1954" stroke="#D97706" stroke-width="1" />
+  <g class="field-row">
+    <rect x="1728" y="1957" width="22" height="15" rx="3.5" ry="3.5" fill="#854D0E" />
+    <text x="1739" y="1965" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#FEF08A">PK</text>
+    <text x="1757" y="1965" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1970" y="1965" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">message_id</text>
+  </g>
+  <g class="field-row"><rect x="1721" y="1976" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <rect x="1728" y="1979" width="22" height="15" rx="3.5" ry="3.5" fill="#0369A1" />
+    <text x="1739" y="1987" text-anchor="middle" dy="0.32em" font-size="9" font-weight="700" fill="#BAE6FD">FK</text>
+    <text x="1757" y="1987" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">uuid</text>
+    <text x="1970" y="1987" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="600" fill="#F8FAFC">session_id</text>
+  </g>
+  <g class="field-row"><title>USER, CROCVEGGIE</title>
+    <text x="1732" y="2009" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">varchar</text>
+    <text x="1970" y="2009" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">sender_role</text>
+  </g>
+  <g class="field-row"><rect x="1721" y="2020" width="258" height="22" fill="#FFFFFF" fill-opacity="0.02" />
+    <text x="1732" y="2031" class="mono" dy="0.35em" font-size="10.5" font-weight="400" fill="#94A3B8">text</text>
+    <text x="1970" y="2031" class="mono" text-anchor="end" dy="0.35em" font-size="11" font-weight="400" fill="#CBD5E1">message_text</text>
+  </g>
+</g>
+
+<!-- ================= RELATIONSHIP PILL BADGES ================= -->
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="268.10" y="158.50" width="133.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#818CF8" stroke-width="1.4" />
+  <text x="335.00" y="170.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🔑 phân quyền</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="444.40" y="133.50" width="211.20" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#818CF8" stroke-width="1.4" />
+  <text x="550.00" y="145.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">👤 Admin tạo tài khoản</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="651.60" y="158.50" width="176.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#818CF8" stroke-width="1.4" />
+  <text x="740.00" y="170.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">⚖️ hồ sơ BMI (1-1)</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="554.50" y="513.50" width="151.00" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#818CF8" stroke-width="1.4" />
+  <text x="630.00" y="525.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">📱 xác thực OTP</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="574.50" y="768.50" width="151.00" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#818CF8" stroke-width="1.4" />
+  <text x="650.00" y="780.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🔄 sở hữu phiên</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="270.20" y="1068.50" width="159.60" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#38BDF8" stroke-width="1.4" />
+  <text x="350.00" y="1080.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">📂 phân loại món</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="632.30" y="1068.50" width="185.40" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#38BDF8" stroke-width="1.4" />
+  <text x="725.00" y="1080.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🍲 chứa nguyên liệu</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="415.90" y="1848.50" width="168.20" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#34D399" stroke-width="1.4" />
+  <text x="500.00" y="1860.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">⚖️ định lượng món</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="285.90" y="1388.50" width="168.20" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#38BDF8" stroke-width="1.4" />
+  <text x="370.00" y="1400.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">📍 menu quán chay</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="445.90" y="1388.50" width="168.20" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#38BDF8" stroke-width="1.4" />
+  <text x="530.00" y="1400.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🍽️ món tương ứng</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="271.60" y="1873.50" width="176.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#34D399" stroke-width="1.4" />
+  <text x="360.00" y="1885.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">📦 lưu trữ tủ lạnh</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="117.30" y="418.50" width="185.40" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#34D399" stroke-width="1.4" />
+  <text x="210.00" y="430.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">📸 chụp ảnh tủ lạnh</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="211.40" y="2173.50" width="297.20" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#34D399" stroke-width="1.4" />
+  <text x="360.00" y="2185.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🤖 Vision AI nhận diện &amp; độ tươi</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="441.60" y="2123.50" width="176.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#34D399" stroke-width="1.4" />
+  <text x="530.00" y="2135.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">✅ xác nhận lưu kho</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="127.30" y="2148.50" width="185.40" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#34D399" stroke-width="1.4" />
+  <text x="220.00" y="2160.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🔍 đối chiếu master</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="611.60" y="908.50" width="176.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#34D399" stroke-width="1.4" />
+  <text x="700.00" y="920.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🧊 quản lý tủ lạnh</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1540.10" y="153.50" width="219.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="1650.00" y="165.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🧠 AI tóm tắt STT (1-1)</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1340.10" y="463.50" width="219.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="1450.00" y="475.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🎬 nhúng video vào blog</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1565.90" y="478.50" width="168.20" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="1650.00" y="490.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">💬 bình luận blog</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1768.80" y="493.50" width="142.40" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="1840.00" y="505.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">↩️ trả lời con</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1969.50" y="463.50" width="151.00" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="2045.00" y="475.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">⭐ đánh giá blog</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1756.60" y="368.50" width="176.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="1845.00" y="380.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">💬 bình luận video</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="2130.20" y="368.50" width="159.60" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="2210.00" y="380.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">⭐ đánh giá video</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1497.30" y="923.50" width="185.40" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#EF4444" stroke-width="1.4" />
+  <text x="1590.00" y="935.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🛡️ kiểm duyệt blog</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1739.40" y="803.50" width="211.20" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#EF4444" stroke-width="1.4" />
+  <text x="1845.00" y="815.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🛡️ kiểm duyệt comment</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1948.00" y="758.50" width="194.00" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#EF4444" stroke-width="1.4" />
+  <text x="2045.00" y="770.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🛡️ kiểm duyệt video</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1536.50" y="1333.50" width="237.00" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#FBBF24" stroke-width="1.4" />
+  <text x="1655.00" y="1345.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🥗 sắp xếp lịch ăn 7 ngày</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1562.30" y="1848.50" width="185.40" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#FBBF24" stroke-width="1.4" />
+  <text x="1655.00" y="1860.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">💬 tin nhắn Copilot</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1043.10" y="153.50" width="133.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="1110.00" y="165.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">📹 đăng video</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1030.20" y="433.50" width="159.60" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="1110.00" y="445.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">✍️ viết bài blog</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1025.90" y="693.50" width="168.20" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#EF4444" stroke-width="1.4" />
+  <text x="1110.00" y="705.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">⚖️ Admin xử lý cờ</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1013.00" y="898.50" width="194.00" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#FBBF24" stroke-width="1.4" />
+  <text x="1110.00" y="910.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">📅 lập kế hoạch tuần</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="1008.70" y="928.50" width="202.60" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#FBBF24" stroke-width="1.4" />
+  <text x="1110.00" y="940.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🤖 phiên chat Copilot</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="844.50" y="1043.50" width="151.00" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="920.00" y="1055.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🏷️ chủ đề blog</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="840.20" y="1248.50" width="159.60" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="920.00" y="1260.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">📖 gắn công thức</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="831.60" y="1273.50" width="176.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#F472B6" stroke-width="1.4" />
+  <text x="920.00" y="1285.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🍳 video hướng dẫn</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="840.20" y="1298.50" width="159.60" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#FBBF24" stroke-width="1.4" />
+  <text x="920.00" y="1310.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🍲 món được chọn</text>
+</g>
+<g class="rel-badge" filter="url(#pill-shadow)">
+  <rect x="831.60" y="1323.50" width="176.80" height="23" rx="11.5" ry="11.5" fill="#0F172A" stroke="#FBBF24" stroke-width="1.4" />
+  <text x="920.00" y="1335.00" text-anchor="middle" font-size="11" font-weight="600" fill="#F8FAFC" dy="3.8">🔄 món AI thay thế</text>
+</g>
+</svg>

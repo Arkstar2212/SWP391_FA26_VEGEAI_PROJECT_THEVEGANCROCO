@@ -7,14 +7,14 @@
 [![Java](https://img.shields.io/badge/Java-21%20LTS-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL_16-4479A1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Swagger](https://img.shields.io/badge/OpenAPI-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger&logoColor=white)](http://localhost:8080/swagger-ui.html)
+[![Swagger](https://img.shields.io/badge/OpenAPI-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger&logoColor=white)](http://localhost:8081/swagger-ui.html)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 <p align="center">
   <b>Dedicated enterprise backend for the VEGEAI platform, providing robust RESTful APIs, JWT stateless authentication, dual-token invalidation, brute-force protection, and deterministic nutrition calculation.</b>
 </p>
 
-[Swagger UI](http://localhost:8080/swagger-ui.html) • [OpenAPI Docs](http://localhost:8080/api-docs) • [ERD Diagram](docs/VEGEAI_CROWS_FOOT_ERD.drawio)
+[Swagger UI](http://localhost:8081/swagger-ui.html) • [OpenAPI Docs](http://localhost:8081/api-docs) • [Crow's Foot ERD](docs/erd-diagram-v2.svg) • [📖 Developer Handover & Setup Guide](BACKEND_HANDOVER_AND_SETUP_GUIDE.md)
 
 ---
 
@@ -24,14 +24,18 @@
 
 This repository houses the **VEGEAI Backend Service**. Frontend clients (React Vite SPA / Mobile) run as independent repositories and consume this service via standardized REST APIs.
 
-### 🛡️ Key Features & Security
-- **Stateless JWT Authentication:** HMAC-SHA256 access tokens (15-min TTL) paired with database-backed refresh tokens (UUID, 1-day TTL).
-- **Dual Invalidation:** Logout simultaneously blacklists the JWT access token and revokes the refresh token.
-- **Brute-Force Rate Limiting:** In-memory Caffeine-based limiter blocks login attempts after 5 consecutive failures per identifier for 15 minutes.
+### 🛡️ Key Features & Security Standards
+- **Client SHA-256 Pre-Hashing:** Passwords must be pre-hashed with SHA-256 (64-character hex regex `^[A-Fa-f0-9]{64}$`) on the client side before transmission; backend applies BCrypt rounds before database persistence.
+- **Dual-Token Session Management:** HMAC-SHA256 access tokens (15-min TTL) paired with database-backed refresh tokens (UUID, 1-7 days TTL, `HttpOnly` cookie with `SameSite=Strict; Path=/api/auth`).
+- **Distributed Redis Blacklist:** Logout invalidates both tokens: marks refresh token as revoked in PostgreSQL and pushes the JWT access token to Spring Data Redis with its exact remaining TTL.
+- **Distributed Brute-Force Rate Limiting (Bucket4j + Redis):**
+  - **Username/Email:** Max 5 failed attempts in 15 minutes (counter resets upon successful login).
+  - **Client-IP (`X-Forwarded-For` / `RemoteAddr`):** Max 20 failed attempts in 15 minutes.
+  - Exceeding threshold returns `429 Too Many Requests` (`LOGIN_ATTEMPTS_EXCEEDED`).
+- **Guest AI Chatbot Quota Guard (`/api/ai/chat`):** Limits unauthenticated guest users to 3 requests per 24 hours per Client-IP via Redis; registered members have unlimited access.
 - **Anti-Enumeration Protection:** Forgot password endpoint returns uniform response messages regardless of email existence.
 - **Standardized API Envelope:** Every endpoint returns `ApiResponse<T>` with typed error codes and HTTP status codes.
 - **CORS Configured:** Pre-configured for Vite frontend (`http://localhost:5173`) and Next/React (`http://localhost:3000`) with credential support (`HttpOnly` cookies).
-- **Flexible Refresh Token Transport:** Supports both standard `HttpOnly` cookies and `X-Refresh-Token` request headers.
 
 ---
 
@@ -49,7 +53,6 @@ All authentication endpoints are located under `/api/auth`:
 | `POST` | `/api/auth/logout` | *(Bearer + Cookie/Header)* | Dual invalidation: blacklists access token + revokes refresh token |
 | `POST` | `/api/auth/forgot-password`| `ForgotPasswordRequest` | Sends reset OTP (anti-enumeration protected) |
 | `POST` | `/api/auth/reset-password` | `ResetPasswordRequest` | Verifies OTP and resets account password |
-| `GET`  | `/api/auth/error-codes` | *(None)* | Developer reference of all error codes & HTTP statuses |
 
 ### Standard Response Envelope (`ApiResponse<T>`)
 ```json
@@ -83,7 +86,7 @@ All authentication endpoints are located under `/api/auth`:
 SWP391_FA26_VEGEAI_PROJECT/
 ├── .github/
 │   └── workflows/ci.yml         # Automated GitHub Actions test pipeline
-├── docs/                        # Architecture specs, PRD, and database ERD
+├── docs/                        # Architecture specs, PRD, and Crow's Foot ERD (erd-diagram-v2.svg)
 ├── src/
 │   ├── main/
 │   │   ├── java/com/vegeai/backend/
@@ -105,6 +108,20 @@ SWP391_FA26_VEGEAI_PROJECT/
 
 ---
 
+## 🗄️ Database Architecture & Crow's Foot ERD
+
+The complete enterprise database schema follows textbook **Crow's Foot notation** (`||`, `o|`, `|<`, `o<`), organized into **24 tables across 5 functional zones** with dedicated relational highway corridors:
+
+- **Zone 1: Account, Authentication & Biometrics** (`roles`, `accounts`, `user_health_profiles`, `otp_verifications`, `refresh_tokens`)
+- **Zone 2: Recipe Management & Vegetarian Places (Map API)** (`categories`, `recipes`, `recipe_ingredients`, `vegan_shops`, `shop_menu_items`)
+- **Zone 3: Smart Pantry & Vision AI Fridge Scanner** (`ingredients`, `user_pantries`, `fridge_scans`, `detected_ingredients`)
+- **Zone 4: Social Community, Videos & AI Moderation** (`videos`, `video_summaries`, `blogs`, `comments`, `votes`, `ai_moderation_logs`)
+- **Zone 5: Personalized Nutrition Planning & AI Chatbot Copilot** (`meal_plans`, `meal_plan_items`, `ai_chatbot_sessions`, `ai_chatbot_messages`)
+
+🔗 **Full Vector Crow's Foot ERD Diagram:** [`docs/erd-diagram-v2.svg`](docs/erd-diagram-v2.svg)
+
+---
+
 ## ⚡ Local Setup & Running
 
 ### Prerequisites
@@ -121,7 +138,13 @@ Default connection (`src/main/resources/application.properties`):
 - Username: `postgres`
 - Password: `your_password`
 
-### 2. Run with Maven Wrapper
+### 2. Run with Docker Compose (Recommended for Full Stack)
+Start PostgreSQL 16, Redis 7, and VEGEAI backend simultaneously:
+```bash
+docker compose up -d --build
+```
+
+### 3. Or Run Locally with Maven Wrapper
 **Windows:**
 ```powershell
 .\mvnw.cmd spring-boot:run
@@ -131,14 +154,14 @@ Default connection (`src/main/resources/application.properties`):
 ./mvnw spring-boot:run
 ```
 
-### 3. Run Test Suite
+### 4. Run Test Suite
 ```powershell
 .\mvnw.cmd test
 ```
 
-### 4. Interactive Documentation
-- **Swagger UI:** `http://localhost:8080/swagger-ui.html`
-- **OpenAPI 3 JSON:** `http://localhost:8080/api-docs`
+### 5. Interactive Documentation
+- **Swagger UI:** `http://localhost:8081/swagger-ui.html`
+- **OpenAPI 3 JSON:** `http://localhost:8081/api-docs`
 
 ---
 

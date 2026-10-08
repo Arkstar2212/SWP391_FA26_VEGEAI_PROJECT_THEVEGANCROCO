@@ -188,23 +188,26 @@ public class AuthService {
 
     @Transactional
     public LoginResult login(LoginRequest req) {
+        return login(req, "127.0.0.1");
+    }
+
+    @Transactional
+    public LoginResult login(LoginRequest req, String clientIp) {
         String identifier = req.getUsernameOrEmail().trim();
 
-        // Brute-force check BEFORE hitting DB
-        if (loginRateLimitService.isBlocked(identifier)) {
-            throw new AppException(ErrorCode.LOGIN_ATTEMPTS_EXCEEDED);
-        }
+        // Brute-force check BEFORE hitting DB (checks both username and IP)
+        loginRateLimitService.checkAllowed(identifier, clientIp);
 
         // Lookup by username or email
         User user = userRepository.findByUsernameOrEmailIgnoreCase(identifier)
                 .orElseThrow(() -> {
-                    loginRateLimitService.recordFailure(identifier);
+                    loginRateLimitService.recordFailure(identifier, clientIp);
                     return new AppException(ErrorCode.INVALID_CREDENTIALS);
                 });
 
         // Password check
         if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
-            boolean blocked = loginRateLimitService.recordFailure(identifier);
+            boolean blocked = loginRateLimitService.recordFailure(identifier, clientIp);
             if (blocked) {
                 throw new AppException(ErrorCode.LOGIN_ATTEMPTS_EXCEEDED);
             }
@@ -285,12 +288,11 @@ public class AuthService {
 
     @Transactional
     public void logout(String bearerToken, String rawRefreshToken) {
-        // Blacklist the access token — compute its expiry epoch second for proper TTL
+        // Blacklist the access token in Redis with its remaining TTL
         if (bearerToken != null && !bearerToken.isBlank()) {
             long remainingSeconds = jwtService.getRemainingTtlSeconds(bearerToken);
             if (remainingSeconds > 0) {
-                long expiryEpoch = java.time.Instant.now().getEpochSecond() + remainingSeconds;
-                tokenBlacklistService.blacklist(bearerToken, expiryEpoch);
+                tokenBlacklistService.blacklist(bearerToken, remainingSeconds);
             }
         }
 

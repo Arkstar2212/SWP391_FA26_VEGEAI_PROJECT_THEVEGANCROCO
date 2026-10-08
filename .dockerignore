@@ -1,0 +1,10 @@
+target/*
+!target/*.jar
+.git/
+.idea/
+.claude/
+.agents/
+*.log
+.env
+Dockerfile*
+docker-compose*.yml

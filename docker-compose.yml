@@ -1,0 +1,80 @@
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: vegeai-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: vegeai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_secure_pass_2026}
+    ports:
+      - "5432:5432"
+    volumes:
+      - vegeai_pgdata:/var/lib/postgresql/data
+      - ./src/main/resources/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vegeai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vegeai-net
+
+  # ── Redis Cache & Blacklist & Rate Limiting ───────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: vegeai-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-}"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - vegeai_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vegeai-net
+
+  # ── VEGEAI Spring Boot Backend Service ───────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vegeai-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8081
+      DB_URL: jdbc:postgresql://postgres:5432/vegeai
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres_secure_pass_2026}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-vegeai-super-secret-key-change-this-in-production-minimum-256-bits}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    ports:
+      - "8081:8081"
+    networks:
+      - vegeai-net
+
+volumes:
+  vegeai_pgdata:
+    driver: local
+  vegeai_redisdata:
+    driver: local
+
+networks:
+  vegeai-net:
+    driver: bridge

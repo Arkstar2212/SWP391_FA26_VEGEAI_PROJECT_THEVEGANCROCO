@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Map;
 
 /**
  * Authentication controller.
@@ -34,7 +33,6 @@ import java.util.Map;
  *  POST /api/auth/logout            — dual invalidation
  *  POST /api/auth/forgot-password   — send reset OTP (anti-enumeration)
  *  POST /api/auth/reset-password    — confirm OTP + new password
- *  GET  /api/auth/error-codes       — list all error codes (dev/debug)
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -87,9 +85,11 @@ public class AuthController {
     @Operation(summary = "Login and receive access token + HttpOnly refresh cookie")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest req,
+            HttpServletRequest request,
             HttpServletResponse response) {
 
-        AuthService.LoginResult result = authService.login(req);
+        String clientIp = extractClientIp(request);
+        AuthService.LoginResult result = authService.login(req, clientIp);
 
         // Set refresh token as HttpOnly cookie
         ResponseCookie refreshCookie = buildRefreshCookie(result.refreshTokenValue());
@@ -168,22 +168,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Password reset successfully. Please log in with your new password.", null));
     }
 
-    // ── Error codes reference (dev/debug) ─────────────────────────────────────
 
-    @GetMapping("/error-codes")
-    @Operation(summary = "List all error codes", description = "Developer reference for all application error codes and their HTTP status.")
-    public ResponseEntity<ApiResponse<Map<String, Object>[]>> errorCodes() {
-        @SuppressWarnings("unchecked")
-        Map<String, Object>[] codes = Arrays.stream(ErrorCode.values())
-                .map(ec -> Map.of(
-                        "name", ec.name(),
-                        "code", ec.getCode(),
-                        "message", ec.getDefaultMessage(),
-                        "httpStatus", ec.getHttpStatus().value()
-                ))
-                .toArray(Map[]::new);
-        return ResponseEntity.ok(ApiResponse.success(codes));
-    }
 
     // ── Cookie helpers ────────────────────────────────────────────────────────
 
@@ -204,5 +189,17 @@ public class AuthController {
                 .map(Cookie::getValue)
                 .findFirst()
                 .orElse(null);
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isBlank() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isBlank() && !"unknown".equalsIgnoreCase(xRealIp)) {
+            return xRealIp.trim();
+        }
+        return request.getRemoteAddr();
     }
 }
