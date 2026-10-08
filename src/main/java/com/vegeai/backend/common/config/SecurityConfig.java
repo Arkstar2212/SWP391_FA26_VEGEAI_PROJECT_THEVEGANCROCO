@@ -54,6 +54,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final GuestAiChatRateLimitFilter guestAiChatRateLimitFilter;
     private final ObjectMapper objectMapper;
 
     // ── Password encoder ─────────────────────────────────────────────────────
@@ -82,9 +83,10 @@ public class SecurityConfig {
                                 "/api/auth/verify-email",
                                 "/api/auth/resend-otp",
                                 "/api/auth/forgot-password",
-                                "/api/auth/reset-password",
-                                "/api/auth/error-codes"
+                                "/api/auth/reset-password"
                         ).permitAll()
+                        // AI Chatbot endpoint (guest trial guarded by GuestAiChatRateLimitFilter)
+                        .requestMatchers("/api/ai/chat").permitAll()
                         // Swagger / OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                          "/api-docs/**", "/v3/api-docs/**").permitAll()
@@ -100,6 +102,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler())
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(guestAiChatRateLimitFilter, JwtAuthenticationFilter.class)
                 .build();
     }
 

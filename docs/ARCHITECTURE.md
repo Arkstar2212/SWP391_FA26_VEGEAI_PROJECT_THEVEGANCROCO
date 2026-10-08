@@ -1,4 +1,4 @@
-﻿# VEGEAI System Architecture & Engineering Blueprint
+# VEGEAI System Architecture & Engineering Blueprint
 
 ## 1. Architectural Philosophy: Why Modular Monolith?
 
@@ -38,10 +38,12 @@ graph TD
     end
 
     subgraph Persistence [Data & AI Providers]
-        Modular_Monolith_Boundary --> DB[(MySQL / PostgreSQL)]
+        Modular_Monolith_Boundary --> DB[(PostgreSQL 16 - 24 Tables Crow's Foot ERD)]
         AiMod -->|Structured JSON / REST| ExternalLLM[Google Gemini / Vision API]
     end
 ```
+
+> **Database ERD:** View the full interactive [Crow's Foot ERD Diagram](erd-diagram-v2.svg) spanning all 5 functional zones.
 
 ---
 

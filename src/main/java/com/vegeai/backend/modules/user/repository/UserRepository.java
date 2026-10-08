@@ -1,14 +1,18 @@
 package com.vegeai.backend.modules.user.repository;
 
+import com.vegeai.backend.modules.user.entity.AccountStatus;
 import com.vegeai.backend.modules.user.entity.User;
+import com.vegeai.backend.modules.user.entity.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
 
     Optional<User> findByEmailIgnoreCase(String email);
 
@@ -25,4 +29,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByUsernameIgnoreCase(String username);
 
     boolean existsByPhoneNumber(String phoneNumber);
+
+    long countByStatus(AccountStatus status);
+
+    long countByRole(UserRole role);
+
+    long countByCreatedAtAfter(LocalDateTime dateTime);
 }

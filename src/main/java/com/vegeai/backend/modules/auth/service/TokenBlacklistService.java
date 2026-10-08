@@ -1,74 +1,78 @@
 package com.vegeai.backend.modules.auth.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Token blacklist using an in-process ConcurrentHashMap.
- * Revoked access tokens are stored with their expiry timestamp.
- * A scheduled cleanup task removes expired entries every 5 minutes.
- *
- * For production with multiple instances, replace this with Redis.
- * The interface is the same — only this bean needs to change.
+ * Distributed JWT Token Blacklist backed by Spring Data Redis.
+ * Revoked access tokens are stored in Redis with their remaining TTL.
+ * Redis automatically evicts expired keys.
+ * A fallback in-memory cache is maintained in case Redis is temporarily unreachable.
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class TokenBlacklistService {
 
-    /**
-     * Map: token → expiry epoch second.
-     */
-    private final Map<String, Long> blacklist = new ConcurrentHashMap<>();
+    private static final String BLACKLIST_KEY_PREFIX = "auth:blacklist:";
+    private final StringRedisTemplate redisTemplate;
+
+    // Fallback in-memory map in case Redis is unreachable (e.g., isolated test environments)
+    private final Map<String, Long> localFallbackBlacklist = new ConcurrentHashMap<>();
 
     /**
-     * Add a token to the blacklist until its expiry.
+     * Add a JWT access token to the Redis blacklist with a specified TTL.
      *
-     * @param token         the raw JWT string
-     * @param expiryEpochSec unix epoch second when the token expires
+     * @param token               the raw JWT string
+     * @param remainingTtlSeconds remaining lifetime of the token in seconds
      */
-    public void blacklist(String token, long expiryEpochSec) {
-        if (expiryEpochSec > Instant.now().getEpochSecond()) {
-            blacklist.put(token, expiryEpochSec);
-            log.debug("[BLACKLIST] Token added. Expires at epoch: {}", expiryEpochSec);
+    public void blacklist(String token, long remainingTtlSeconds) {
+        if (token == null || token.isBlank() || remainingTtlSeconds <= 0) {
+            return;
         }
-        // If already expired, no need to blacklist
+
+        String key = BLACKLIST_KEY_PREFIX + token;
+        try {
+            redisTemplate.opsForValue().set(key, "revoked", remainingTtlSeconds, TimeUnit.SECONDS);
+            log.info("[REDIS-BLACKLIST] Token blacklisted in Redis with TTL: {}s", remainingTtlSeconds);
+        } catch (Exception ex) {
+            log.warn("[REDIS-BLACKLIST] Redis unavailable, using local fallback blacklist: {}", ex.getMessage());
+            localFallbackBlacklist.put(token, System.currentTimeMillis() + (remainingTtlSeconds * 1000));
+        }
     }
 
     /**
-     * Returns true if the token is currently blacklisted (not yet expired).
+     * Returns true if the token is present in the Redis blacklist.
      */
     public boolean isBlacklisted(String token) {
-        Long expiry = blacklist.get(token);
-        if (expiry == null) return false;
-        if (expiry <= Instant.now().getEpochSecond()) {
-            blacklist.remove(token); // lazy cleanup
+        if (token == null || token.isBlank()) {
             return false;
         }
-        return true;
-    }
 
-    /**
-     * Scheduled cleanup: purge expired entries every 5 minutes.
-     */
-    @Scheduled(fixedDelay = 300_000)
-    public void cleanup() {
-        long now = Instant.now().getEpochSecond();
-        Iterator<Map.Entry<String, Long>> it = blacklist.entrySet().iterator();
-        int removed = 0;
-        while (it.hasNext()) {
-            if (it.next().getValue() <= now) {
-                it.remove();
-                removed++;
+        String key = BLACKLIST_KEY_PREFIX + token;
+        try {
+            Boolean hasKey = redisTemplate.hasKey(key);
+            if (Boolean.TRUE.equals(hasKey)) {
+                return true;
             }
+        } catch (Exception ex) {
+            log.warn("[REDIS-BLACKLIST] Redis error checking blacklist, consulting fallback: {}", ex.getMessage());
         }
-        if (removed > 0) {
-            log.debug("[BLACKLIST] Cleanup removed {} expired tokens. Remaining: {}", removed, blacklist.size());
+
+        // Consult local fallback
+        Long expiryTime = localFallbackBlacklist.get(token);
+        if (expiryTime != null) {
+            if (System.currentTimeMillis() < expiryTime) {
+                return true;
+            }
+            localFallbackBlacklist.remove(token);
         }
+        return false;
     }
 }

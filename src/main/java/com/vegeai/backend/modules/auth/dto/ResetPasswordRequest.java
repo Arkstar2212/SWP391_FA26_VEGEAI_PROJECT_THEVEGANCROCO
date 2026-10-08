@@ -18,9 +18,10 @@ public class ResetPasswordRequest {
     private String otp;
 
     @NotBlank(message = "New password is required.")
-    @Size(min = 8, max = 100, message = "New password must be between 8 and 100 characters.")
+    @Pattern(regexp = "^[A-Fa-f0-9]{64}$", message = "New password must be a 64-character SHA-256 hex string.")
     private String newPassword;
 
     @NotBlank(message = "Password confirmation is required.")
+    @Pattern(regexp = "^[A-Fa-f0-9]{64}$", message = "Confirm new password must be a 64-character SHA-256 hex string.")
     private String confirmNewPassword;
 }

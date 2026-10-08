@@ -51,12 +51,15 @@ class AuthControllerTest {
         userRepository.deleteAll();
     }
 
+    private static final String VALID_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    private static final String MISMATCH_SHA256 = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
     private RegisterRequest createValidRegisterRequest() {
         RegisterRequest req = new RegisterRequest();
         req.setUsername("vege_chef");
         req.setEmail("chef@vegeai.com");
-        req.setPassword("SecurePassword123!");
-        req.setConfirmPassword("SecurePassword123!");
+        req.setPassword(VALID_SHA256);
+        req.setConfirmPassword(VALID_SHA256);
         req.setFullName("Nguyen Van A");
         req.setPhoneNumber("0912345678");
         req.setDietaryPreferences("VEGAN");
@@ -96,10 +99,25 @@ class AuthControllerTest {
         }
 
         @Test
+        @DisplayName("Should fail with 400 when password is plain text (must be 64-char SHA-256 hex)")
+        void registerPlainTextPasswordFails() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            req.setPassword("PlainPassword123!");
+            req.setConfirmPassword("PlainPassword123!");
+
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_ERROR.getCode()));
+        }
+
+        @Test
         @DisplayName("Should fail with 400 when password and confirmPassword mismatch")
         void registerPasswordMismatch() throws Exception {
             RegisterRequest req = createValidRegisterRequest();
-            req.setConfirmPassword("DifferentPassword123!");
+            req.setConfirmPassword(MISMATCH_SHA256);
 
             mockMvc.perform(post("/api/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -313,11 +331,25 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("Should fail login with 401 on wrong password")
+        @DisplayName("Should fail login with 400 when password is not 64-char SHA-256 hex")
+        void loginPlainTextPasswordFails() throws Exception {
+            LoginRequest loginReq = new LoginRequest();
+            loginReq.setUsernameOrEmail("vege_chef");
+            loginReq.setPassword("PlainPassword123!");
+
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(loginReq)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_ERROR.getCode()));
+        }
+
+        @Test
+        @DisplayName("Should fail login with 401 on wrong password (valid SHA-256)")
         void loginWrongPasswordFails() throws Exception {
             LoginRequest loginReq = new LoginRequest();
             loginReq.setUsernameOrEmail("nonexistent_user");
-            loginReq.setPassword("wrongPassword");
+            loginReq.setPassword(MISMATCH_SHA256);
 
             mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -365,6 +397,42 @@ class AuthControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.message", containsString("If the email exists")));
+        }
+    }
+
+    @Nested
+    @DisplayName("AI Chatbot Guest Quota Guard (/api/ai/chat)")
+    class AiChatbotQuotaTests {
+
+        @Test
+        @DisplayName("Guest should be allowed 3 requests then blocked with 429 on 4th request")
+        void guestAiChatbotQuotaEnforced() throws Exception {
+            com.vegeai.backend.modules.ai.dto.AiChatRequest chatReq =
+                    com.vegeai.backend.modules.ai.dto.AiChatRequest.builder()
+                            .message("Can you recommend high-protein vegan breakfast?")
+                            .build();
+
+            String uniqueIp = "192.168.10.99";
+
+            // Requests 1, 2, 3 should succeed
+            for (int i = 1; i <= 3; i++) {
+                mockMvc.perform(post("/api/ai/chat")
+                                .header("X-Forwarded-For", uniqueIp)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(chatReq)))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.success").value(true));
+            }
+
+            // Request 4 must be blocked with HTTP 429 Too Many Requests
+            mockMvc.perform(post("/api/ai/chat")
+                            .header("X-Forwarded-For", uniqueIp)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(chatReq)))
+                    .andExpect(status().isTooManyRequests())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.GUEST_AI_QUOTA_EXCEEDED.getCode()))
+                    .andExpect(jsonPath("$.message", containsString("Guest trial limit reached")));
         }
     }
 }
