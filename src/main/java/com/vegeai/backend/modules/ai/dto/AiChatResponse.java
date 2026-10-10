@@ -1,5 +1,6 @@
 package com.vegeai.backend.modules.ai.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,9 @@ public class AiChatResponse {
     private String sessionId;
     private List<String> recommendedRecipes;
     private Instant timestamp;
+
+    @JsonProperty("isGuestTrial")
     private boolean isGuestTrial;
+
     private Integer remainingGuestQuota;
 }

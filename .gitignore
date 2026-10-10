@@ -41,3 +41,14 @@ build/
 ### Logs ###
 *.log
 logs/
+
+### Backup files ###
+*.bak
+*.bak.*
+
+### Local Design Prototypes ###
+auth_modals_for_figma.html
+figma_modals/
+index.html
+
+
