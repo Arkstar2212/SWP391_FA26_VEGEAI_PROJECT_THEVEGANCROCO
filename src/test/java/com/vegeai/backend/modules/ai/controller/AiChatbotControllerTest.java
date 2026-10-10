@@ -78,6 +78,7 @@ class AiChatbotControllerTest {
                 .build();
 
         mockMvc.perform(post("/api/ai/chat")
+                        .header("X-Forwarded-For", "10.150.1." + (System.currentTimeMillis() % 250))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -114,6 +115,7 @@ class AiChatbotControllerTest {
                 .build();
 
         mockMvc.perform(post("/api/ai/chat")
+                        .header("X-Forwarded-For", "10.150.2." + (System.currentTimeMillis() % 250))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
