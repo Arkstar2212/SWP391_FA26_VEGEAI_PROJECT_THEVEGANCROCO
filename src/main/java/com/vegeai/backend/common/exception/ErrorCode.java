@@ -61,7 +61,13 @@ public enum ErrorCode {
     CANNOT_MODIFY_SELF_STATUS(1602, "You cannot modify your own administrative status or role.", HttpStatus.FORBIDDEN),
 
     // ── Email ─────────────────────────────────────────────────────────────────
-    EMAIL_SEND_FAILED(1901, "Failed to send email. Please try again later.", HttpStatus.SERVICE_UNAVAILABLE);
+    EMAIL_SEND_FAILED(1901, "Failed to send email. Please try again later.", HttpStatus.SERVICE_UNAVAILABLE),
+
+    // ── Image & Vision AI ────────────────────────────────────────────────────
+    IMAGE_EMPTY(1701, "Image file must not be empty.", HttpStatus.BAD_REQUEST),
+    IMAGE_TOO_LARGE(1702, "Image size exceeds maximum limit of 5MB.", HttpStatus.PAYLOAD_TOO_LARGE),
+    UNSUPPORTED_IMAGE_FORMAT(1703, "Unsupported image format. Allowed formats: JPG, PNG, WEBP.", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+    AI_PROCESSING_ERROR(1704, "Failed to analyze image with AI model.", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;
     private final String defaultMessage;
