@@ -47,11 +47,18 @@ public class RegisterRequest {
     @Schema(description = "Insert 10-digit phone number starting with 0 (optional)", example = "0977498038")
     private String phoneNumber;
 
-    /** VEGAN, VEGETARIAN, LACTO_OVO */
-    @Schema(description = "Dietary preference tag (VEGAN, VEGETARIAN, LACTO_OVO, LACTO, OVO)", example = "VEGAN")
+    /** VEGAN, VEGETARIAN, LACTO_OVO, etc. */
+    @Schema(
+        description = "Dietary preference tag. Options: VEGAN (Thuần chay 100%), VEGETARIAN (Ăn chay chung), LACTO_OVO (Chay có trứng & sữa), LACTO (Chay có sữa), OVO (Chay có trứng), PESCATARIAN (Chay kèm hải sản), FLEXITARIAN (Bán chay), RAW_VEGAN (Thuần chay thô)",
+        example = "VEGAN",
+        allowableValues = {"VEGAN", "VEGETARIAN", "LACTO_OVO", "LACTO", "OVO", "PESCATARIAN", "FLEXITARIAN", "RAW_VEGAN"}
+    )
     private String dietaryPreferences;
 
     /** Comma-separated allergens */
-    @Schema(description = "Known food allergies comma-separated (e.g. PEANUTS, SOY, GLUTEN or NONE)", example = "NONE")
+    @Schema(
+        description = "Known food allergies comma-separated. Common options: NONE, PEANUTS (Đậu phộng), TREE_NUTS (Hạt óc chó/hạnh nhân/điều), SOY (Đậu nành/đậu phụ), GLUTEN (Lúa mì), DAIRY (Sữa động vật), EGGS (Trứng), SESAME (Mè/Vừng), MUSHROOMS (Nấm), CORN (Bắp/Ngô)",
+        example = "NONE"
+    )
     private String allergies;
 }

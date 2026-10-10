@@ -37,8 +37,17 @@ import java.util.UUID;
 public class AiChatbotController {
 
     @PostMapping("/chat")
-    @Operation(summary = "Chat with AI Nutrition Assistant",
-               description = "Answers vegetarian nutrition questions and recommends recipes. Guests are limited to 3 trial queries per 24 hours.")
+    @Operation(summary = "Chat with AI Nutrition Assistant", description = """
+            **Trò chuyện và hỏi đáp dinh dưỡng chay với AI.**
+            
+            **Chính sách giới hạn (Rate Limit Policy):**
+            - **Thành viên đã đăng nhập (MEMBER / ADMIN):** Không giới hạn số lượt hỏi.
+            - **Khách vãng lai (Guest):** Tối đa **3 câu hỏi dùng thử mỗi 24 giờ** theo địa chỉ IP (áp dụng bộ lọc `GuestAiChatRateLimitFilter`). Sau 3 câu, hệ thống yêu cầu đăng nhập.
+            
+            **Tham số:**
+            - `message`: Câu hỏi hoặc yêu cầu tư vấn dinh dưỡng chay (Ví dụ: "Gợi ý cho tôi bữa sáng chay giàu đạm").
+            - `sessionId`: *(Tùy chọn)* Định danh phiên trò chuyện để ghi nhớ ngữ cảnh.
+            """)
     public ResponseEntity<ApiResponse<AiChatResponse>> chat(@Valid @RequestBody AiChatRequest req) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean isGuest = (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken);
