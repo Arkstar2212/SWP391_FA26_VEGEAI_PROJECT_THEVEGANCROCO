@@ -52,11 +52,18 @@ public class UpdateUserProfileRequest {
     private Double weightKg;
 
     @Size(max = 255, message = "Dietary preferences must not exceed 255 characters.")
-    @Schema(description = "Comma-separated dietary preferences (VEGAN, VEGETARIAN, LACTO_OVO)", example = "VEGAN")
+    @Schema(
+        description = "Dietary preference tag. Options: VEGAN (Thuần chay 100%), VEGETARIAN (Ăn chay chung), LACTO_OVO (Chay có trứng & sữa), LACTO (Chay có sữa), OVO (Chay có trứng), PESCATARIAN (Chay kèm hải sản), FLEXITARIAN (Bán chay), RAW_VEGAN (Thuần chay thô)",
+        example = "VEGAN",
+        allowableValues = {"VEGAN", "VEGETARIAN", "LACTO_OVO", "LACTO", "OVO", "PESCATARIAN", "FLEXITARIAN", "RAW_VEGAN"}
+    )
     private String dietaryPreferences;
 
     @Size(max = 255, message = "Allergies must not exceed 255 characters.")
-    @Schema(description = "Comma-separated allergens (PEANUTS, GLUTEN, SOY, SESAME)", example = "PEANUTS, GLUTEN")
+    @Schema(
+        description = "Known food allergies comma-separated. Common options: NONE, PEANUTS (Đậu phộng), TREE_NUTS (Hạt dinh dưỡng), SOY (Đậu nành/đậu phụ), GLUTEN (Lúa mì), DAIRY (Sữa), EGGS (Trứng), SESAME (Mè/Vừng), MUSHROOMS (Nấm), CORN (Bắp/Ngô)",
+        example = "PEANUTS, GLUTEN"
+    )
     private String allergies;
 
     @Min(value = 500, message = "Daily calorie target must be at least 500 kcal.")

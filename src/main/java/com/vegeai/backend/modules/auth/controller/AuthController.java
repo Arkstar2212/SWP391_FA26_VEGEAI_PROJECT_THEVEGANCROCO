@@ -49,7 +49,20 @@ public class AuthController {
     // ── 2.1 Register ─────────────────────────────────────────────────────────
 
     @PostMapping("/register")
-    @Operation(summary = "Register a new account", description = "Creates account with PENDING_VERIFICATION status and sends OTP to email.")
+    @Operation(summary = "Register a new account", description = """
+            **Đăng ký tài khoản thành viên mới.**
+            
+            **Quy tắc điền thông tin:**
+            - `username`: 4-50 ký tự, chỉ gồm chữ cái, số và dấu gạch dưới `_`.
+            - `email`: Địa chỉ email hợp lệ để nhận mã OTP xác thực (6 số).
+            - `password` & `confirmPassword`: Chuỗi mã hóa SHA-256 (64 ký tự hex) từ phía client (Ví dụ: `Admin@123` -> `e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7` hoặc `User@123` -> `aca155e1ad5b7acc67a56e1e04284b914758da42cedc8f05df939811a5b8e093`).
+            - `fullName`: Họ và tên, tối đa 100 ký tự (không chứa số).
+            - `phoneNumber`: *(Tùy chọn)* Đúng 10 chữ số bắt đầu bằng `0` (Ví dụ: `0912345678`) hoặc để trống `""`.
+            - `dietaryPreferences`: `VEGAN`, `VEGETARIAN`, `LACTO_OVO`, `LACTO`, `OVO`, `PESCATARIAN`, `FLEXITARIAN`, `RAW_VEGAN`.
+            - `allergies`: `NONE` hoặc phân tách bằng dấu phẩy: `PEANUTS`, `TREE_NUTS`, `SOY`, `GLUTEN`, `DAIRY`, `EGGS`, `SESAME`, `MUSHROOMS`, `CORN`.
+            
+            *Sau khi đăng ký thành công, tài khoản ở trạng thái `PENDING_VERIFICATION`. Mã OTP 6 số sẽ được gửi về email.*
+            """)
     public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody RegisterRequest req) {
         authService.register(req);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -64,7 +77,13 @@ public class AuthController {
     // ── 2.2 Verify Email ─────────────────────────────────────────────────────
 
     @PostMapping("/verify-email")
-    @Operation(summary = "Verify email with OTP")
+    @Operation(summary = "Verify email with OTP", description = """
+            **Kích hoạt tài khoản bằng mã OTP 6 chữ số.**
+            
+            - `email`: Email đã dùng để đăng ký.
+            - `otp`: Mã số gồm 6 chữ số nhận từ email hoặc console backend (hạn sử dụng 3 phút).
+            - Sau khi kích hoạt thành công, tài khoản chuyển sang trạng thái `ACTIVE` và có thể đăng nhập.
+            """)
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody VerifyEmailRequest req) {
         authService.verifyEmail(req);
         return ResponseEntity.ok(ApiResponse.success("Email verified successfully. You can now log in.", null));
@@ -73,7 +92,12 @@ public class AuthController {
     // ── 2.2 Resend OTP ───────────────────────────────────────────────────────
 
     @PostMapping("/resend-otp")
-    @Operation(summary = "Resend email verification OTP", description = "Rate-limited: 30 seconds cooldown between requests.")
+    @Operation(summary = "Resend email verification OTP", description = """
+            **Gửi lại mã OTP kích hoạt tài khoản.**
+            
+            - `email`: Email cần gửi lại OTP.
+            - Giới hạn: Thời gian chờ giữa 2 lần gửi tối thiểu là **30 giây** (cooldown).
+            """)
     public ResponseEntity<ApiResponse<Void>> resendOtp(@Valid @RequestBody ResendOtpRequest req) {
         authService.resendOtp(req);
         return ResponseEntity.ok(ApiResponse.success("A new OTP has been sent to your email.", null));
@@ -82,7 +106,20 @@ public class AuthController {
     // ── 2.3 Login ────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
-    @Operation(summary = "Login and receive access token + HttpOnly refresh cookie")
+    @Operation(summary = "Login and receive access token + HttpOnly refresh cookie", description = """
+            **Đăng nhập hệ thống.**
+            
+            **Quy tắc điền thông tin:**
+            - `usernameOrEmail`: Tên đăng nhập hoặc email đã đăng ký.
+            - `password`: Chuỗi mã hóa SHA-256 (64 ký tự hex) từ client.
+            
+            **Tài khoản mẫu để test:**
+            - Quản trị viên (ADMIN): `admin` / `e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7` (Mật khẩu gốc: `Admin@123`).
+            
+            **Kết quả trả về:**
+            - `accessToken`: JWT Bearer dùng để gắn vào nút **Authorize** trên Swagger UI (hạn 15 phút).
+            - `refreshToken`: Tự động lưu vào HttpOnly Cookie (hạn 1 ngày).
+            """)
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest req,
             HttpServletRequest request,
@@ -101,7 +138,13 @@ public class AuthController {
     // ── 2.4 Refresh ──────────────────────────────────────────────────────────
 
     @PostMapping("/refresh")
-    @Operation(summary = "Get a new access token using HttpOnly refresh cookie or X-Refresh-Token header")
+    @Operation(summary = "Get a new access token using HttpOnly refresh cookie or X-Refresh-Token header", description = """
+            **Làm mới Access Token khi phiên đăng nhập hết hạn.**
+            
+            - Trình duyệt tự động gửi kèm HttpOnly cookie `refreshToken`.
+            - Khi test bằng Postman/cURL không có cookie, có thể gửi qua header `X-Refresh-Token`.
+            - Trả về Access Token mới và xoay vòng (rotate) Refresh Token mới.
+            """)
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(HttpServletRequest request) {
         String refreshToken = extractRefreshCookie(request);
         if (refreshToken == null || refreshToken.isBlank()) {
@@ -119,7 +162,13 @@ public class AuthController {
     // ── 2.5 Logout ───────────────────────────────────────────────────────────
 
     @PostMapping("/logout")
-    @Operation(summary = "Logout — blacklist access token and revoke refresh token")
+    @Operation(summary = "Logout — blacklist access token and revoke refresh token", description = """
+            **Đăng xuất an toàn khỏi hệ thống.**
+            
+            - Thu hồi Refresh Token trong cơ sở dữ liệu.
+            - Đưa Access Token hiện tại vào Blacklist (Redis/Memory) để vô hiệu hóa ngay lập tức.
+            - Xóa sạch cookie `refreshToken` trên trình duyệt.
+            """)
     public ResponseEntity<ApiResponse<Void>> logout(
             HttpServletRequest request,
             HttpServletResponse response) {
@@ -151,7 +200,13 @@ public class AuthController {
     // ── 2.6 Forgot Password ───────────────────────────────────────────────────
 
     @PostMapping("/forgot-password")
-    @Operation(summary = "Request password reset OTP", description = "Anti-enumeration: always returns the same message regardless of whether email exists.")
+    @Operation(summary = "Request password reset OTP", description = """
+            **Yêu cầu đặt lại mật khẩu qua email.**
+            
+            - `email`: Địa chỉ email tài khoản của bạn.
+            - Cơ chế bảo mật chống dò quét tài khoản (Anti-enumeration): Hệ thống luôn trả về thông báo chung thành công dù email có tồn tại hay không.
+            - Nếu email có trong hệ thống, mã OTP 6 số sẽ được gửi về hòm thư (và log console).
+            """)
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
         authService.forgotPassword(req);
         // Always same response to prevent account enumeration
@@ -162,7 +217,13 @@ public class AuthController {
     // ── 2.6 Reset Password ────────────────────────────────────────────────────
 
     @PostMapping("/reset-password")
-    @Operation(summary = "Reset password using OTP received by email")
+    @Operation(summary = "Reset password using OTP received by email", description = """
+            **Thiết lập mật khẩu mới bằng mã OTP.**
+            
+            - `email`: Địa chỉ email cần đổi mật khẩu.
+            - `otp`: Mã xác nhận 6 chữ số nhận từ email hoặc console backend.
+            - `newPassword` & `confirmNewPassword`: Chuỗi SHA-256 hex (64 ký tự) của mật khẩu mới.
+            """)
     public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
         authService.resetPassword(req);
         return ResponseEntity.ok(ApiResponse.success("Password reset successfully. Please log in with your new password.", null));

@@ -30,7 +30,12 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    @Operation(summary = "Get current user's profile", description = "Fetches the full profile, dietary preferences, and BMI of the authenticated user.")
+    @Operation(summary = "Get current user's profile", description = """
+            **Xem thông tin hồ sơ của tài khoản đang đăng nhập.**
+            
+            - **Yêu cầu:** Bấm nút **Authorize** ở góc trên Swagger và nhập `Bearer <accessToken>`.
+            - Trả về thông tin cá nhân, chỉ số BMI y khoa tất định, phân loại thể trạng, chế độ ăn và dị ứng.
+            """)
     public ResponseEntity<ApiResponse<UserProfileResponse>> getMyProfile(
             @AuthenticationPrincipal String userId) {
         UserProfileResponse profile = userService.getMyProfile(userId);
@@ -38,7 +43,20 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    @Operation(summary = "Update current user's profile", description = "Updates personal info, dietary preferences, and recalculates deterministic BMI if height/weight change.")
+    @Operation(summary = "Update current user's profile", description = """
+            **Cập nhật hồ sơ cá nhân và chỉ số sức khỏe.**
+            
+            **Quy tắc điền thông tin:**
+            - `fullName`: Họ và tên (không chứa số, tối đa 100 ký tự).
+            - `phoneNumber`: Đúng 10 chữ số bắt đầu bằng `0` (hoặc để trống `""`).
+            - `heightCm`: Chiều cao tính bằng cm (50.0 - 280.0 cm, ví dụ: `172.5`).
+            - `weightKg`: Cân nặng tính bằng kg (20.0 - 350.0 kg, ví dụ: `65.0`).
+            - `dietaryPreferences`: `VEGAN`, `VEGETARIAN`, `LACTO_OVO`, `LACTO`, `OVO`, `PESCATARIAN`, `FLEXITARIAN`, `RAW_VEGAN`.
+            - `allergies`: `NONE` hoặc phân tách bằng dấu phẩy (ví dụ: `PEANUTS, GLUTEN, SOY`).
+            - `dailyCalorieTarget`: Mục tiêu calo hàng ngày (500 - 10,000 kcal, ví dụ: `2000`).
+            
+            *Lưu ý: Hệ thống sẽ tự động tính toán lại BMI và phân loại thể trạng (Gầy, Bình thường, Thừa cân, Béo phì) chuẩn y khoa khi bạn cập nhật chiều cao hoặc cân nặng.*
+            """)
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateMyProfile(
             @AuthenticationPrincipal String userId,
             @Valid @RequestBody UpdateUserProfileRequest req) {
@@ -47,7 +65,13 @@ public class UserController {
     }
 
     @PutMapping("/me/password")
-    @Operation(summary = "Change password", description = "Validates existing password, updates with new password, and invalidates all active refresh tokens.")
+    @Operation(summary = "Change password", description = """
+            **Đổi mật khẩu tài khoản.**
+            
+            - `currentPassword`: Chuỗi SHA-256 hex (64 ký tự) của mật khẩu hiện tại.
+            - `newPassword` & `confirmNewPassword`: Chuỗi SHA-256 hex (64 ký tự) của mật khẩu mới.
+            - *Lưu ý: Sau khi đổi mật khẩu thành công, toàn bộ phiên đăng nhập cũ trên các thiết bị khác sẽ tự động bị hủy (thu hồi Refresh Tokens).*
+            """)
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @AuthenticationPrincipal String userId,
             @Valid @RequestBody ChangePasswordRequest req) {
@@ -56,7 +80,12 @@ public class UserController {
     }
 
     @DeleteMapping("/me")
-    @Operation(summary = "Deactivate current account", description = "Soft-deletes/disables the current user account and invalidates all active sessions.")
+    @Operation(summary = "Deactivate current account", description = """
+            **Hủy kích hoạt (vô hiệu hóa) tài khoản người dùng.**
+            
+            - Chuyển trạng thái tài khoản thành `DISABLED`.
+            - Tự động hủy toàn bộ phiên đăng nhập và token hiện tại.
+            """)
     public ResponseEntity<ApiResponse<Void>> deactivateMyAccount(
             @AuthenticationPrincipal String userId) {
         userService.deactivateMyAccount(userId);
@@ -64,7 +93,13 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/public")
-    @Operation(summary = "Get public user profile", description = "Public profile information safe for community feeds, comments, and recipes.")
+    @Operation(summary = "Get public user profile", description = """
+            **Xem hồ sơ công khai của người dùng theo UUID.**
+            
+            - Không yêu cầu đăng nhập (Public).
+            - Chỉ hiển thị thông tin cộng đồng (Username, Full Name, Avatar URL, Dietary Preferences, Ngày tham gia).
+            - Các dữ liệu nhạy cảm (Email, SĐT, Chiều cao, Cân nặng, BMI) được ẩn hoàn toàn để bảo vệ quyền riêng tư (PII Protection).
+            """)
     public ResponseEntity<ApiResponse<PublicUserProfileResponse>> getPublicProfile(
             @PathVariable UUID userId) {
         PublicUserProfileResponse publicProfile = userService.getPublicProfile(userId);

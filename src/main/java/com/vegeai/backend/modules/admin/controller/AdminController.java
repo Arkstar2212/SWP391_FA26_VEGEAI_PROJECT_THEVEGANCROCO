@@ -42,8 +42,18 @@ public class AdminController {
     private final AdminService adminService;
 
     @GetMapping("/users")
-    @Operation(summary = "List and search users",
-               description = "Filter by keyword (username, email, fullName), role, or status with pagination and sorting.")
+    @Operation(summary = "List and search users", description = """
+            **Tìm kiếm và lọc danh sách người dùng toàn hệ thống (Phân trang).**
+            
+            **Tham số truy vấn (Query Params):**
+            - `page`: Số trang bắt đầu từ `0` (Mặc định: 0).
+            - `size`: Số bản ghi mỗi trang (Mặc định: 20).
+            - `search`: Từ khóa tìm kiếm theo `username`, `email` hoặc `fullName`.
+            - `role`: Lọc theo vai trò (`ADMIN` hoặc `MEMBER`).
+            - `status`: Lọc theo trạng thái (`ACTIVE`, `PENDING_VERIFICATION`, `LOCKED`, `DISABLED`).
+            - `sortBy`: Cột sắp xếp (`createdAt`, `username`, `email`, `lastLogin`).
+            - `direction`: Hướng sắp xếp (`asc` hoặc `desc`).
+            """)
     public ResponseEntity<ApiResponse<PageResponse<UserProfileResponse>>> listUsers(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size,
@@ -59,7 +69,11 @@ public class AdminController {
     }
 
     @GetMapping("/users/{userId}")
-    @Operation(summary = "Get user details by ID")
+    @Operation(summary = "Get user details by ID", description = """
+            **Xem chi tiết thông tin quản trị của người dùng theo UUID.**
+            
+            - Yêu cầu quyền ADMIN.
+            """)
     public ResponseEntity<ApiResponse<UserProfileResponse>> getUserById(
             @PathVariable UUID userId) {
         UserProfileResponse user = adminService.getUserById(userId);
@@ -67,8 +81,14 @@ public class AdminController {
     }
 
     @PatchMapping("/users/{userId}/status")
-    @Operation(summary = "Update user account status",
-               description = "Locks, unlocks, activates or disables an account. Protected by Admin Immunity Rule.")
+    @Operation(summary = "Update user account status", description = """
+            **Khóa hoặc mở khóa trạng thái tài khoản.**
+            
+            **Quy tắc:**
+            - `status`: Trạng thái mới (`ACTIVE`, `LOCKED`, `DISABLED`, `PENDING_VERIFICATION`).
+            - `reason`: Lý do thay đổi trạng thái (Ví dụ: "Vi phạm quy chuẩn cộng đồng").
+            - **Admin Immunity Rule:** Hệ thống chặn tuyệt đối hành vi khóa/vô hiệu hóa tài khoản của chính Admin đang thao tác hoặc Super Admin gốc.
+            """)
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateUserStatus(
             @PathVariable UUID userId,
             @Valid @RequestBody UpdateUserStatusRequest req,
@@ -79,8 +99,12 @@ public class AdminController {
     }
 
     @PatchMapping("/users/{userId}/role")
-    @Operation(summary = "Change user role",
-               description = "Promote a member to ADMIN or demote to MEMBER. Self-demotion is prevented.")
+    @Operation(summary = "Change user role", description = """
+            **Phân quyền vai trò người dùng.**
+            
+            - `role`: Vai trò mới (`ADMIN` hoặc `MEMBER`).
+            - Hệ thống chặn việc Admin tự hạ quyền (Self-demotion) của chính mình.
+            """)
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateUserRole(
             @PathVariable UUID userId,
             @Valid @RequestBody UpdateUserRoleRequest req,
@@ -91,23 +115,33 @@ public class AdminController {
     }
 
     @GetMapping("/dashboard/stats")
-    @Operation(summary = "Get admin dashboard overview statistics")
+    @Operation(summary = "Get admin dashboard overview statistics", description = """
+            **Báo cáo thống kê tổng quan hệ thống.**
+            
+            - Trả về tổng số thành viên, số tài khoản đang hoạt động, tài khoản bị khóa, và tỷ lệ kích hoạt tài khoản.
+            """)
     public ResponseEntity<ApiResponse<AdminDashboardStatsResponse>> getDashboardStats() {
         AdminDashboardStatsResponse stats = adminService.getDashboardStats();
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
 
     @GetMapping("/ai/status")
-    @Operation(summary = "Get AI Ops status and model telemetry",
-               description = "Monitors external LLMs (Gemini, Whisper) and local guardrails latency, uptime, and request quotas.")
+    @Operation(summary = "Get AI Ops status and model telemetry", description = """
+            **Giám sát trạng thái hoạt động các mô hình AI (FR-ADMIN-03).**
+            
+            - Đo lường độ trễ (latency ms), trạng thái hoạt động (HEALTHY/DEGRADED), uptime và hạn mức gọi API của các mô hình LLM (Gemini 1.5, Whisper STT, Guardrail moderation).
+            """)
     public ResponseEntity<ApiResponse<AiOpsStatusResponse>> getAiOpsStatus() {
         AiOpsStatusResponse status = adminService.getAiOpsStatus();
         return ResponseEntity.ok(ApiResponse.success(status));
     }
 
     @GetMapping("/ai/audit-logs")
-    @Operation(summary = "Get AI audit trail logs",
-               description = "Returns audit logs of recent AI interactions, model latency, and moderation flags.")
+    @Operation(summary = "Get AI audit trail logs", description = """
+            **Xem nhật ký kiểm tra (Audit Trail) các truy vấn AI.**
+            
+            - Ghi lại các tương tác AI gần nhất, thời gian phản hồi, trạng thái kiểm duyệt nội dung (SAFE/FLAGGED) phục vụ giám sát và can thiệp thủ công.
+            """)
     public ResponseEntity<ApiResponse<List<AiAuditLogEntry>>> getAiAuditLogs() {
         List<AiAuditLogEntry> logs = adminService.getAiAuditLogs();
         return ResponseEntity.ok(ApiResponse.success(logs));
