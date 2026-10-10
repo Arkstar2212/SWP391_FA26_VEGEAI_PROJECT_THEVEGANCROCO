@@ -278,6 +278,49 @@ class AuthControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value(ErrorCode.OTP_INVALID.getCode()));
         }
+
+        @Test
+        @DisplayName("Should block resend-otp if called too soon (< 30s cooldown)")
+        void resendOtpCooldownBlocked() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isCreated());
+
+            ResendOtpRequest resendReq = new ResendOtpRequest();
+            resendReq.setEmail(req.getEmail());
+
+            mockMvc.perform(post("/api/auth/resend-otp")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(resendReq)))
+                    .andExpect(status().isTooManyRequests())
+                    .andExpect(jsonPath("$.code").value(ErrorCode.OTP_RESEND_TOO_SOON.getCode()));
+        }
+
+        @Test
+        @DisplayName("Should allow resend-otp after 30s cooldown has passed")
+        void resendOtpSuccessAfterCooldown() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isCreated());
+
+            User user = userRepository.findByEmailIgnoreCase(req.getEmail()).orElseThrow();
+            var token = evtRepository.findLatestUnused(user, TokenPurpose.REGISTRATION).orElseThrow();
+            token.setCreatedAt(java.time.LocalDateTime.now().minusSeconds(35));
+            evtRepository.save(token);
+
+            ResendOtpRequest resendReq = new ResendOtpRequest();
+            resendReq.setEmail(req.getEmail());
+
+            mockMvc.perform(post("/api/auth/resend-otp")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(resendReq)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        }
     }
 
     @Nested
@@ -372,6 +415,39 @@ class AuthControllerTest {
         }
 
         @Test
+        @DisplayName("Should refresh access token using valid refresh token cookie")
+        void refreshWithCookieSuccess() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isCreated());
+
+            User user = userRepository.findByEmailIgnoreCase(req.getEmail()).orElseThrow();
+            user.setStatus(AccountStatus.ACTIVE);
+            userRepository.save(user);
+
+            LoginRequest loginReq = new LoginRequest();
+            loginReq.setUsernameOrEmail(req.getUsername());
+            loginReq.setPassword(req.getPassword());
+
+            var loginResult = mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(loginReq)))
+                    .andExpect(status().isOk())
+                    .andReturn();
+
+            var cookie = loginResult.getResponse().getCookie("refreshToken");
+            org.junit.jupiter.api.Assertions.assertNotNull(cookie);
+
+            mockMvc.perform(post("/api/auth/refresh")
+                            .cookie(cookie))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.accessToken", notNullValue()));
+        }
+
+        @Test
         @DisplayName("Should logout cleanly and clear refresh cookie")
         void logoutSuccess() throws Exception {
             mockMvc.perform(post("/api/auth/logout"))
@@ -398,6 +474,70 @@ class AuthControllerTest {
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.message", containsString("If the email exists")));
         }
+
+        @Test
+        @DisplayName("Should reset password with valid OTP and allow login with new password")
+        void resetPasswordSuccess() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isCreated());
+
+            User user = userRepository.findByEmailIgnoreCase(req.getEmail()).orElseThrow();
+            user.setStatus(AccountStatus.ACTIVE);
+            userRepository.save(user);
+
+            // Request forgot password
+            ForgotPasswordRequest forgotReq = new ForgotPasswordRequest();
+            forgotReq.setEmail(req.getEmail());
+            mockMvc.perform(post("/api/auth/forgot-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(forgotReq)))
+                    .andExpect(status().isOk());
+
+            var otpToken = evtRepository.findLatestUnused(user, TokenPurpose.FORGOT_PASSWORD).orElseThrow();
+
+            String newSha256 = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
+            ResetPasswordRequest resetReq = new ResetPasswordRequest();
+            resetReq.setEmail(req.getEmail());
+            resetReq.setOtp(otpToken.getOtpCode());
+            resetReq.setNewPassword(newSha256);
+            resetReq.setConfirmNewPassword(newSha256);
+
+            mockMvc.perform(post("/api/auth/reset-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(resetReq)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+
+            // Verify login works with new password
+            LoginRequest loginReq = new LoginRequest();
+            loginReq.setUsernameOrEmail(req.getUsername());
+            loginReq.setPassword(newSha256);
+
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(loginReq)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("Should fail reset-password when passwords mismatch")
+        void resetPasswordMismatchFails() throws Exception {
+            ResetPasswordRequest resetReq = new ResetPasswordRequest();
+            resetReq.setEmail("chef@vegeai.com");
+            resetReq.setOtp("123456");
+            resetReq.setNewPassword(VALID_SHA256);
+            resetReq.setConfirmNewPassword(MISMATCH_SHA256);
+
+            mockMvc.perform(post("/api/auth/reset-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(resetReq)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(ErrorCode.PASSWORD_MISMATCH.getCode()));
+        }
     }
 
     @Nested
@@ -412,7 +552,7 @@ class AuthControllerTest {
                             .message("Can you recommend high-protein vegan breakfast?")
                             .build();
 
-            String uniqueIp = "192.168.10.99";
+            String uniqueIp = "10.200." + ((System.currentTimeMillis() / 1000) % 200) + "." + ((System.nanoTime() / 1000) % 200);
 
             // Requests 1, 2, 3 should succeed
             for (int i = 1; i <= 3; i++) {

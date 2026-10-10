@@ -182,4 +182,16 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.email").doesNotExist())
                 .andExpect(jsonPath("$.data.bmi").doesNotExist());
     }
+
+    @Test
+    @DisplayName("GET /api/users/{userId}/public - Accessible without authentication token (Guest/Public)")
+    void getPublicProfile_unauthenticated_success() throws Exception {
+        mockMvc.perform(get("/api/users/" + testUser.getUserId() + "/public"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.username").value("test_vege"))
+                .andExpect(jsonPath("$.data.fullName").value("Test Vegetarian"))
+                .andExpect(jsonPath("$.data.email").doesNotExist())
+                .andExpect(jsonPath("$.data.bmi").doesNotExist());
+    }
 }

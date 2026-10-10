@@ -164,7 +164,7 @@ public class AuthService {
         }
 
         // Check cooldown: find the latest token regardless of used/expired status
-        evtRepository.findLatestUnused(user, TokenPurpose.REGISTRATION).ifPresent(latest -> {
+        evtRepository.findLatestByPurpose(user, TokenPurpose.REGISTRATION).ifPresent(latest -> {
             long secondsSinceIssue = java.time.Duration.between(latest.getCreatedAt(), LocalDateTime.now()).getSeconds();
             if (secondsSinceIssue < resendCooldownSeconds) {
                 long remaining = resendCooldownSeconds - secondsSinceIssue;
