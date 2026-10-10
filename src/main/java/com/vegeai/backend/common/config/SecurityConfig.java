@@ -92,6 +92,8 @@ public class SecurityConfig {
                                          "/api-docs/**", "/v3/api-docs/**").permitAll()
                         // Public content
                         .requestMatchers("/api/public/**").permitAll()
+                        // Public user profile (PII-protected)
+                        .requestMatchers("/api/users/*/public").permitAll()
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Everything else requires authentication

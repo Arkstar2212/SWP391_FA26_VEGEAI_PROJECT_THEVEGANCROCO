@@ -45,6 +45,6 @@ public class EmailVerificationToken {
     @Column(name = "purpose", nullable = false, length = 30)
     private TokenPurpose purpose;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

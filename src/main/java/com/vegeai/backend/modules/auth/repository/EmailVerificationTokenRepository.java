@@ -40,4 +40,17 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
     void invalidatePreviousTokens(
             @Param("user") User user,
             @Param("purpose") TokenPurpose purpose);
+
+    /**
+     * Fetch the absolute latest OTP for a user/purpose combo (for cooldown checks).
+     */
+    @Query("""
+            SELECT t FROM EmailVerificationToken t
+            WHERE t.user = :user AND t.purpose = :purpose
+            ORDER BY t.createdAt DESC
+            LIMIT 1
+            """)
+    Optional<EmailVerificationToken> findLatestByPurpose(
+            @Param("user") User user,
+            @Param("purpose") TokenPurpose purpose);
 }
