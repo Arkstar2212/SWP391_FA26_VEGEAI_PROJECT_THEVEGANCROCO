@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -37,6 +38,7 @@ import java.util.List;
  *  PUBLIC (permitAll):
  *    /api/auth/**        — all auth endpoints
  *    /api/public/**      — public content (blogs, videos)
+ *    POST /api/nutrition/calculate, GET /api/nutrition/options — guest nutrition calculator
  *    /api-docs/**        — OpenAPI spec
  *    /swagger-ui/**      — Swagger UI
  *
@@ -92,6 +94,9 @@ public class SecurityConfig {
                                          "/api-docs/**", "/v3/api-docs/**").permitAll()
                         // Public content
                         .requestMatchers("/api/public/**").permitAll()
+                        // Public nutrition calculator & dropdown options (stateless, nothing saved)
+                        .requestMatchers(HttpMethod.POST, "/api/nutrition/calculate").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/nutrition/options").permitAll()
                         // Public user profile (PII-protected)
                         .requestMatchers("/api/users/*/public").permitAll()
                         // Admin only

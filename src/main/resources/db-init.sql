@@ -102,3 +102,32 @@ CREATE INDEX IF NOT EXISTS idx_fridge_user_norm_name ON fridge_items(user_id, no
 CREATE INDEX IF NOT EXISTS idx_fridge_expiry ON fridge_items(expiry_date);
 
 
+
+-- ============================================================
+-- Nutrition Profiles (ERD: NUTRITION.PROFILES) — one per user
+-- Inputs + deterministic snapshot of BMI / BMR / TDEE / macro targets
+-- ============================================================
+CREATE TABLE IF NOT EXISTS nutrition_profiles (
+    nutrition_profile_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
+    gender VARCHAR(10) NOT NULL,
+    date_of_birth DATE NOT NULL,
+    height_cm DOUBLE PRECISION NOT NULL,
+    weight_kg DOUBLE PRECISION NOT NULL,
+    activity_level VARCHAR(20) NOT NULL,
+    goal VARCHAR(20) NOT NULL,
+    custom_daily_calories INTEGER,
+    bmi DOUBLE PRECISION,
+    bmi_category VARCHAR(20),
+    bmr INTEGER,
+    tdee INTEGER,
+    daily_calories_target INTEGER,
+    protein_target_g INTEGER,
+    carbs_target_g INTEGER,
+    fat_target_g INTEGER,
+    fiber_target_g INTEGER,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_nutrition_profiles_user ON nutrition_profiles(user_id);
