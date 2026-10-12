@@ -10,6 +10,9 @@ import com.vegeai.backend.modules.ai.dto.AiChatResponse;
 import com.vegeai.backend.modules.ai.dto.FridgeScanResponse;
 import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.repository.UserRepository;
+import com.vegeai.backend.modules.fridge.entity.FridgeItem;
+import com.vegeai.backend.modules.fridge.entity.FridgeItemStatus;
+import com.vegeai.backend.modules.fridge.repository.FridgeItemRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.text.Normalizer;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -40,6 +44,7 @@ import java.util.*;
 public class GeminiAiService {
 
     private final UserRepository userRepository;
+    private final FridgeItemRepository fridgeItemRepository;
     private final ObjectMapper objectMapper;
 
     @Value("${app.gemini.api-key:}")
@@ -431,6 +436,7 @@ public class GeminiAiService {
             if (res.getIngredients() != null) {
                 res.setTotalItemsDetected(res.getIngredients().size());
                 enrichAllergyWarnings(res, currentUsername);
+                enrichFridgeMemory(res, currentUsername);
             }
             return res;
         } catch (Exception ex) {
@@ -531,7 +537,59 @@ public class GeminiAiService {
                 .build();
 
         enrichAllergyWarnings(res, currentUsername);
+        enrichFridgeMemory(res, currentUsername);
         return res;
+    }
+
+    /**
+     * So khớp nguyên liệu nhận diện với kho tủ lạnh thông minh của người dùng (Smart Fridge Memory).
+     * Nhận diện lại các món cũ, tính số ngày đã lưu trong tủ và gắn cảnh báo nếu sắp hỏng.
+     */
+    private void enrichFridgeMemory(FridgeScanResponse res, String username) {
+        findUserByIdentifier(username).ifPresent(user -> {
+            List<FridgeItem> activeItems =
+                    fridgeItemRepository.findByUserIdAndStatusOrderByExpiryDateAsc(user.getUserId(), FridgeItemStatus.ACTIVE);
+
+            if (activeItems.isEmpty() || res.getIngredients() == null) {
+                return;
+            }
+
+            for (FridgeScanResponse.ScannedIngredient ing : res.getIngredients()) {
+                String normScanned = normalizeVietnamese(ing.getName());
+                for (FridgeItem item : activeItems) {
+                    if (item.getNormalizedName().equalsIgnoreCase(normScanned)
+                            || normScanned.contains(item.getNormalizedName())
+                            || item.getNormalizedName().contains(normScanned)) {
+                        long daysInFridge = item.calculateDaysInFridge();
+                        long daysRemaining = item.calculateDaysRemaining();
+
+                        ing.setMatchedExistingFridgeItemId(item.getItemId());
+                        ing.setPreviouslyTracked(true);
+                        ing.setPreviousDaysInFridge(daysInFridge);
+
+                        if (res.getWarnings() == null) {
+                            res.setWarnings(new ArrayList<>());
+                        }
+                        if (daysRemaining <= 2) {
+                            res.getWarnings().add("⚠️ LƯU Ý TỦ LẠNH: '" + item.getName() + "' đã nằm trong tủ "
+                                    + daysInFridge + " ngày rồi (còn ~" + daysRemaining + " ngày là hết hạn). Ưu tiên nấu ngay!");
+                        } else if (daysInFridge >= 3) {
+                            res.getWarnings().add("ℹ️ '" + item.getName() + "' đã nằm trong tủ lạnh "
+                                    + daysInFridge + " ngày.");
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    private String normalizeVietnamese(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String norm = Normalizer.normalize(text.trim().toLowerCase(), Normalizer.Form.NFD);
+        return norm.replaceAll("\\p{M}", "").replaceAll("\\s+", " ").trim();
     }
 
     private Optional<User> findUserByIdentifier(String identifier) {

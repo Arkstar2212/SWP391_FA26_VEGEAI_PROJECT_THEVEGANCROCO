@@ -60,6 +60,9 @@ public enum ErrorCode {
     ADMIN_IMMUNITY_VIOLATION(1601, "Admin immunity: Cannot modify another administrator account.", HttpStatus.FORBIDDEN),
     CANNOT_MODIFY_SELF_STATUS(1602, "You cannot modify your own administrative status or role.", HttpStatus.FORBIDDEN),
 
+    // ── Fridge & Inventory ──────────────────────────────────────────────────
+    FRIDGE_ITEM_NOT_FOUND(1801, "Fridge item not found or does not belong to you.", HttpStatus.NOT_FOUND),
+
     // ── Email ─────────────────────────────────────────────────────────────────
     EMAIL_SEND_FAILED(1901, "Failed to send email. Please try again later.", HttpStatus.SERVICE_UNAVAILABLE),
 
