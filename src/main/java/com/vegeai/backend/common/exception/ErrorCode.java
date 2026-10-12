@@ -63,6 +63,10 @@ public enum ErrorCode {
     // ── Fridge & Inventory ──────────────────────────────────────────────────
     FRIDGE_ITEM_NOT_FOUND(1801, "Fridge item not found or does not belong to you.", HttpStatus.NOT_FOUND),
 
+    // ── Nutrition ─────────────────────────────────────────────────────────────
+    NUTRITION_PROFILE_NOT_FOUND(2001, "Nutrition profile not found. Please set up your nutrition profile first.", HttpStatus.NOT_FOUND),
+    NUTRITION_AGE_OUT_OF_RANGE(2002, "Age must be between 13 and 100 to calculate nutrition targets.", HttpStatus.BAD_REQUEST),
+
     // ── Email ─────────────────────────────────────────────────────────────────
     EMAIL_SEND_FAILED(1901, "Failed to send email. Please try again later.", HttpStatus.SERVICE_UNAVAILABLE),
 

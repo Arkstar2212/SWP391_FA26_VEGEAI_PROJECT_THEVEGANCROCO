@@ -3,6 +3,8 @@ package com.vegeai.backend.modules.user.service;
 import com.vegeai.backend.common.exception.AppException;
 import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
+import com.vegeai.backend.modules.nutrition.service.NutritionCalculator;
+import com.vegeai.backend.modules.nutrition.service.NutritionService;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
 import com.vegeai.backend.modules.user.dto.PublicUserProfileResponse;
 import com.vegeai.backend.modules.user.dto.UpdateUserProfileRequest;
@@ -16,8 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.UUID;
 
 @Service
@@ -28,6 +28,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NutritionCalculator nutritionCalculator;
+    private final NutritionService nutritionService;
 
     /**
      * Get the profile of the authenticated user (identified by userId from JWT).
@@ -100,13 +102,16 @@ public class UserService {
             Double h = user.getHeightCm();
             Double w = user.getWeightKg();
             if (h != null && w != null && h > 0 && w > 0) {
-                double heightM = h / 100.0;
-                double calculatedBmi = w / (heightM * heightM);
-                double roundedBmi = BigDecimal.valueOf(calculatedBmi)
-                        .setScale(2, RoundingMode.HALF_UP)
-                        .doubleValue();
-                user.setBmi(roundedBmi);
+                user.setBmi(nutritionCalculator.calculateBmi(h, w));
             }
+        }
+
+        // ── Keep the nutrition profile (if any) in sync with body metrics ─────
+        boolean bodyMetricsChanged = heightUpdated || weightUpdated
+                || req.getDateOfBirth() != null || req.getGender() != null
+                || req.getDailyCalorieTarget() != null;
+        if (bodyMetricsChanged) {
+            nutritionService.syncFromUser(user, req.getDailyCalorieTarget());
         }
 
         User saved = userRepository.save(user);
