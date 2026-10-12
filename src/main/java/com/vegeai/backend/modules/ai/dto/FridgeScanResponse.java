@@ -71,5 +71,15 @@ public class FridgeScanResponse {
 
         @Schema(description = "Mẹo bảo quản để giữ tươi lâu hơn", example = "Bọc giấy báo để trong ngăn mát tủ lạnh")
         private String storageTip;
+
+        @Schema(description = "ID nguyên liệu đã có sẵn trong kho tủ lạnh (nếu nhận diện lại món cũ)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+        private java.util.UUID matchedExistingFridgeItemId;
+
+        @Schema(description = "Có phải nguyên liệu đã được lưu vết trong tủ lạnh từ trước không", example = "true")
+        @com.fasterxml.jackson.annotation.JsonProperty("isPreviouslyTracked")
+        private boolean isPreviouslyTracked;
+
+        @Schema(description = "Số ngày nguyên liệu này đã nằm trong tủ lạnh tính đến thời điểm quét", example = "3")
+        private Long previousDaysInFridge;
     }
 }
