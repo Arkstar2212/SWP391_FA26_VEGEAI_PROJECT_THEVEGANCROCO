@@ -45,3 +45,30 @@ INSERT INTO users (
     NOW()
 ) ON CONFLICT (email) DO NOTHING;
 
+-- ── Email Verification Tokens (OTP) ──────────────────────────
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    otp_code VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    purpose VARCHAR(30) NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_evt_user_purpose ON email_verification_tokens(user_id, purpose);
+
+-- ── Refresh Tokens (Opaque UUID) ──────────────────────────────
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    token VARCHAR(36) NOT NULL UNIQUE,
+    expires_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_refresh_token_value ON refresh_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_refresh_token_user ON refresh_tokens(user_id);
+
+
