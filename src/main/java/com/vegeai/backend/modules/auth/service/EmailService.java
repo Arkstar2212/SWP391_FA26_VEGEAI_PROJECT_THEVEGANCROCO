@@ -25,7 +25,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from:noreply@vegeai.com}")
+    @Value("${app.mail.from:giflvl123@gmail.com}")
     private String fromAddress;
 
     @Value("${app.mail.from-name:VEGEAI}")

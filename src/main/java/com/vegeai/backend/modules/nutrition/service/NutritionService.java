@@ -63,6 +63,11 @@ public class NutritionService {
         User user = userRepository.findById(parseUuid(userIdStr))
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
+        if (user.getStatus() == com.vegeai.backend.modules.user.entity.AccountStatus.PENDING_VERIFICATION) {
+            throw new AppException(ErrorCode.ACCOUNT_PENDING_VERIFICATION,
+                    "Tài khoản chưa được xác thực email. Vui lòng nhập mã OTP để kích hoạt tài khoản trước khi thiết lập hồ sơ dinh dưỡng.");
+        }
+
         NutritionProfile profile = profileRepository.findByUser_UserId(user.getUserId())
                 .orElseGet(() -> NutritionProfile.builder().user(user).build());
         boolean isNew = profile.getNutritionProfileId() == null;

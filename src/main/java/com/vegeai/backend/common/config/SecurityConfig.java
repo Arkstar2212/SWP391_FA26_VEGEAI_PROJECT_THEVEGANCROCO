@@ -99,6 +99,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/nutrition/options").permitAll()
                         // Public user profile (PII-protected)
                         .requestMatchers("/api/users/*/public").permitAll()
+                        // Recipes & Smart Filter (Public browsing, authenticated fridge matching)
+                        .requestMatchers("/api/recipes/fridge-match").authenticated()
+                        .requestMatchers("/api/recipes/**").permitAll()
+                        // Google Maps & Places (Public nearby search)
+                        .requestMatchers("/api/places/**").permitAll()
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Everything else requires authentication

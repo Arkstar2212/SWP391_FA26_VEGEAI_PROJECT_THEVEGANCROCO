@@ -328,8 +328,8 @@ class AuthControllerTest {
     class LoginTests {
 
         @Test
-        @DisplayName("Should prevent login if account is PENDING_VERIFICATION")
-        void loginPendingVerificationFails() throws Exception {
+        @DisplayName("Should allow login if account is PENDING_VERIFICATION with unverified status")
+        void loginPendingVerificationSucceedsWithUnverifiedStatus() throws Exception {
             RegisterRequest req = createValidRegisterRequest();
             mockMvc.perform(post("/api/auth/register")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -343,8 +343,10 @@ class AuthControllerTest {
             mockMvc.perform(post("/api/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(loginReq)))
-                    .andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.code").value(ErrorCode.ACCOUNT_PENDING_VERIFICATION.getCode()));
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.status").value("PENDING_VERIFICATION"))
+                    .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
         }
 
         @Test

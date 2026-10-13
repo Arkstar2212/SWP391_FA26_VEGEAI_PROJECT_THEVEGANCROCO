@@ -67,6 +67,12 @@ public enum ErrorCode {
     NUTRITION_PROFILE_NOT_FOUND(2001, "Nutrition profile not found. Please set up your nutrition profile first.", HttpStatus.NOT_FOUND),
     NUTRITION_AGE_OUT_OF_RANGE(2002, "Age must be between 13 and 100 to calculate nutrition targets.", HttpStatus.BAD_REQUEST),
 
+    // ── Recipes & Tags ────────────────────────────────────────────────────────
+    RECIPE_NOT_FOUND(2101, "Recipe not found.", HttpStatus.NOT_FOUND),
+    TAG_NOT_FOUND(2102, "Tag not found.", HttpStatus.NOT_FOUND),
+    TAG_ALREADY_EXISTS(2103, "Tag with this code already exists.", HttpStatus.CONFLICT),
+
+
     // ── Email ─────────────────────────────────────────────────────────────────
     EMAIL_SEND_FAILED(1901, "Failed to send email. Please try again later.", HttpStatus.SERVICE_UNAVAILABLE),
 

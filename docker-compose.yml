@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: vegeai
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_secure_pass_2026}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
@@ -26,7 +26,7 @@ services:
     image: redis:7-alpine
     container_name: vegeai-redis
     restart: always
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-}"]
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
     volumes:
@@ -55,15 +55,15 @@ services:
       SERVER_PORT: 8081
       DB_URL: jdbc:postgresql://postgres:5432/vegeai
       DB_USERNAME: postgres
-      DB_PASSWORD: ${DB_PASSWORD:-postgres_secure_pass_2026}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       JWT_SECRET: ${JWT_SECRET:-vegeai-super-secret-key-change-this-in-production-minimum-256-bits}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
-      MAIL_USERNAME: ${MAIL_USERNAME:-}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_USERNAME: ${MAIL_USERNAME:-giflvl123@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-pnpsiwgmapmdhqkr}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}

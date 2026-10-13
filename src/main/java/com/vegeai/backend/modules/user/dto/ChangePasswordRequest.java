@@ -16,9 +16,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ChangePasswordRequest {
 
-    @NotBlank(message = "Current password is required.")
-    @Schema(description = "Current password", example = "OldPass@123")
+    @Schema(description = "Current password (optional if otp is provided)", example = "OldPass@123")
     private String currentPassword;
+
+    @Schema(description = "OTP sent to email (optional if currentPassword is provided)", example = "123456")
+    private String otp;
 
     @NotBlank(message = "New password is required.")
     @Size(min = 8, max = 100, message = "New password must be between 8 and 100 characters.")
