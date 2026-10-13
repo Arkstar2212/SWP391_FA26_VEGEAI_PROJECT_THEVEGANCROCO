@@ -53,46 +53,65 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
-Nội dung tối thiểu trong file `.env`:
+#### Cách 1: Sử dụng Database Cloud Supabase dùng chung cả nhóm (KHUYÊN DÙNG)
+Không cần cài Docker hay PostgreSQL trên máy, cả Frontend và Backend đều trỏ chung vào:
 ```env
-# Database PostgreSQL
-DB_URL=jdbc:postgresql://localhost:5432/vegeai
+# Database Supabase Cloud (Singapore Region)
+DB_URL=jdbc:postgresql://db.oskyqehkztqksazhvmvn.supabase.co:5432/postgres?sslmode=require
 DB_USERNAME=postgres
-DB_PASSWORD=postgres_secure_pass_2026
+DB_PASSWORD=DBPGVEGEAI123
 
-# Redis Cache & Rate Limit
+# Redis (Cache, Blacklist & Rate Limiting)
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=
 
-# JWT Secret (Tối thiểu 256 bits, tạo bằng: openssl rand -hex 64)
+# JWT Secret
 JWT_SECRET=vegeai-super-secret-key-change-this-in-production-minimum-256-bits
 
 # Cấu hình gửi mail OTP (Gmail SMTP)
+# Nếu để trống: Hệ thống tự động in mã OTP ra Terminal/Console log để test nhanh!
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_gmail_app_password
+MAIL_USERNAME=
+MAIL_PASSWORD=
+
+# Google Gemini AI Studio
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-3.8-flash
 ```
 
-*(Lưu ý: Nếu chưa cấu hình email SMTP, mã OTP kích hoạt và OTP quên mật khẩu vẫn được ghi rõ ràng ra log console ở mức INFO: `[MOCK-EMAIL] OTP ...` để lập trình viên test ngay lập tức).*
+#### Cách 2: Sử dụng PostgreSQL & Redis Local qua Docker Compose
+Nếu muốn chạy hoàn toàn offline trên máy cá nhân:
+```env
+DB_URL=jdbc:postgresql://localhost:5432/vegeai
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
 
 ---
 
-### 2.3 Bước 2: Khởi động Database & Redis qua Docker Compose
-Chạy lệnh sau để khởi động PostgreSQL 16 và Redis:
+### 2.3 Bước 2: Tự động khởi tạo dữ liệu mẫu (Auto Data Initializer)
+Backend đã tích hợp 2 bộ khởi tạo dữ liệu tự động (`CommandLineRunner`):
+1. **`UserDataInitializer.java`**: Tự động kiểm tra và khởi tạo 3 tài khoản mặc định (`admin@vegeai.com`, `member@vegeai.com`, `unverified@vegeai.com`) với pre-hashed SHA-256 + BCrypt encoding.
+2. **`RecipeDataInitializer.java`**: Tự động nạp bộ từ điển Thẻ tag ẩm thực đa tầng và danh mục công thức mẫu chuẩn.
 
+*Lưu ý về gửi mail OTP:* Khi chạy ở môi trường DEV mà chưa có Gmail App Password, hệ thống sẽ tự động in mã OTP nổi bật ra màn hình Terminal:
+```text
+===============================================================================
+>>> [OTP DEV FALLBACK] REGISTRATION OTP FOR [email]: [XXXXXX] <<<
+===============================================================================
+```
+
+---
+
+### 2.4 Bước 3: Khởi động Database & Redis qua Docker Compose (Nếu dùng Local)
+Nếu chọn chạy Docker local:
 ```bash
 docker-compose up -d postgres redis
 ```
-
-- PostgreSQL sẽ tự động chạy script [`src/main/resources/db-init.sql`](src/main/resources/db-init.sql) để tạo bảng và chèn tài khoản Super Admin đầu tiên.
-- Kiểm tra container đang chạy:
-  ```bash
-  docker ps
-  ```
-
----
 
 ### 2.4 Bước 3: Chạy ứng dụng Spring Boot
 Dự án có thể chạy trực tiếp từ dòng lệnh hoặc mở bằng IntelliJ IDEA / VS Code:
@@ -331,19 +350,29 @@ Hiện tại [`AiChatbotController`](src/main/java/com/vegeai/backend/modules/ai
 
 Khi khởi động cơ sở dữ liệu qua Docker Compose, script `db-init.sql` đã khởi tạo sẵn tài khoản quản trị viên:
 
-- **Tài khoản Super Admin:**
+- **1. Tài khoản Super Admin:**
   - **Email:** `admin@vegeai.com`
   - **Username:** `admin`
   - **Mật khẩu thô:** `Admin@123`
   - **Chuỗi Pre-hash SHA-256 (truyền trong API request):**  
     `e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7`
-  - **Role:** `ADMIN`
-  - **Trạng thái:** `ACTIVE`
+  - **Role:** `ADMIN` | **Trạng thái:** `ACTIVE`
 
-- **Tạo tài khoản Member mới để kiểm thử:**
-  - Gọi `POST /api/auth/register` với mật khẩu thô đã băm SHA-256 (ví dụ SHA-256 của `Pass@123456` là `24300a74797669d2f6fb39fca6d3fd32f41bc90a88095b542e03ea29d10bc9aa`).
-  - Lấy mã OTP 6 số in trong console log (hoặc trong hộp thư đến nếu đã nối Gmail SMTP).
-  - Gọi `POST /api/auth/verify-email` để kích hoạt tài khoản.
+- **2. Tài khoản Thành viên Active (Member):**
+  - **Email:** `member@vegeai.com`
+  - **Username:** `member`
+  - **Mật khẩu thô:** `Member@123`
+  - **Chuỗi Pre-hash SHA-256:**  
+    `abe2d3ed5419e1a2293c034a6b375a622ff5a60e5ac30f29c461220898ffdd97`
+  - **Role:** `MEMBER` | **Trạng thái:** `ACTIVE`
+
+- **3. Tài khoản Chưa kích hoạt (Unverified Member - Dùng test OTP):**
+  - **Email:** `unverified@vegeai.com`
+  - **Username:** `unverified`
+  - **Mật khẩu thô:** `User@123`
+  - **Chuỗi Pre-hash SHA-256:**  
+    `3e7c19576488862816f13b512cacf3e4ba97dd97243ea0bd6a2ad1642d86ba72`
+  - **Role:** `MEMBER` | **Trạng thái:** `PENDING_VERIFICATION`
 
 ---
 
