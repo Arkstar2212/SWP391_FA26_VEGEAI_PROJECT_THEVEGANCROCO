@@ -53,8 +53,8 @@ services:
         condition: service_healthy
     environment:
       SERVER_PORT: 8081
-      DB_URL: jdbc:postgresql://postgres:5432/vegeai
-      DB_USERNAME: postgres
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/vegeai}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       REDIS_HOST: redis
       REDIS_PORT: 6379
