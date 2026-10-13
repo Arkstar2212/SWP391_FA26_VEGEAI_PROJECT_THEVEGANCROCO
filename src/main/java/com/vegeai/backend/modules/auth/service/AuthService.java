@@ -313,9 +313,9 @@ public class AuthService {
     @Transactional
     public void forgotPassword(ForgotPasswordRequest req) {
         String email = req.getEmail().trim();
-        // Anti-enumeration: always return success message, only send if account exists + ACTIVE
+        // Anti-enumeration: always return success message, send OTP if account exists and is not disabled/locked
         userRepository.findByEmailIgnoreCase(email).ifPresent(user -> {
-            if (user.getStatus() == AccountStatus.ACTIVE) {
+            if (user.getStatus() == AccountStatus.ACTIVE || user.getStatus() == AccountStatus.PENDING_VERIFICATION) {
                 evtRepository.invalidatePreviousTokens(user, TokenPurpose.FORGOT_PASSWORD);
                 String otp = generateOtp();
                 issueOtp(user, otp, TokenPurpose.FORGOT_PASSWORD);
@@ -337,7 +337,9 @@ public class AuthService {
 
         String email = req.getEmail().trim();
         String otp = req.getOtp().trim();
-        User user = findUserByEmailOrThrow(email);
+        // Anti-enumeration: throw OTP_INVALID instead of revealing user non-existence via USER_NOT_FOUND (404)
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new AppException(ErrorCode.OTP_INVALID));
 
         if (user.getStatus() == AccountStatus.LOCKED) {
             throw new AppException(ErrorCode.ACCOUNT_LOCKED);
@@ -364,10 +366,18 @@ public class AuthService {
         evtRepository.save(token);
 
         user.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
+        if (user.getStatus() == AccountStatus.PENDING_VERIFICATION) {
+            user.setStatus(AccountStatus.ACTIVE);
+            log.info("[AUTH] Account {} activated via verified password reset OTP.", user.getEmail());
+        }
         userRepository.save(user);
 
         // Revoke all refresh tokens after password change
         refreshTokenRepository.revokeAllByUser(user);
+
+        // Reset brute-force lockout counters so the user can immediately log in
+        loginRateLimitService.resetCounter(user.getEmail());
+        loginRateLimitService.resetCounter(user.getUsername());
 
         log.info("[AUTH] Password reset for: {}", user.getEmail());
     }
