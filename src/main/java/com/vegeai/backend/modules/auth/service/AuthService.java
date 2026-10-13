@@ -214,12 +214,11 @@ public class AuthService {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        // Account status checks
+        // Account status checks (PENDING_VERIFICATION users are permitted to log in with unverified status)
         switch (user.getStatus()) {
-            case PENDING_VERIFICATION -> throw new AppException(ErrorCode.ACCOUNT_PENDING_VERIFICATION);
-            case LOCKED               -> throw new AppException(ErrorCode.ACCOUNT_LOCKED);
-            case DISABLED             -> throw new AppException(ErrorCode.ACCOUNT_DISABLED);
-            default                   -> { /* ACTIVE — proceed */ }
+            case LOCKED   -> throw new AppException(ErrorCode.ACCOUNT_LOCKED);
+            case DISABLED -> throw new AppException(ErrorCode.ACCOUNT_DISABLED);
+            default       -> { /* ACTIVE or PENDING_VERIFICATION — proceed */ }
         }
 
         // Success — reset failure counter

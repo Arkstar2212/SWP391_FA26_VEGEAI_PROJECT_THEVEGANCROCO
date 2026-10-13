@@ -148,6 +148,18 @@ class NutritionControllerTest {
     }
 
     @Test
+    @DisplayName("PUT /api/nutrition/profile - PENDING_VERIFICATION user is blocked (403)")
+    void upsert_unverifiedBlocked() throws Exception {
+        user.setStatus(AccountStatus.PENDING_VERIFICATION);
+        userRepository.save(user);
+
+        mockMvc.perform(put("/api/nutrition/profile").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(maleMaintain())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(ErrorCode.ACCOUNT_PENDING_VERIFICATION.getCode()));
+    }
+
+    @Test
     @DisplayName("PUT /api/nutrition/profile - age under 13 is rejected")
     void upsert_tooYoung() throws Exception {
         NutritionProfileRequest kid = maleMaintain();

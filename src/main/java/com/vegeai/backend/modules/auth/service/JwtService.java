@@ -60,6 +60,7 @@ public class JwtService {
                 .claim("username", user.getUsername())
                 .claim("email", user.getEmail())
                 .claim("role", user.getRole().name())
+                .claim("status", user.getStatus().name())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(signingKey)
@@ -112,6 +113,10 @@ public class JwtService {
 
     public String extractRole(Claims claims) {
         return claims.get("role", String.class);
+    }
+
+    public String extractStatus(Claims claims) {
+        return claims.get("status", String.class);
     }
 
     public long getExpirationMinutes() {

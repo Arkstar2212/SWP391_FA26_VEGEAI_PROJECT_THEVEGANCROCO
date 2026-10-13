@@ -64,12 +64,25 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully.", updated));
     }
 
+    @PostMapping("/me/password/request-otp")
+    @Operation(summary = "Request OTP to change password", description = """
+            **Yêu cầu gửi mã OTP để đổi mật khẩu.**
+            
+            - Gửi mã xác nhận 6 chữ số về email đã đăng ký của tài khoản đang đăng nhập.
+            - Mã có hiệu lực trong 3 phút.
+            """)
+    public ResponseEntity<ApiResponse<Void>> requestPasswordChangeOtp(
+            @AuthenticationPrincipal String userId) {
+        userService.requestPasswordChangeOtp(userId);
+        return ResponseEntity.ok(ApiResponse.success("Mã OTP đổi mật khẩu đã được gửi về email của bạn.", null));
+    }
+
     @PutMapping("/me/password")
     @Operation(summary = "Change password", description = """
             **Đổi mật khẩu tài khoản.**
             
-            - `currentPassword`: Chuỗi SHA-256 hex (64 ký tự) của mật khẩu hiện tại.
-            - `newPassword` & `confirmNewPassword`: Chuỗi SHA-256 hex (64 ký tự) của mật khẩu mới.
+            - Hỗ trợ đổi bằng `currentPassword` (mật khẩu cũ) HOẶC bằng mã `otp` (gửi về email).
+            - `newPassword` & `confirmNewPassword`: Mật khẩu mới (tối thiểu 8 ký tự).
             - *Lưu ý: Sau khi đổi mật khẩu thành công, toàn bộ phiên đăng nhập cũ trên các thiết bị khác sẽ tự động bị hủy (thu hồi Refresh Tokens).*
             """)
     public ResponseEntity<ApiResponse<Void>> changePassword(

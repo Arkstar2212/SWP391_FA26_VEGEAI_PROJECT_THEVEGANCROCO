@@ -52,12 +52,16 @@ class UserControllerTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private com.vegeai.backend.modules.auth.repository.EmailVerificationTokenRepository evtRepository;
+
     private User testUser;
     private String userToken;
 
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
+        evtRepository.deleteAll();
         userRepository.deleteAll();
 
         testUser = User.builder()
@@ -120,6 +124,63 @@ class UserControllerTest {
         User updatedUser = userRepository.findById(testUser.getUserId()).orElseThrow();
         assertEquals(23.53, updatedUser.getBmi());
         assertEquals("VEGAN", updatedUser.getDietaryPreferences());
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/me - Fails when user status is PENDING_VERIFICATION")
+    void updateMyProfile_failsWhenPendingVerification() throws Exception {
+        testUser.setStatus(AccountStatus.PENDING_VERIFICATION);
+        userRepository.save(testUser);
+
+        UpdateUserProfileRequest req = UpdateUserProfileRequest.builder()
+                .fullName("Unverified Name")
+                .build();
+
+        mockMvc.perform(put("/api/users/me")
+                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(ErrorCode.ACCOUNT_PENDING_VERIFICATION.getCode()));
+    }
+
+    @Test
+    @DisplayName("POST /api/users/me/password/request-otp - Successfully requests OTP")
+    void requestPasswordChangeOtp_success() throws Exception {
+        mockMvc.perform(post("/api/users/me/password/request-otp")
+                        .header(HttpHeaders.AUTHORIZATION, userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        var tokenOpt = evtRepository.findLatestUnused(testUser, com.vegeai.backend.modules.auth.entity.TokenPurpose.FORGOT_PASSWORD);
+        assertTrue(tokenOpt.isPresent());
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/me/password - Successfully updates password using OTP")
+    void changePassword_withOtpSuccess() throws Exception {
+        // Request OTP first
+        mockMvc.perform(post("/api/users/me/password/request-otp")
+                        .header(HttpHeaders.AUTHORIZATION, userToken))
+                .andExpect(status().isOk());
+
+        var token = evtRepository.findLatestUnused(testUser, com.vegeai.backend.modules.auth.entity.TokenPurpose.FORGOT_PASSWORD).orElseThrow();
+
+        ChangePasswordRequest req = ChangePasswordRequest.builder()
+                .otp(token.getOtpCode())
+                .newPassword("BrandNewPass@456")
+                .confirmNewPassword("BrandNewPass@456")
+                .build();
+
+        mockMvc.perform(put("/api/users/me/password")
+                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        User updatedUser = userRepository.findById(testUser.getUserId()).orElseThrow();
+        assertTrue(passwordEncoder.matches("BrandNewPass@456", updatedUser.getPasswordHash()));
     }
 
     @Test

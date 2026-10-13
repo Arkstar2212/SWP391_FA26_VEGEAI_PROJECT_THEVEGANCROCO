@@ -36,6 +36,10 @@ public class FridgeService {
     @Transactional
     public ConfirmFridgeScanResponse confirmScanItems(String userIdStr, ConfirmFridgeScanRequest request) {
         User user = resolveUser(userIdStr);
+        if (user.getStatus() == com.vegeai.backend.modules.user.entity.AccountStatus.PENDING_VERIFICATION) {
+            throw new AppException(ErrorCode.ACCOUNT_PENDING_VERIFICATION,
+                    "Tài khoản chưa được xác thực email. Vui lòng nhập mã OTP để kích hoạt tài khoản trước khi quản lý tủ lạnh.");
+        }
         UUID userId = user.getUserId();
 
         List<FridgeItem> processedItems = new ArrayList<>();
@@ -148,6 +152,10 @@ public class FridgeService {
     @Transactional
     public FridgeItemResponse addManualItem(String userIdStr, CreateFridgeItemRequest request) {
         User user = resolveUser(userIdStr);
+        if (user.getStatus() == com.vegeai.backend.modules.user.entity.AccountStatus.PENDING_VERIFICATION) {
+            throw new AppException(ErrorCode.ACCOUNT_PENDING_VERIFICATION,
+                    "Tài khoản chưa được xác thực email. Vui lòng nhập mã OTP để kích hoạt tài khoản trước khi quản lý tủ lạnh.");
+        }
         String normName = normalizeName(request.getName());
 
         int shelfLifeDays = (request.getEstimatedShelfLifeDays() != null && request.getEstimatedShelfLifeDays() > 0)

@@ -2,6 +2,10 @@ package com.vegeai.backend.modules.user.service;
 
 import com.vegeai.backend.common.exception.AppException;
 import com.vegeai.backend.common.exception.ErrorCode;
+import com.vegeai.backend.modules.auth.entity.EmailVerificationToken;
+import com.vegeai.backend.modules.auth.entity.TokenPurpose;
+import com.vegeai.backend.modules.auth.repository.EmailVerificationTokenRepository;
+import com.vegeai.backend.modules.auth.service.EmailService;
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
 import com.vegeai.backend.modules.nutrition.service.NutritionCalculator;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
@@ -18,6 +22,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -27,9 +33,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final EmailVerificationTokenRepository evtRepository;
+    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final NutritionCalculator nutritionCalculator;
     private final NutritionService nutritionService;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /**
      * Get the profile of the authenticated user (identified by userId from JWT).
@@ -46,6 +55,11 @@ public class UserService {
     @Transactional
     public UserProfileResponse updateMyProfile(String userIdStr, UpdateUserProfileRequest req) {
         User user = findUserById(userIdStr);
+
+        if (user.getStatus() == AccountStatus.PENDING_VERIFICATION) {
+            throw new AppException(ErrorCode.ACCOUNT_PENDING_VERIFICATION,
+                    "Tài khoản chưa được xác thực email. Vui lòng nhập mã OTP để xác thực tài khoản trước khi cập nhật hồ sơ cá nhân.");
+        }
 
         if (req.getFullName() != null && !req.getFullName().isBlank()) {
             user.setFullName(req.getFullName().trim());
@@ -121,15 +135,12 @@ public class UserService {
 
     /**
      * Change password for the current authenticated user.
+     * Supports either currentPassword verification OR email OTP verification.
      * Revokes all active refresh tokens for enhanced session security.
      */
     @Transactional
     public void changePassword(String userIdStr, ChangePasswordRequest req) {
         User user = findUserById(userIdStr);
-
-        if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPasswordHash())) {
-            throw new AppException(ErrorCode.OLD_PASSWORD_INCORRECT);
-        }
 
         if (!req.getNewPassword().equals(req.getConfirmNewPassword())) {
             throw new AppException(ErrorCode.PASSWORD_MISMATCH);
@@ -139,12 +150,65 @@ public class UserService {
             throw new AppException(ErrorCode.SAME_PASSWORD_ERROR);
         }
 
+        // Verify either via OTP or via currentPassword
+        if (req.getOtp() != null && !req.getOtp().isBlank()) {
+            String otp = req.getOtp().trim();
+            EmailVerificationToken token = evtRepository
+                    .findLatestUnused(user, TokenPurpose.FORGOT_PASSWORD)
+                    .orElseThrow(() -> new AppException(ErrorCode.OTP_INVALID,
+                            "Mã OTP không hợp lệ hoặc không tìm thấy yêu cầu đổi mật khẩu."));
+
+            if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+                token.setUsed(true);
+                evtRepository.save(token);
+                throw new AppException(ErrorCode.OTP_EXPIRED);
+            }
+
+            if (!token.getOtpCode().equals(otp)) {
+                throw new AppException(ErrorCode.OTP_INVALID);
+            }
+
+            token.setUsed(true);
+            evtRepository.save(token);
+        } else if (req.getCurrentPassword() != null && !req.getCurrentPassword().isBlank()) {
+            if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPasswordHash())) {
+                throw new AppException(ErrorCode.OLD_PASSWORD_INCORRECT);
+            }
+        } else {
+            throw new AppException(ErrorCode.INVALID_REQUEST,
+                    "Vui lòng nhập mật khẩu hiện tại hoặc mã OTP để đổi mật khẩu.");
+        }
+
         user.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
         userRepository.save(user);
 
         // Security best practice: Revoke all refresh tokens on password change
         refreshTokenRepository.revokeAllByUser(user);
         log.info("[USER] Password changed and refresh tokens revoked for userId={}", user.getUserId());
+    }
+
+    /**
+     * Request OTP to change password for the authenticated user.
+     */
+    @Transactional
+    public void requestPasswordChangeOtp(String userIdStr) {
+        User user = findUserById(userIdStr);
+        evtRepository.invalidatePreviousTokens(user, TokenPurpose.FORGOT_PASSWORD);
+        int code = 100_000 + SECURE_RANDOM.nextInt(900_000);
+        String otp = String.valueOf(code);
+
+        EmailVerificationToken token = EmailVerificationToken.builder()
+                .user(user)
+                .otpCode(otp)
+                .purpose(TokenPurpose.FORGOT_PASSWORD)
+                .expiresAt(LocalDateTime.now().plusMinutes(3))
+                .createdAt(LocalDateTime.now())
+                .used(false)
+                .build();
+        evtRepository.save(token);
+
+        emailService.sendForgotPasswordOtp(user, otp);
+        log.info("[USER] Password change OTP sent to email={}", user.getEmail());
     }
 
     /**

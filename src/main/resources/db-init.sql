@@ -45,6 +45,40 @@ INSERT INTO users (
     NOW()
 ) ON CONFLICT (email) DO NOTHING;
 
+-- Insert default ACTIVE MEMBER account
+-- Raw Password: Member@123 -> Client Pre-hashed SHA-256: abe2d3ed5419e1a2293c034a6b375a622ff5a60e5ac30f29c461220898ffdd97
+INSERT INTO users (
+    user_id, username, email, password_hash, full_name,
+    role, status, created_at, updated_at
+) VALUES (
+    gen_random_uuid(),
+    'member',
+    'member@vegeai.com',
+    '$2a$12$ExqNZqpItOOtg.qlSGV7H.E7DtOJP7ARFMoGucjt9hWg0xsYvCHZa', -- Member@123
+    'Standard Member',
+    'MEMBER',
+    'ACTIVE',
+    NOW(),
+    NOW()
+) ON CONFLICT (email) DO NOTHING;
+
+-- Insert default PENDING_VERIFICATION MEMBER account
+-- Raw Password: User@123 -> Client Pre-hashed SHA-256: 3e7c19576488862816f13b512cacf3e4ba97dd97243ea0bd6a2ad1642d86ba72
+INSERT INTO users (
+    user_id, username, email, password_hash, full_name,
+    role, status, created_at, updated_at
+) VALUES (
+    gen_random_uuid(),
+    'unverified',
+    'unverified@vegeai.com',
+    '$2a$12$K9dnVbrhnnZuIoX3yW3Y2elVaEit5xAO.LrVIO3q14th2itnJ8s0u', -- User@123
+    'Unverified Member',
+    'MEMBER',
+    'PENDING_VERIFICATION',
+    NOW(),
+    NOW()
+) ON CONFLICT (email) DO NOTHING;
+
 -- ── Email Verification Tokens (OTP) ──────────────────────────
 CREATE TABLE IF NOT EXISTS email_verification_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -100,6 +134,88 @@ CREATE TABLE IF NOT EXISTS fridge_items (
 CREATE INDEX IF NOT EXISTS idx_fridge_user_status ON fridge_items(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_fridge_user_norm_name ON fridge_items(user_id, normalized_name, status);
 CREATE INDEX IF NOT EXISTS idx_fridge_expiry ON fridge_items(expiry_date);
+
+-- ============================================================
+-- Tags & Taxonomy Table (tags)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS tags (
+    tag_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    tag_group VARCHAR(30) NOT NULL,
+    description VARCHAR(255)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tags_code ON tags(code);
+CREATE INDEX IF NOT EXISTS idx_tags_group ON tags(tag_group);
+
+-- ============================================================
+-- Verified Recipes Table (recipes)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS recipes (
+    recipe_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(150) NOT NULL,
+    slug VARCHAR(160) NOT NULL UNIQUE,
+    description VARCHAR(1000),
+    cook_time_minutes INTEGER,
+    prep_time_minutes INTEGER,
+    servings INTEGER,
+    difficulty VARCHAR(20) DEFAULT 'EASY',
+    calories INTEGER,
+    protein_grams DOUBLE PRECISION,
+    carbs_grams DOUBLE PRECISION,
+    fat_grams DOUBLE PRECISION,
+    fiber_grams DOUBLE PRECISION,
+    image_url VARCHAR(500),
+    is_verified BOOLEAN NOT NULL DEFAULT TRUE,
+    author_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PUBLISHED',
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_recipes_slug ON recipes(slug);
+CREATE INDEX IF NOT EXISTS idx_recipes_status ON recipes(status);
+CREATE INDEX IF NOT EXISTS idx_recipes_calories ON recipes(calories);
+CREATE INDEX IF NOT EXISTS idx_recipes_cook_time ON recipes(cook_time_minutes);
+
+-- ============================================================
+-- Recipe Ingredients Table (recipe_ingredients)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS recipe_ingredients (
+    ingredient_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    recipe_id UUID NOT NULL REFERENCES recipes(recipe_id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    normalized_name VARCHAR(100) NOT NULL,
+    amount DOUBLE PRECISION,
+    unit VARCHAR(30),
+    is_optional BOOLEAN NOT NULL DEFAULT FALSE,
+    is_allergen BOOLEAN NOT NULL DEFAULT FALSE,
+    allergen_type VARCHAR(50)
+);
+
+CREATE INDEX IF NOT EXISTS idx_recipe_ing_norm_name ON recipe_ingredients(normalized_name);
+CREATE INDEX IF NOT EXISTS idx_recipe_ing_recipe ON recipe_ingredients(recipe_id);
+
+-- ============================================================
+-- Recipe Tags Mapping Table (recipe_tags)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS recipe_tags (
+    recipe_id UUID NOT NULL REFERENCES recipes(recipe_id) ON DELETE CASCADE,
+    tag_id UUID NOT NULL REFERENCES tags(tag_id) ON DELETE CASCADE,
+    PRIMARY KEY (recipe_id, tag_id)
+);
+
+-- ============================================================
+-- Recipe Cooking Steps Table (recipe_instructions)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS recipe_instructions (
+    recipe_id UUID NOT NULL REFERENCES recipes(recipe_id) ON DELETE CASCADE,
+    step_description VARCHAR(1000) NOT NULL,
+    step_order INTEGER NOT NULL,
+    PRIMARY KEY (recipe_id, step_order)
+);
+
 
 
 
