@@ -26,8 +26,8 @@ public class UpdateUserProfileRequest {
     @Schema(description = "Full name", example = "Tran Van Chay")
     private String fullName;
 
-    @Pattern(regexp = "^$|^[0-9+]{9,15}$", message = "Phone number must be valid (9-15 digits).")
-    @Schema(description = "Phone number", example = "+84901234567")
+    @Pattern(regexp = "^$|^(?:(?:\\+84|84|0)(?:3|5|7|8|9)\\d{8})$", message = "Phone number must be a valid Vietnamese mobile number (+84 or 03/05/07/08/09 followed by 8 digits).")
+    @Schema(description = "Phone number (e.g. 0912345678 or +84912345678)", example = "+84901234567")
     private String phoneNumber;
 
     @Schema(description = "Date of birth", example = "2000-01-15")

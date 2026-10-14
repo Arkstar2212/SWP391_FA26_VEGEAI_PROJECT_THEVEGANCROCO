@@ -145,7 +145,9 @@ public class AuthController {
             - Khi test bằng Postman/cURL không có cookie, có thể gửi qua header `X-Refresh-Token`.
             - Trả về Access Token mới và xoay vòng (rotate) Refresh Token mới.
             """)
-    public ResponseEntity<ApiResponse<AuthResponse>> refresh(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(
+            HttpServletRequest request,
+            HttpServletResponse response) {
         String refreshToken = extractRefreshCookie(request);
         if (refreshToken == null || refreshToken.isBlank()) {
             refreshToken = request.getHeader("X-Refresh-Token");
@@ -155,8 +157,13 @@ public class AuthController {
                     ErrorCode.REFRESH_TOKEN_NOT_FOUND,
                     "Refresh token not found. Please provide via HttpOnly cookie or X-Refresh-Token header.");
         }
-        AuthResponse authResponse = authService.refresh(refreshToken.trim());
-        return ResponseEntity.ok(ApiResponse.success("Token refreshed.", authResponse));
+        AuthService.LoginResult result = authService.refresh(refreshToken.trim());
+
+        // Refresh Token Rotation (RTR): Update client's HttpOnly cookie with the newly rotated token
+        ResponseCookie refreshCookie = buildRefreshCookie(result.refreshTokenValue());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed.", result.authResponse()));
     }
 
     // ── 2.5 Logout ───────────────────────────────────────────────────────────

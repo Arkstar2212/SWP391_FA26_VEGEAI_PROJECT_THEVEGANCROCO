@@ -17,12 +17,12 @@ public class RegisterRequest {
 
     @NotBlank(message = "Username is required.")
     @Size(min = 4, max = 50, message = "Username must be between 4 and 50 characters.")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers and underscores.")
-    @Schema(description = "Insert username (4-50 characters, letters, numbers, underscores)", example = "insert_username_text")
+    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9_]{4,50}$", message = "Username must be between 4 and 50 characters, contain both letters and numbers, with optional underscores.")
+    @Schema(description = "Insert username (4-50 characters, letters, numbers, underscores)", example = "vege_chef1")
     private String username;
 
     @NotBlank(message = "Email is required.")
-    @Email(message = "Invalid email format.")
+    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "Invalid email format. Must follow standard email format (e.g. user@gmail.com, user@outlook.com).")
     @Schema(description = "Insert valid email address to receive OTP", example = "user@email.com")
     private String email;
 
@@ -43,8 +43,8 @@ public class RegisterRequest {
     private String fullName;
 
     // ── Optional fields (can be updated later in profile) ─────────────────
-    @Pattern(regexp = "^$|^0\\d{9}$", message = "Phone number must be a valid Vietnamese number (10 digits starting with 0).")
-    @Schema(description = "Insert 10-digit phone number starting with 0 (optional)", example = "0977498038")
+    @Pattern(regexp = "^$|^(?:(?:\\+84|84|0)(?:3|5|7|8|9)\\d{8})$", message = "Phone number must be a valid Vietnamese mobile number (+84 or 03/05/07/08/09 followed by 8 digits).")
+    @Schema(description = "Insert Vietnamese phone number (e.g. 0912345678 or +84912345678, optional)", example = "0977498038")
     private String phoneNumber;
 
     /** VEGAN, VEGETARIAN, LACTO_OVO, etc. */

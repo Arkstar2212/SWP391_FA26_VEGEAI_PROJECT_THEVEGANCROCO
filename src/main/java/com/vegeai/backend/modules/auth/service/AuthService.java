@@ -198,11 +198,14 @@ public class AuthService {
         // Brute-force check BEFORE hitting DB (checks both username and IP)
         loginRateLimitService.checkAllowed(identifier, clientIp);
 
-        // Lookup by username or email
+        // Lookup by username or email (with anti-timing-attack dummy BCrypt check)
         User user = userRepository.findByUsernameOrEmailIgnoreCase(identifier)
-                .orElseThrow(() -> {
+                .orElseGet(() -> {
+                    try {
+                        passwordEncoder.matches("dummy", "$2a$10$7E7/bH74T.vYw7zN.m5u0.m5u0.m5u0.m5u0.m5u0.m5u0.m5u0.m5u0");
+                    } catch (Exception ignored) {}
                     loginRateLimitService.recordFailure(identifier, clientIp);
-                    return new AppException(ErrorCode.INVALID_CREDENTIALS);
+                    throw new AppException(ErrorCode.INVALID_CREDENTIALS);
                 });
 
         // Password check
@@ -250,12 +253,16 @@ public class AuthService {
     // 2.4 REFRESH TOKEN
     // ──────────────────────────────────────────────────────────────────────────
 
-    @Transactional
-    public AuthResponse refresh(String rawRefreshToken) {
+    @Transactional(noRollbackFor = AppException.class)
+    public LoginResult refresh(String rawRefreshToken) {
         RefreshToken rt = refreshTokenRepository.findByToken(rawRefreshToken)
                 .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         if (rt.isRevoked()) {
+            // Automatic reuse detection (RFC 6749): If an already-revoked refresh token is re-submitted,
+            // the token chain may have been hijacked. Invalidate ALL sessions for this user!
+            log.warn("[AUTH-ALERT] Revoked refresh token reuse detected for user: {}. Revoking all sessions!", rt.getUser().getUsername());
+            refreshTokenRepository.revokeAllByUser(rt.getUser());
             throw new AppException(ErrorCode.REFRESH_TOKEN_REVOKED);
         }
         if (rt.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -264,11 +271,16 @@ public class AuthService {
             throw new AppException(ErrorCode.REFRESH_TOKEN_EXPIRED);
         }
 
+        // Rotate token: invalidate the used refresh token and issue a new one
+        rt.setRevoked(true);
+        refreshTokenRepository.save(rt);
+
         User user = rt.getUser();
         String newAccessToken = jwtService.generateAccessToken(user);
+        RefreshToken newRefreshToken = issueRefreshToken(user);
 
-        log.debug("[AUTH] Token refreshed for: {}", user.getUsername());
-        return AuthResponse.builder()
+        log.debug("[AUTH] Token refreshed and rotated for: {}", user.getUsername());
+        AuthResponse authResponse = AuthResponse.builder()
                 .accessToken(newAccessToken)
                 .tokenType("Bearer")
                 .expiresInSeconds(jwtService.getExpirationMinutes() * 60)
@@ -279,6 +291,8 @@ public class AuthService {
                 .role(user.getRole().name())
                 .status(user.getStatus().name())
                 .build();
+
+        return new LoginResult(authResponse, newRefreshToken.getToken());
     }
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -39,13 +39,14 @@ public class JwtService {
 
     @PostConstruct
     public void init() {
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        if (keyBytes.length < 32) {
-            throw new IllegalStateException("JWT secret must be at least 32 characters (256 bits). " +
-                    "Set app.jwt.secret in environment variables.");
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(secret.getBytes(StandardCharsets.UTF_8));
+            this.signingKey = Keys.hmacShaKeyFor(digest);
+            log.info("JwtService initialized with cooked 256-bit key. Token TTL: {} minutes.", expirationMinutes);
+        } catch (java.security.NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 algorithm not available", ex);
         }
-        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
-        log.info("JwtService initialized. Token TTL: {} minutes.", expirationMinutes);
     }
 
     // ── Token generation ─────────────────────────────────────────────────────
