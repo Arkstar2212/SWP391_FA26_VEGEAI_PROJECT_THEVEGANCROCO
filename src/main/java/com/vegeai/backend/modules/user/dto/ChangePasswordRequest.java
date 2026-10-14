@@ -2,6 +2,7 @@ package com.vegeai.backend.modules.user.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +24,10 @@ public class ChangePasswordRequest {
     private String otp;
 
     @NotBlank(message = "New password is required.")
-    @Size(min = 8, max = 100, message = "New password must be between 8 and 100 characters.")
+    @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,100}$",
+        message = "New password must be between 8 and 100 characters, containing uppercase (A-Z), lowercase (a-z), number (0-9), and special characters."
+    )
     @Schema(description = "New password", example = "NewPass@123456")
     private String newPassword;
 

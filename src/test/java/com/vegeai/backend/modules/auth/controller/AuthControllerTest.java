@@ -56,7 +56,7 @@ class AuthControllerTest {
 
     private RegisterRequest createValidRegisterRequest() {
         RegisterRequest req = new RegisterRequest();
-        req.setUsername("vege_chef");
+        req.setUsername("vege_chef1");
         req.setEmail("chef@vegeai.com");
         req.setPassword(VALID_SHA256);
         req.setConfirmPassword(VALID_SHA256);
@@ -155,6 +155,66 @@ class AuthControllerTest {
                     .andExpect(jsonPath("$.success").value(false))
                     .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_ERROR.getCode()))
                     .andExpect(jsonPath("$.data.email", notNullValue()));
+        }
+
+        @Test
+        @DisplayName("Should fail with 400 when username has only letters (missing numbers)")
+        void registerUsernameOnlyLettersFails() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            req.setUsername("onlyletters");
+
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_ERROR.getCode()))
+                    .andExpect(jsonPath("$.data.username", notNullValue()));
+        }
+
+        @Test
+        @DisplayName("Should fail with 400 when username has only digits (missing letters)")
+        void registerUsernameOnlyDigitsFails() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            req.setUsername("123456");
+
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_ERROR.getCode()))
+                    .andExpect(jsonPath("$.data.username", notNullValue()));
+        }
+
+        @Test
+        @DisplayName("Should fail with 400 when phone number is not valid Vietnam format")
+        void registerInvalidPhoneFails() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            req.setPhoneNumber("0123456789"); // 01 is not a valid modern 10-digit Vietnam mobile prefix
+
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_ERROR.getCode()))
+                    .andExpect(jsonPath("$.data.phoneNumber", notNullValue()));
+        }
+
+        @Test
+        @DisplayName("Should accept valid +84 Vietnam phone number")
+        void registerValidPlus84PhoneSuccess() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            req.setUsername("chef_plus84_1");
+            req.setEmail("plus84@vegeai.com");
+            req.setPhoneNumber("+84912345678");
+
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true));
         }
 
         @Test
@@ -379,7 +439,7 @@ class AuthControllerTest {
         @DisplayName("Should fail login with 400 when password is not 64-char SHA-256 hex")
         void loginPlainTextPasswordFails() throws Exception {
             LoginRequest loginReq = new LoginRequest();
-            loginReq.setUsernameOrEmail("vege_chef");
+            loginReq.setUsernameOrEmail("vege_chef1");
             loginReq.setPassword("PlainPassword123!");
 
             mockMvc.perform(post("/api/auth/login")
@@ -417,7 +477,7 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("Should refresh access token using valid refresh token cookie")
+        @DisplayName("Should refresh access token using valid refresh token cookie and rotate refresh token (RTR)")
         void refreshWithCookieSuccess() throws Exception {
             RegisterRequest req = createValidRegisterRequest();
             mockMvc.perform(post("/api/auth/register")
@@ -439,14 +499,63 @@ class AuthControllerTest {
                     .andExpect(status().isOk())
                     .andReturn();
 
-            var cookie = loginResult.getResponse().getCookie("refreshToken");
-            org.junit.jupiter.api.Assertions.assertNotNull(cookie);
+            var initialCookie = loginResult.getResponse().getCookie("refreshToken");
+            org.junit.jupiter.api.Assertions.assertNotNull(initialCookie);
 
-            mockMvc.perform(post("/api/auth/refresh")
-                            .cookie(cookie))
+            var refreshResult = mockMvc.perform(post("/api/auth/refresh")
+                            .cookie(initialCookie))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data.accessToken", notNullValue()));
+                    .andExpect(jsonPath("$.data.accessToken", notNullValue()))
+                    .andExpect(header().exists("Set-Cookie"))
+                    .andReturn();
+
+            var rotatedCookie = refreshResult.getResponse().getCookie("refreshToken");
+            org.junit.jupiter.api.Assertions.assertNotNull(rotatedCookie);
+            org.junit.jupiter.api.Assertions.assertNotEquals(initialCookie.getValue(), rotatedCookie.getValue(), "Refresh token must be rotated");
+
+            // Verify old token is now marked as revoked in database
+            var oldToken = refreshTokenRepository.findByToken(initialCookie.getValue()).orElseThrow();
+            org.junit.jupiter.api.Assertions.assertTrue(oldToken.isRevoked(), "Old refresh token must be revoked after rotation");
+        }
+
+        @Test
+        @DisplayName("Should detect revoked token reuse and perform family revocation")
+        void refreshRevokedTokenTriggersFamilyRevocation() throws Exception {
+            RegisterRequest req = createValidRegisterRequest();
+            mockMvc.perform(post("/api/auth/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isCreated());
+
+            User user = userRepository.findByEmailIgnoreCase(req.getEmail()).orElseThrow();
+            user.setStatus(AccountStatus.ACTIVE);
+            userRepository.save(user);
+
+            LoginRequest loginReq = new LoginRequest();
+            loginReq.setUsernameOrEmail(req.getUsername());
+            loginReq.setPassword(req.getPassword());
+
+            var loginResult = mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(loginReq)))
+                    .andExpect(status().isOk())
+                    .andReturn();
+
+            var initialCookie = loginResult.getResponse().getCookie("refreshToken");
+
+            // First refresh: rotates token (old token becomes revoked)
+            mockMvc.perform(post("/api/auth/refresh").cookie(initialCookie))
+                    .andExpect(status().isOk());
+
+            // Second refresh with the OLD revoked token: REUSE DETECTED!
+            mockMvc.perform(post("/api/auth/refresh").cookie(initialCookie))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.code").value(ErrorCode.REFRESH_TOKEN_REVOKED.getCode()));
+
+            // Verify all tokens for this user are now revoked
+            var allTokens = refreshTokenRepository.findAll();
+            org.junit.jupiter.api.Assertions.assertTrue(allTokens.stream().allMatch(com.vegeai.backend.modules.auth.entity.RefreshToken::isRevoked));
         }
 
         @Test
