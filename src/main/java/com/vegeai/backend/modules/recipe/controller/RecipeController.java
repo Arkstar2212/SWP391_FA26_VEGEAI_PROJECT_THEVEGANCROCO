@@ -19,7 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/recipes")
 @RequiredArgsConstructor
-@Tag(name = "Recipes & Smart Filter", description = "Khám phá công thức món chay, bộ lọc đa tiêu chí phân tầng (AND/OR, loại trừ dị ứng) và so khớp nguyên liệu tủ lạnh.")
+@Tag(name = "07. Recipes & Smart Filter", description = "Khám phá công thức món chay, bộ lọc đa tiêu chí phân tầng (AND/OR, loại trừ dị ứng) và so khớp nguyên liệu tủ lạnh.")
 public class RecipeController {
 
     private final RecipeService recipeService;

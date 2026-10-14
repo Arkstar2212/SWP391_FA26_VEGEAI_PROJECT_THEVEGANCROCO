@@ -35,7 +35,7 @@ import java.util.UUID;
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@Tag(name = "Admin", description = "Admin-only user governance, system telemetry, and AI Ops monitoring.")
+@Tag(name = "03. Super Admin & Governance", description = "Admin-only user governance, system telemetry, and AI Ops monitoring.")
 @SecurityRequirement(name = "bearerAuth")
 public class AdminController {
 

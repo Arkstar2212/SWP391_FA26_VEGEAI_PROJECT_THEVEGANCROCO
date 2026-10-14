@@ -36,7 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "AI Vision & Fridge Scanner", description = "Endpoints nhận diện nguyên liệu, thẩm định đồ chay và độ tươi từ ảnh chụp tủ lạnh.")
+@Tag(name = "06. AI Vision & Fridge Scanner", description = "Endpoints nhận diện nguyên liệu, thẩm định đồ chay và độ tươi từ ảnh chụp tủ lạnh.")
 public class AiVisionController {
 
     private final GeminiAiService geminiAiService;

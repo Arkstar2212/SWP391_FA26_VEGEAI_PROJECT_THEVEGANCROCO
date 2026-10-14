@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/api/places")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "06. Google Maps & Vegetarian Places", description = "Tìm kiếm đề xuất quán ăn chay, siêu thị chay và cửa hàng thực phẩm chay gần nhất với Google Maps")
+@Tag(name = "10. Google Maps & Vegetarian Places", description = "Tìm kiếm đề xuất quán ăn chay, siêu thị chay và cửa hàng thực phẩm chay gần nhất với Google Maps")
 public class PlaceController {
 
     private final GooglePlacesService googlePlacesService;

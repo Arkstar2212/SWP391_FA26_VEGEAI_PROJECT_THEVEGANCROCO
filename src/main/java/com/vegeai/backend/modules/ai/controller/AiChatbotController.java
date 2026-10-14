@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "AI Copilot & Nutrition Chatbot", description = "AI meal recommendations and nutrition advisory endpoints.")
+@Tag(name = "09. AI Nutrition Copilot", description = "AI meal recommendations and nutrition advisory endpoints.")
 public class AiChatbotController {
 
     private final GeminiAiService geminiAiService;

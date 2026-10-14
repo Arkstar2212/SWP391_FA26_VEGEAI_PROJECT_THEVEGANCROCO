@@ -21,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/fridge")
 @RequiredArgsConstructor
-@Tag(name = "Smart Fridge Inventory", description = "Quản lý kho tủ lạnh thông minh, lưu vết hạn sử dụng, cơ chế Smart Memory qua các lần quét AI và cảnh báo sắp hỏng.")
+@Tag(name = "05. Smart Fridge Inventory", description = "Quản lý kho tủ lạnh thông minh, lưu vết hạn sử dụng, cơ chế Smart Memory qua các lần quét AI và cảnh báo sắp hỏng.")
 @SecurityRequirement(name = "bearerAuth")
 public class FridgeController {
 
