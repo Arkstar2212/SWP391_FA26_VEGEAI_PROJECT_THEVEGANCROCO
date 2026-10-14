@@ -36,6 +36,7 @@ class PlaceControllerTest {
                         .param("radius", "5000")
                         .param("category", "ALL"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data", hasSize(greaterThan(0))))
                 .andExpect(jsonPath("$.data[0].name").isNotEmpty())
@@ -107,6 +108,7 @@ class PlaceControllerTest {
                         .param("lat", "10.7769")
                         .param("lng", "106.7009"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data", hasSize(greaterThan(0))))
                 .andExpect(jsonPath("$.data[0].name").isNotEmpty());
@@ -117,6 +119,7 @@ class PlaceControllerTest {
     void getCategories_returnsAllFour() throws Exception {
         mockMvc.perform(get("/api/places/categories"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data", hasSize(4)))
                 .andExpect(jsonPath("$.data[*].category", containsInAnyOrder("ALL", "RESTAURANT", "SUPERMARKET", "GROCERY_STORE")));

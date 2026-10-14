@@ -51,6 +51,7 @@ public class PlaceController {
         List<PlaceResponse> places = googlePlacesService.findNearbyVegetarianPlaces(lat, lng, radius, category, keyword);
 
         return ResponseEntity.ok(ApiResponse.<List<PlaceResponse>>builder()
+                .success(true)
                 .code(200)
                 .message("Tìm thấy " + places.size() + " địa điểm chay quanh bạn")
                 .data(places)
@@ -80,6 +81,7 @@ public class PlaceController {
         List<PlaceResponse> places = googlePlacesService.searchVegetarianPlaces(query, lat, lng, radius);
 
         return ResponseEntity.ok(ApiResponse.<List<PlaceResponse>>builder()
+                .success(true)
                 .code(200)
                 .message("Tìm thấy " + places.size() + " địa điểm phù hợp với từ khóa '" + query + "'")
                 .data(places)
@@ -95,6 +97,7 @@ public class PlaceController {
         List<CategoryMetadataDto> categories = googlePlacesService.getCategoryMetadata();
 
         return ResponseEntity.ok(ApiResponse.<List<CategoryMetadataDto>>builder()
+                .success(true)
                 .code(200)
                 .message("Lấy danh mục phân loại thành công")
                 .data(categories)
