@@ -52,16 +52,12 @@ class UserControllerTest {
     @Autowired
     private JwtService jwtService;
 
-    @Autowired
-    private com.vegeai.backend.modules.auth.repository.EmailVerificationTokenRepository evtRepository;
-
     private User testUser;
     private String userToken;
 
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
-        evtRepository.deleteAll();
         userRepository.deleteAll();
 
         testUser = User.builder()
@@ -145,29 +141,17 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/users/me/password/request-otp - Successfully requests OTP")
-    void requestPasswordChangeOtp_success() throws Exception {
+    @DisplayName("POST /api/users/me/password/request-otp - Endpoint removed returns 404/405")
+    void requestPasswordChangeOtp_endpointRemoved() throws Exception {
         mockMvc.perform(post("/api/users/me/password/request-otp")
                         .header(HttpHeaders.AUTHORIZATION, userToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-
-        var tokenOpt = evtRepository.findLatestUnused(testUser, com.vegeai.backend.modules.auth.entity.TokenPurpose.FORGOT_PASSWORD);
-        assertTrue(tokenOpt.isPresent());
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("PUT /api/users/me/password - Successfully updates password using OTP")
-    void changePassword_withOtpSuccess() throws Exception {
-        // Request OTP first
-        mockMvc.perform(post("/api/users/me/password/request-otp")
-                        .header(HttpHeaders.AUTHORIZATION, userToken))
-                .andExpect(status().isOk());
-
-        var token = evtRepository.findLatestUnused(testUser, com.vegeai.backend.modules.auth.entity.TokenPurpose.FORGOT_PASSWORD).orElseThrow();
-
+    @DisplayName("PUT /api/users/me/password - Fails with 400 when currentPassword is missing")
+    void changePassword_missingCurrentPassword_fails() throws Exception {
         ChangePasswordRequest req = ChangePasswordRequest.builder()
-                .otp(token.getOtpCode())
                 .newPassword("BrandNewPass@456")
                 .confirmNewPassword("BrandNewPass@456")
                 .build();
@@ -176,11 +160,8 @@ class UserControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-
-        User updatedUser = userRepository.findById(testUser.getUserId()).orElseThrow();
-        assertTrue(passwordEncoder.matches("BrandNewPass@456", updatedUser.getPasswordHash()));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_ERROR.getCode()));
     }
 
     @Test

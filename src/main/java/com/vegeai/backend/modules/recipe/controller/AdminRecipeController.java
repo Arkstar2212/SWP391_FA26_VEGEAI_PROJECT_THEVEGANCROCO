@@ -22,7 +22,7 @@ import java.util.UUID;
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@Tag(name = "Admin Recipe Management", description = "Quản lý kho công thức món ăn chuẩn (Verified Recipes) và bộ từ điển thẻ tag phân loại của Quản trị viên.")
+@Tag(name = "08. Admin Recipe Management", description = "Quản lý kho công thức món ăn chuẩn (Verified Recipes) và bộ từ điển thẻ tag phân loại của Quản trị viên.")
 @SecurityRequirement(name = "bearerAuth")
 public class AdminRecipeController {
 

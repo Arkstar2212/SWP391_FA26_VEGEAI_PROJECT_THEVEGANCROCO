@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/nutrition")
 @RequiredArgsConstructor
-@Tag(name = "Nutrition", description = "Hồ sơ dinh dưỡng, BMI/BMR/TDEE và mục tiêu calo, macro (tính toán tất định, không dùng AI).")
+@Tag(name = "04. Nutrition & Health", description = "Hồ sơ dinh dưỡng, BMI/BMR/TDEE và mục tiêu calo, macro (tính toán tất định, không dùng AI).")
 public class NutritionController {
 
     private final NutritionService nutritionService;

@@ -38,7 +38,7 @@ import java.util.Arrays;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Authentication", description = "Auth endpoints: register, login, token refresh, logout, OTP, password reset.")
+@Tag(name = "01. Authentication", description = "Auth endpoints: register, login, token refresh, logout, OTP, password reset.")
 public class AuthController {
 
     private static final String REFRESH_TOKEN_COOKIE = "refreshToken";
