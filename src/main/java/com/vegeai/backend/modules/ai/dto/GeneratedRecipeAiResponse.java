@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -16,6 +17,9 @@ import java.util.List;
 @AllArgsConstructor
 @Schema(description = "Công thức nấu ăn chi tiết cá nhân hóa do AI tạo ra")
 public class GeneratedRecipeAiResponse {
+
+    @Schema(description = "ID công thức đã lưu vào sổ tay cá nhân (nếu đã lưu)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+    private UUID id;
 
     @Schema(description = "Tên món ăn", example = "Canh cải ngọt nấu nấm bào ngư thanh đạm")
     private String title;

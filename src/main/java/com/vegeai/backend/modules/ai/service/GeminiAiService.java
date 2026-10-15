@@ -15,6 +15,8 @@ import com.vegeai.backend.modules.user.repository.UserRepository;
 import com.vegeai.backend.modules.fridge.entity.FridgeItem;
 import com.vegeai.backend.modules.fridge.entity.FridgeItemStatus;
 import com.vegeai.backend.modules.fridge.repository.FridgeItemRepository;
+import com.vegeai.backend.modules.recipe.entity.CustomRecipe;
+import com.vegeai.backend.modules.recipe.service.CookbookService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,7 @@ public class GeminiAiService {
     private final UserRepository userRepository;
     private final FridgeItemRepository fridgeItemRepository;
     private final ObjectMapper objectMapper;
+    private final CookbookService cookbookService;
 
     @Value("${app.gemini.api-key:}")
     private String apiKey;
@@ -698,12 +701,14 @@ public class GeminiAiService {
                     "Vui lòng thiết lập sở thích ăn chay và hồ sơ dinh dưỡng trước khi tạo công thức nấu ăn.");
         }
 
+        GeneratedRecipeAiResponse recipe = null;
+
         if (apiKey != null && !apiKey.trim().isBlank()) {
             try {
                 GeneratedRecipeAiResponse geminiRecipe = callGeminiGenerateRecipe(req, user);
                 if (geminiRecipe != null) {
                     geminiRecipe.setRequiresProfileSetup(false);
-                    return geminiRecipe;
+                    recipe = geminiRecipe;
                 }
             } catch (Exception ex) {
                 log.warn("[GEMINI-RECIPE] Failed to generate recipe via Gemini API ({}), falling back to deterministic recipe generator.", ex.getMessage());
@@ -712,7 +717,24 @@ public class GeminiAiService {
             log.info("[GEMINI-RECIPE] GEMINI_API_KEY is not set. Operating in intelligent deterministic recipe generation mode.");
         }
 
-        return buildFallbackRecipe(req, user);
+        if (recipe == null) {
+            recipe = buildFallbackRecipe(req, user);
+        }
+        recipe.setRequiresProfileSetup(false);
+
+        // Auto-save generated recipe into user's personal cookbook if autoSave != false (default true)
+        if (req.getAutoSave() == null || Boolean.TRUE.equals(req.getAutoSave())) {
+            try {
+                CustomRecipe saved = cookbookService.saveGeneratedRecipe(user.getUserId(), recipe, req.getContextNotes());
+                recipe.setId(saved.getId());
+                log.info("[GEMINI-RECIPE] Recipe '{}' auto-saved to user's personal cookbook with ID {}",
+                        recipe.getTitle(), saved.getId());
+            } catch (Exception ex) {
+                log.error("[GEMINI-RECIPE] Failed to auto-save recipe to cookbook: {}", ex.getMessage(), ex);
+            }
+        }
+
+        return recipe;
     }
 
     private GeneratedRecipeAiResponse callGeminiGenerateRecipe(GenerateRecipeAiRequest req, User user) throws Exception {
