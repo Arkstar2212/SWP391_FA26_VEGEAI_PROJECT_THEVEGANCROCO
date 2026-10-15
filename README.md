@@ -14,7 +14,7 @@
   <b>Dedicated enterprise backend for the VEGEAI platform, providing robust RESTful APIs, JWT stateless authentication, dual-token invalidation, brute-force protection, and deterministic nutrition calculation.</b>
 </p>
 
-[Swagger UI](http://localhost:8081/swagger-ui.html) • [OpenAPI Docs](http://localhost:8081/api-docs) • [Crow's Foot ERD](docs/erd-diagram-v2.svg) • [📖 Developer Handover & Setup Guide](BACKEND_HANDOVER_AND_SETUP_GUIDE.md)
+[Swagger UI](http://localhost:8081/swagger-ui.html) • [OpenAPI Docs](http://localhost:8081/api-docs) • [Crow's Foot ERD](docs/erd-diagram-v2.svg) • [📖 Developer Handover & Setup Guide](BACKEND_HANDOVER_AND_SETUP_GUIDE.md) • [📋 Flow Logic & Requirements Specification](VEGEAI_BACKEND_FLOW_REQUIREMENTS_GUIDE.md)
 
 ---
 
