@@ -6,6 +6,7 @@ import com.vegeai.backend.modules.community.dto.CommunityDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
 import com.vegeai.backend.modules.community.repository.QuestionRepository;
 import com.vegeai.backend.modules.user.entity.User;
+import com.vegeai.backend.modules.user.entity.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,8 +20,9 @@ public class QuestionService {
     private final QuestionRepository questions;
     private final CommunityAccess access;
 
+    @PreAuthorize("hasRole('MEMBER')")
     public QuestionResponse create(String principal, QuestionInput input) {
-        User user = access.user(principal);
+        User user = questioner(principal);
         String content = input.content().strip();
         if (content.length() < 5) throw new AppException(ErrorCode.VALIDATION_ERROR, "Question must contain at least 5 characters.");
         CommunityQuestion question = new CommunityQuestion();
@@ -41,14 +43,14 @@ public class QuestionService {
         return response(question, false);
     }
 
-    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('MEMBER')") @Transactional(readOnly = true)
     public PageResponse<QuestionResponse> mine(String principal, QuestionStatus status, int page, int size) {
-        return list(status, access.user(principal).getUserId(), null, null, page, size, true);
+        return list(status, questioner(principal).getUserId(), null, null, page, size, true);
     }
 
-    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('MEMBER')") @Transactional(readOnly = true)
     public QuestionResponse mine(String principal, UUID id) {
-        UUID author = access.user(principal).getUserId();
+        UUID author = questioner(principal).getUserId();
         CommunityQuestion question = questions.findById(id).filter(q -> q.getAuthor().getUserId().equals(author))
                 .orElseThrow(() -> new AppException(ErrorCode.QUESTION_NOT_FOUND));
         return response(question, true);
@@ -97,6 +99,12 @@ public class QuestionService {
         access.admin(principal);
         questions.delete(locked(id, version));
         questions.flush();
+    }
+
+    private User questioner(String principal) {
+        User user = access.user(principal);
+        if (user.getRole() != UserRole.MEMBER) throw new AppException(ErrorCode.FORBIDDEN);
+        return user;
     }
 
     private CommunityQuestion locked(UUID id, Long version) {

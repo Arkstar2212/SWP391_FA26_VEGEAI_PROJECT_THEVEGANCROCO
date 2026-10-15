@@ -96,6 +96,7 @@ public class SecurityConfig {
                                          "/api-docs/**", "/v3/api-docs/**").permitAll()
                         // Public content
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/blog/posts", "/api/blog/posts/*").permitAll()
                         // Public nutrition calculator & dropdown options (stateless, nothing saved)
                         .requestMatchers(HttpMethod.POST, "/api/nutrition/calculate").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/nutrition/options").permitAll()
