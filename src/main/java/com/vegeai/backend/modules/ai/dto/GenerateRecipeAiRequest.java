@@ -31,4 +31,7 @@ public class GenerateRecipeAiRequest {
     @Size(max = 500, message = "Ghi chú ngữ cảnh tối đa 500 ký tự.")
     @Schema(description = "Ghi chú tùy biến thêm từ người dùng", example = "Nấu ít dầu mỡ, không dùng ngũ vị tân")
     private String contextNotes;
+
+    @Schema(description = "Tự động lưu vào sổ tay cá nhân của người dùng (mặc định: true)", example = "true")
+    private Boolean autoSave;
 }

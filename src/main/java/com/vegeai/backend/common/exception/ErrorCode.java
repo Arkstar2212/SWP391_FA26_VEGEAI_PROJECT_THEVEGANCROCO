@@ -72,6 +72,7 @@ public enum ErrorCode {
     RECIPE_NOT_FOUND(2101, "Recipe not found.", HttpStatus.NOT_FOUND),
     TAG_NOT_FOUND(2102, "Tag not found.", HttpStatus.NOT_FOUND),
     TAG_ALREADY_EXISTS(2103, "Tag with this code already exists.", HttpStatus.CONFLICT),
+    COOKBOOK_RECIPE_NOT_FOUND(2104, "Cookbook recipe not found or does not belong to you.", HttpStatus.NOT_FOUND),
 
 
     // ── Email ─────────────────────────────────────────────────────────────────
