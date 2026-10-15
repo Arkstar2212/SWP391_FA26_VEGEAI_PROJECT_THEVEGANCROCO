@@ -73,6 +73,10 @@ public enum ErrorCode {
     TAG_NOT_FOUND(2102, "Tag not found.", HttpStatus.NOT_FOUND),
     TAG_ALREADY_EXISTS(2103, "Tag with this code already exists.", HttpStatus.CONFLICT),
     COOKBOOK_RECIPE_NOT_FOUND(2104, "Cookbook recipe not found or does not belong to you.", HttpStatus.NOT_FOUND),
+    QUESTION_NOT_FOUND(2301, "Question not found.", HttpStatus.NOT_FOUND),
+    VIDEO_NOT_FOUND(2401, "Video not found.", HttpStatus.NOT_FOUND),
+    VIDEO_COMMENT_NOT_FOUND(2402, "Video comment not found.", HttpStatus.NOT_FOUND),
+    COMMUNITY_CONFLICT(2501, "Content changed. Reload before updating or deleting.", HttpStatus.CONFLICT),
 
 
     // ── Email ─────────────────────────────────────────────────────────────────
@@ -82,7 +86,13 @@ public enum ErrorCode {
     IMAGE_EMPTY(1701, "Image file must not be empty.", HttpStatus.BAD_REQUEST),
     IMAGE_TOO_LARGE(1702, "Image size exceeds maximum limit of 5MB.", HttpStatus.PAYLOAD_TOO_LARGE),
     UNSUPPORTED_IMAGE_FORMAT(1703, "Unsupported image format. Allowed formats: JPG, PNG, WEBP.", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
-    AI_PROCESSING_ERROR(1704, "Failed to analyze image with AI model.", HttpStatus.INTERNAL_SERVER_ERROR);
+    AI_PROCESSING_ERROR(1704, "Failed to analyze image with AI model.", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_IMAGE(1705, "File không phải ảnh JPG, PNG hoặc WEBP hợp lệ.", HttpStatus.BAD_REQUEST),
+    AI_NOT_CONFIGURED(1706, "AI chưa được cấu hình. Vui lòng liên hệ quản trị viên.", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_AUTH_FAILED(1707, "Gemini từ chối API key hoặc quyền truy cập. Vui lòng liên hệ quản trị viên.", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_QUOTA_EXCEEDED(1708, "Gemini đã hết hạn mức hoặc đang giới hạn tốc độ. Vui lòng thử lại sau.", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_UNAVAILABLE(1709, "Không thể kết nối Gemini hoặc model không khả dụng. Vui lòng thử lại sau.", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_RESPONSE_INVALID(1710, "Gemini chưa trả về kết quả hợp lệ. Vui lòng thử lại.", HttpStatus.BAD_GATEWAY);
 
     private final int code;
     private final String defaultMessage;

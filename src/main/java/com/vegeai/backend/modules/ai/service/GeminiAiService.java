@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
@@ -191,31 +192,19 @@ public class GeminiAiService {
 
         String userContext = contextBuilder.toString().trim();
 
-        // 2. If Gemini API Key is configured, attempt real Gemini call
-        if (apiKey != null && !apiKey.trim().isBlank()) {
-            try {
-                AiChatResponse geminiResult = callGeminiApi(req.getMessage(), userContext, sessionId, isGuest, requiresProfileSetup);
-                if (geminiResult != null) {
-                    return geminiResult;
-                }
-            } catch (Exception ex) {
-                log.warn("[GEMINI-AI] Failed to query Gemini API ({}), falling back to intelligent offline assistant.", ex.getMessage());
-            }
-        } else {
-            log.info("[GEMINI-AI] GEMINI_API_KEY is not set. Operating in intelligent deterministic fallback mode.");
-        }
-
-        // 3. Fallback: Intelligent Deterministic Nutrition Advisory
-        return buildFallbackResponse(req.getMessage(), userContext, sessionId, isGuest, requiresProfileSetup);
+        requireConfiguredKey();
+        try {
+            return callGeminiApi(req, userContext, sessionId, isGuest, requiresProfileSetup);
+        } catch (Exception ex) { throw geminiFailure(ex); }
     }
 
     /**
      * Call Google AI Studio Gemini API via RestClient with JSON schema mode.
      */
-    private AiChatResponse callGeminiApi(String userPrompt, String userContext, String sessionId, boolean isGuest, boolean requiresProfileSetup) throws Exception {
+    private AiChatResponse callGeminiApi(AiChatRequest request, String userContext, String sessionId, boolean isGuest, boolean requiresProfileSetup) throws Exception {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(6));
-        requestFactory.setReadTimeout(Duration.ofSeconds(25));
+        requestFactory.setReadTimeout(Duration.ofSeconds(60));
 
         RestClient restClient = RestClient.builder()
                 .requestFactory(requestFactory)
@@ -223,12 +212,19 @@ public class GeminiAiService {
                 .build();
 
         String combinedPrompt = (userContext != null && !userContext.isBlank())
-                ? userContext + "\n\n[CÂU HỎI CỦA NGƯỜI DÙNG]:\n" + userPrompt
-                : userPrompt;
+                ? userContext + "\n\n[CÂU HỎI CỦA NGƯỜI DÙNG]:\n" + request.getMessage()
+                : request.getMessage();
 
         // Construct Gemini request payload
         Map<String, Object> textPart = Map.of("text", combinedPrompt);
         Map<String, Object> contentObj = Map.of("role", "user", "parts", List.of(textPart));
+        List<Map<String, Object>> contents = new ArrayList<>();
+        if (request.getHistory() != null) {
+            for (AiChatRequest.ChatMessage message : request.getHistory()) {
+                contents.add(Map.of("role", message.getRole(), "parts", List.of(Map.of("text", message.getText()))));
+            }
+        }
+        contents.add(contentObj);
 
         Map<String, Object> systemPart = Map.of("text", SYSTEM_INSTRUCTION);
         Map<String, Object> systemInstructionObj = Map.of("parts", List.of(systemPart));
@@ -239,37 +235,23 @@ public class GeminiAiService {
         );
 
         Map<String, Object> requestBody = Map.of(
-                "contents", List.of(contentObj),
+                "contents", contents,
                 "systemInstruction", systemInstructionObj,
                 "generationConfig", generationConfig
         );
 
-        String endpointUri = String.format("/models/%s:generateContent?key=%s", model, apiKey.trim());
+        String endpointUri = String.format("/models/%s:generateContent", model);
         log.info("[GEMINI-AI] Dispatching prompt to Gemini model '{}' (isGuest: {})...", model, isGuest);
 
         String responseJson = restClient.post()
                 .uri(endpointUri)
+                .header("x-goog-api-key", apiKey.trim())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
                 .body(String.class);
 
-        if (responseJson == null || responseJson.isBlank()) {
-            return null;
-        }
-
-        // Parse Gemini response structure
-        JsonNode rootNode = objectMapper.readTree(responseJson);
-        JsonNode candidatesNode = rootNode.path("candidates");
-        if (candidatesNode.isArray() && !candidatesNode.isEmpty()) {
-            JsonNode textNode = candidatesNode.get(0).path("content").path("parts").get(0).path("text");
-            if (!textNode.isMissingNode()) {
-                String rawText = textNode.asText().trim();
-                return parseStructuredJsonOutput(rawText, sessionId, isGuest, requiresProfileSetup);
-            }
-        }
-
-        return null;
+        return parseStructuredJsonOutput(extractText(responseJson), sessionId, isGuest, requiresProfileSetup);
     }
 
     /**
@@ -290,6 +272,7 @@ public class GeminiAiService {
 
         try {
             GeminiStructuredReply structured = objectMapper.readValue(cleanJson, GeminiStructuredReply.class);
+            if (structured == null || structured.getReply() == null || structured.getReply().isBlank()) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
             return AiChatResponse.builder()
                     .sessionId(sessionId)
                     .reply(structured.getReply())
@@ -298,17 +281,7 @@ public class GeminiAiService {
                     .isGuestTrial(isGuest)
                     .requiresProfileSetup(requiresProfileSetup)
                     .build();
-        } catch (Exception ex) {
-            log.warn("[GEMINI-AI] Output was not strict JSON, using raw response: {}", ex.getMessage());
-            return AiChatResponse.builder()
-                    .sessionId(sessionId)
-                    .reply(cleanJson)
-                    .recommendedRecipes(List.of("Đậu phụ sốt nấm đông cô", "Canh rong biển hạt sen", "Salad bơ rong nho mè rang"))
-                    .timestamp(Instant.now())
-                    .isGuestTrial(isGuest)
-                    .requiresProfileSetup(requiresProfileSetup)
-                    .build();
-        }
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) { throw new AppException(ErrorCode.AI_RESPONSE_INVALID); }
     }
 
     /**
@@ -407,21 +380,12 @@ public class GeminiAiService {
 
         String userContext = buildUserHealthContext(currentUsername, isGuest);
 
-        FridgeScanResponse scanResult = null;
-        if (apiKey != null && !apiKey.trim().isBlank()) {
-            try {
-                byte[] bytes = file.getBytes();
-                scanResult = callGeminiVisionFridgeScan(bytes, contentType, userContext, currentUsername);
-            } catch (Exception ex) {
-                log.warn("[GEMINI-VISION] Vision scan failed ({}). Switching to deterministic fallback.", ex.getMessage());
-            }
-        } else {
-            log.info("[GEMINI-VISION] GEMINI_API_KEY is not set. Using intelligent deterministic fallback scanner.");
-        }
-
-        if (scanResult == null) {
-            scanResult = buildFallbackFridgeScan(currentUsername);
-        }
+        requireConfiguredKey();
+        FridgeScanResponse scanResult;
+        try {
+            String mime = contentType.equalsIgnoreCase("image/jpg") ? "image/jpeg" : contentType.toLowerCase(Locale.ROOT);
+            scanResult = callGeminiVisionFridgeScan(file.getBytes(), mime, userContext, currentUsername);
+        } catch (Exception ex) { throw geminiFailure(ex); }
 
         scanResult.setRequiresProfileSetup(requiresProfileSetup);
         return scanResult;
@@ -433,7 +397,7 @@ public class GeminiAiService {
     private FridgeScanResponse callGeminiVisionFridgeScan(byte[] imageBytes, String mimeType, String userContext, String currentUsername) throws Exception {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(8));
-        requestFactory.setReadTimeout(Duration.ofSeconds(30));
+        requestFactory.setReadTimeout(Duration.ofSeconds(60));
 
         RestClient restClient = RestClient.builder()
                 .requestFactory(requestFactory)
@@ -469,30 +433,18 @@ public class GeminiAiService {
                 "generationConfig", generationConfig
         );
 
-        String endpointUri = String.format("/models/%s:generateContent?key=%s", model, apiKey.trim());
+        String endpointUri = String.format("/models/%s:generateContent", model);
         log.info("[GEMINI-VISION] Dispatching fridge scan image to Gemini model '{}'...", model);
 
         String responseJson = restClient.post()
                 .uri(endpointUri)
+                .header("x-goog-api-key", apiKey.trim())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
                 .body(String.class);
 
-        if (responseJson == null || responseJson.isBlank()) {
-            return null;
-        }
-
-        JsonNode rootNode = objectMapper.readTree(responseJson);
-        JsonNode candidatesNode = rootNode.path("candidates");
-        if (candidatesNode.isArray() && !candidatesNode.isEmpty()) {
-            JsonNode textNode = candidatesNode.get(0).path("content").path("parts").get(0).path("text");
-            if (!textNode.isMissingNode()) {
-                String rawText = textNode.asText().trim();
-                return parseFridgeScanJson(rawText, currentUsername);
-            }
-        }
-        return null;
+        return parseFridgeScanJson(extractText(responseJson), currentUsername);
     }
 
     private FridgeScanResponse parseFridgeScanJson(String rawText, String currentUsername) {
@@ -509,6 +461,26 @@ public class GeminiAiService {
 
         try {
             FridgeScanResponse res = objectMapper.readValue(cleanJson, FridgeScanResponse.class);
+            if (res == null || res.getSummary() == null || res.getSummary().isBlank() || res.getIngredients() == null) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+            boolean nonVegetarian = false;
+            boolean spoiled = false;
+            for (FridgeScanResponse.ScannedIngredient item : res.getIngredients()) {
+                if (item == null || item.getName() == null || item.getName().isBlank()
+                        || item.getCategory() == null || !Set.of("VEGAN", "LACTO_OVO", "NON_VEG").contains(item.getCategory())
+                        || item.getFreshness() == null || !Set.of("FRESH", "USABLE", "SPOILED").contains(item.getFreshness())) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+                item.setVegetarian(!"NON_VEG".equals(item.getCategory()));
+                item.setPreviouslyTracked(false);
+                item.setMatchedExistingFridgeItemId(null);
+                item.setPreviousDaysInFridge(null);
+                nonVegetarian |= !item.isVegetarian();
+                spoiled |= "SPOILED".equals(item.getFreshness());
+            }
+            res.setHasNonVegetarianItem(nonVegetarian);
+            res.setWarnings(new ArrayList<>(res.getWarnings() == null ? List.of() : res.getWarnings()));
+            if (nonVegetarian) res.getWarnings().add("Có nguyên liệu không phải đồ chay; không dùng nguyên liệu này cho món chay.");
+            if (spoiled) res.getWarnings().add("Có nguyên liệu có dấu hiệu hỏng; không sử dụng để nấu ăn.");
+            res.getWarnings().add("Độ tươi và thời hạn chỉ là ước tính từ ảnh, không xác nhận thực phẩm an toàn để ăn.");
+            if (res.getIngredients().isEmpty()) res.setSuggestedRecipes(List.of());
             res.setScannedAt(Instant.now());
             if (res.getIngredients() != null) {
                 res.setTotalItemsDetected(res.getIngredients().size());
@@ -516,10 +488,37 @@ public class GeminiAiService {
                 enrichFridgeMemory(res, currentUsername);
             }
             return res;
-        } catch (Exception ex) {
-            log.warn("[GEMINI-VISION] Failed to parse fridge JSON ({}), building fallback.", ex.getMessage());
-            return buildFallbackFridgeScan(currentUsername);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) { throw new AppException(ErrorCode.AI_RESPONSE_INVALID); }
+    }
+
+    private void requireConfiguredKey() {
+        if (apiKey == null || apiKey.isBlank() || apiKey.startsWith("your_")) throw new AppException(ErrorCode.AI_NOT_CONFIGURED);
+    }
+
+    private AppException geminiFailure(Exception error) {
+        if (error instanceof AppException app) return app;
+        if (error instanceof RestClientResponseException response) {
+            int status = response.getStatusCode().value();
+            log.warn("[GEMINI] Provider request failed (HTTP {}, model={})", status, model);
+            if (status == 401 || status == 403) return new AppException(ErrorCode.AI_AUTH_FAILED);
+            if (status == 429) return new AppException(ErrorCode.AI_QUOTA_EXCEEDED);
         }
+        if (error instanceof com.fasterxml.jackson.core.JsonProcessingException) return new AppException(ErrorCode.AI_RESPONSE_INVALID);
+        log.warn("[GEMINI] Provider processing failed (type={})", error.getClass().getSimpleName());
+        return new AppException(ErrorCode.AI_UNAVAILABLE);
+    }
+
+    private String extractText(String response) throws com.fasterxml.jackson.core.JsonProcessingException {
+        if (response == null || response.isBlank()) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+        JsonNode candidate = objectMapper.readTree(response).path("candidates").path(0);
+        String finish = candidate.path("finishReason").asText();
+        if (!finish.isBlank() && !finish.equals("STOP")) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+        StringBuilder text = new StringBuilder();
+        for (JsonNode part : candidate.path("content").path("parts")) {
+            if (!part.path("thought").asBoolean() && part.path("text").isTextual()) text.append(part.path("text").asText());
+        }
+        if (text.toString().isBlank()) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+        return text.toString().trim();
     }
 
     private void enrichAllergyWarnings(FridgeScanResponse res, String username) {
@@ -701,25 +700,10 @@ public class GeminiAiService {
                     "Vui lòng thiết lập sở thích ăn chay và hồ sơ dinh dưỡng trước khi tạo công thức nấu ăn.");
         }
 
-        GeneratedRecipeAiResponse recipe = null;
-
-        if (apiKey != null && !apiKey.trim().isBlank()) {
-            try {
-                GeneratedRecipeAiResponse geminiRecipe = callGeminiGenerateRecipe(req, user);
-                if (geminiRecipe != null) {
-                    geminiRecipe.setRequiresProfileSetup(false);
-                    recipe = geminiRecipe;
-                }
-            } catch (Exception ex) {
-                log.warn("[GEMINI-RECIPE] Failed to generate recipe via Gemini API ({}), falling back to deterministic recipe generator.", ex.getMessage());
-            }
-        } else {
-            log.info("[GEMINI-RECIPE] GEMINI_API_KEY is not set. Operating in intelligent deterministic recipe generation mode.");
-        }
-
-        if (recipe == null) {
-            recipe = buildFallbackRecipe(req, user);
-        }
+        requireConfiguredKey();
+        GeneratedRecipeAiResponse recipe;
+        try { recipe = callGeminiGenerateRecipe(req, user); }
+        catch (Exception ex) { throw geminiFailure(ex); }
         recipe.setRequiresProfileSetup(false);
 
         // Auto-save generated recipe into user's personal cookbook if autoSave != false (default true)
@@ -740,7 +724,7 @@ public class GeminiAiService {
     private GeneratedRecipeAiResponse callGeminiGenerateRecipe(GenerateRecipeAiRequest req, User user) throws Exception {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(6));
-        requestFactory.setReadTimeout(Duration.ofSeconds(25));
+        requestFactory.setReadTimeout(Duration.ofSeconds(60));
 
         RestClient restClient = RestClient.builder()
                 .requestFactory(requestFactory)
@@ -784,30 +768,18 @@ public class GeminiAiService {
                 "generationConfig", generationConfig
         );
 
-        String endpointUri = String.format("/models/%s:generateContent?key=%s", model, apiKey.trim());
+        String endpointUri = String.format("/models/%s:generateContent", model);
         log.info("[GEMINI-RECIPE] Requesting custom recipe generation from model '{}' for recipe '{}'...", model, req.getRecipeName());
 
         String responseJson = restClient.post()
                 .uri(endpointUri)
+                .header("x-goog-api-key", apiKey.trim())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
                 .body(String.class);
 
-        if (responseJson == null || responseJson.isBlank()) {
-            return null;
-        }
-
-        JsonNode rootNode = objectMapper.readTree(responseJson);
-        JsonNode candidatesNode = rootNode.path("candidates");
-        if (candidatesNode.isArray() && !candidatesNode.isEmpty()) {
-            JsonNode textNode = candidatesNode.get(0).path("content").path("parts").get(0).path("text");
-            if (!textNode.isMissingNode()) {
-                String rawText = textNode.asText().trim();
-                return parseStructuredRecipeOutput(rawText, req, user);
-            }
-        }
-        return null;
+        return parseStructuredRecipeOutput(extractText(responseJson), req, user);
     }
 
     private GeneratedRecipeAiResponse parseStructuredRecipeOutput(String rawText, GenerateRecipeAiRequest req, User user) {
@@ -824,15 +796,15 @@ public class GeminiAiService {
 
         try {
             GeneratedRecipeAiResponse res = objectMapper.readValue(cleanJson, GeneratedRecipeAiResponse.class);
+            if (res == null || res.getTitle() == null || res.getTitle().isBlank()
+                    || res.getIngredients() == null || res.getIngredients().isEmpty()
+                    || res.getInstructions() == null || res.getInstructions().isEmpty()) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
             if (res.getCreatedAt() == null) {
                 res.setCreatedAt(Instant.now());
             }
             res.setRequiresProfileSetup(false);
             return res;
-        } catch (Exception ex) {
-            log.warn("[GEMINI-RECIPE] Failed to parse strict recipe JSON: {}. Using fallback format.", ex.getMessage());
-            return buildFallbackRecipe(req, user);
-        }
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) { throw new AppException(ErrorCode.AI_RESPONSE_INVALID); }
     }
 
     private GeneratedRecipeAiResponse buildFallbackRecipe(GenerateRecipeAiRequest req, User user) {
