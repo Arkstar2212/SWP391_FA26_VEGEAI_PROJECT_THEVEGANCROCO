@@ -1,6 +1,7 @@
 package com.vegeai.backend.modules.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vegeai.backend.support.GeminiIntegrationTestSupport;
 import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.auth.dto.*;
 import com.vegeai.backend.modules.auth.entity.TokenPurpose;
@@ -27,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class AuthControllerTest {
+class AuthControllerTest extends GeminiIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

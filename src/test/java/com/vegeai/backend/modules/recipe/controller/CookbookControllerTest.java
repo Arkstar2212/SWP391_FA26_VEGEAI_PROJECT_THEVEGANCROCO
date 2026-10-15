@@ -1,6 +1,7 @@
 package com.vegeai.backend.modules.recipe.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vegeai.backend.support.GeminiIntegrationTestSupport;
 import com.vegeai.backend.modules.ai.dto.GenerateRecipeAiRequest;
 import com.vegeai.backend.modules.auth.service.JwtService;
 import com.vegeai.backend.modules.recipe.dto.SaveCookbookRecipeRequest;
@@ -21,7 +22,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -36,8 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"app.gemini.api-key=", "GEMINI_API_KEY="})
-class CookbookControllerTest {
+class CookbookControllerTest extends GeminiIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

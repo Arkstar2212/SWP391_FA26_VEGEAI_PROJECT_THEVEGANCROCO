@@ -1,6 +1,7 @@
 package com.vegeai.backend.modules.ai.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vegeai.backend.support.GeminiIntegrationTestSupport;
 import com.vegeai.backend.modules.ai.dto.AiChatRequest;
 import com.vegeai.backend.modules.auth.service.JwtService;
 import com.vegeai.backend.modules.user.entity.AccountStatus;
@@ -10,6 +11,8 @@ import com.vegeai.backend.modules.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,14 +25,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import org.springframework.test.context.TestPropertySource;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"app.gemini.api-key=", "GEMINI_API_KEY="})
-class AiChatbotControllerTest {
+class AiChatbotControllerTest extends GeminiIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -48,6 +49,18 @@ class AiChatbotControllerTest {
 
     private User testUser;
     private String userToken;
+
+    @ParameterizedTest
+    @CsvSource({"fixture:rate-limit,503,1708", "fixture:auth-failed,503,1707", "fixture:invalid-json,502,1710"})
+    void providerFailuresAreNotReportedAsSuccessfulAdvice(String message, int statusCode, int errorCode) throws Exception {
+        mockMvc.perform(post("/api/ai/chat")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(AiChatRequest.builder().message(message).build())))
+                .andExpect(status().is(statusCode))
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(errorCode));
+    }
 
     @BeforeEach
     void setUp() {
