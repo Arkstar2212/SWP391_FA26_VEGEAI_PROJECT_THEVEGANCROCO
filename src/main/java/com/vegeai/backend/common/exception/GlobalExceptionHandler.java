@@ -22,6 +22,11 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUploadTooLarge() {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ApiResponse.error(ErrorCode.IMAGE_TOO_LARGE.getCode(), "Ảnh vượt quá giới hạn 5 MB."));
+    }
 
     // ── AppException (typed application errors) ──────────────────────────────
     @ExceptionHandler(AppException.class)
