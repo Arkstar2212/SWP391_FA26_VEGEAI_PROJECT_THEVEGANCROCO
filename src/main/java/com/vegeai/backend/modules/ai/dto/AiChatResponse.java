@@ -24,4 +24,7 @@ public class AiChatResponse {
     private boolean isGuestTrial;
 
     private Integer remainingGuestQuota;
+
+    @JsonProperty("requiresProfileSetup")
+    private boolean requiresProfileSetup;
 }

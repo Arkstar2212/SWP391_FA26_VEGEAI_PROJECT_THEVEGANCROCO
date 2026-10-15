@@ -22,11 +22,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import org.springframework.test.context.TestPropertySource;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@TestPropertySource(properties = {"app.gemini.api-key=", "GEMINI_API_KEY="})
 class AiChatbotControllerTest {
 
     @Autowired
@@ -120,5 +122,52 @@ class AiChatbotControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("AI Chat: Member with incomplete profile receives requiresProfileSetup=true flag")
+    void chatMemberIncompleteProfile_requiresProfileSetup() throws Exception {
+        User incompleteUser = User.builder()
+                .username("chat_incomplete")
+                .email("chatincomplete@vegeai.com")
+                .passwordHash(passwordEncoder.encode("hashed_pass"))
+                .fullName("Chat Incomplete")
+                .role(UserRole.MEMBER)
+                .status(AccountStatus.ACTIVE)
+                .dietaryPreferences(null) // Incomplete!
+                .build();
+        userRepository.save(incompleteUser);
+        String token = jwtService.generateAccessToken(incompleteUser);
+
+        AiChatRequest request = AiChatRequest.builder()
+                .message("Tôi nên ăn gì hôm nay?")
+                .build();
+
+        mockMvc.perform(post("/api/ai/chat")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.requiresProfileSetup").value(true));
+    }
+
+    @Test
+    @DisplayName("AI Chat: Chat with FRIDGE context screen and custom context data succeeds")
+    void chatWithFridgeContext_success() throws Exception {
+        AiChatRequest request = AiChatRequest.builder()
+                .message("Tủ lạnh tôi có những món này thì nấu được gì?")
+                .contextScreen("FRIDGE")
+                .contextData("Cải ngọt, Nấm bào ngư, Đậu phụ")
+                .build();
+
+        mockMvc.perform(post("/api/ai/chat")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.reply").isNotEmpty())
+                .andExpect(jsonPath("$.data.requiresProfileSetup").value(false));
     }
 }

@@ -89,8 +89,8 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password"
                         ).permitAll()
-                        // AI endpoints (Chatbot & Multimodal Fridge Scanner Vision)
-                        .requestMatchers("/api/ai/chat", "/api/ai/fridge-scan").permitAll()
+                        // AI endpoints (Chatbot, Multimodal Fridge Scanner Vision & Custom Recipe Generator)
+                        .requestMatchers("/api/ai/chat", "/api/ai/fridge-scan", "/api/ai/generate-recipe").permitAll()
                         // Swagger / OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                          "/api-docs/**", "/v3/api-docs/**").permitAll()

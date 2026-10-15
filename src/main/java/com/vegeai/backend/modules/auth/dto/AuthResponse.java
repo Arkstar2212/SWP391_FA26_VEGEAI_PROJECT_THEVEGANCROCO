@@ -26,4 +26,5 @@ public class AuthResponse {
     private final String fullName;
     private final String role;
     private final String status;
+    private final Boolean isProfileCompleted;
 }

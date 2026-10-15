@@ -7,6 +7,7 @@ import com.vegeai.backend.modules.nutrition.service.NutritionCalculator;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
 import com.vegeai.backend.modules.user.dto.PublicUserProfileResponse;
+import com.vegeai.backend.modules.user.dto.QuickProfileRequest;
 import com.vegeai.backend.modules.user.dto.UpdateUserProfileRequest;
 import com.vegeai.backend.modules.user.dto.UserProfileResponse;
 import com.vegeai.backend.modules.user.entity.AccountStatus;
@@ -126,7 +127,49 @@ public class UserService {
     }
 
     /**
-     * Change password for the current authenticated user.
+     * Quick update of dietary preferences and allergies (used in popup modals when user is gated).
+     */
+    @Transactional
+    public UserProfileResponse updateQuickProfile(String userIdStr, QuickProfileRequest req) {
+        User user = findUserById(userIdStr);
+
+        user.setDietaryPreferences(req.getDietaryPreferences().trim());
+
+        if (req.getAllergies() != null) {
+            user.setAllergies(req.getAllergies().trim());
+        }
+
+        boolean heightUpdated = req.getHeightCm() != null;
+        boolean weightUpdated = req.getWeightKg() != null;
+
+        if (heightUpdated) {
+            user.setHeightCm(req.getHeightCm());
+        }
+        if (weightUpdated) {
+            user.setWeightKg(req.getWeightKg());
+        }
+        if (req.getDailyCalorieTarget() != null) {
+            user.setDailyCalorieTarget(req.getDailyCalorieTarget());
+        }
+
+        if (heightUpdated || weightUpdated || (user.getHeightCm() != null && user.getWeightKg() != null)) {
+            Double h = user.getHeightCm();
+            Double w = user.getWeightKg();
+            if (h != null && w != null && h > 0 && w > 0) {
+                user.setBmi(nutritionCalculator.calculateBmi(h, w));
+            }
+        }
+
+        boolean bodyMetricsChanged = heightUpdated || weightUpdated || req.getDailyCalorieTarget() != null;
+        if (bodyMetricsChanged) {
+            nutritionService.syncFromUser(user, req.getDailyCalorieTarget());
+        }
+
+        User saved = userRepository.save(user);
+        log.info("[USER] Quick profile updated for userId={}, dietaryPreferences={}", saved.getUserId(), saved.getDietaryPreferences());
+        return UserProfileResponse.from(saved);
+    }
+
     /**
      * Change password for the current authenticated user.
      * Verifies currentPassword, enforces new password complexity, and

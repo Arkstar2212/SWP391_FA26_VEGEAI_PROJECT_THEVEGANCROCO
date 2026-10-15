@@ -18,4 +18,10 @@ public class AiChatRequest {
     private String message;
 
     private String sessionId;
+
+    @io.swagger.v3.oas.annotations.media.Schema(description = "Màn hình người dùng đang đứng khi gọi AI: FRIDGE, RECIPE, NUTRITION, GENERAL", example = "FRIDGE")
+    private String contextScreen;
+
+    @io.swagger.v3.oas.annotations.media.Schema(description = "Dữ liệu ngữ cảnh bổ sung kèm theo (ví dụ: danh sách nguyên liệu tủ lạnh)", example = "Cải ngọt, Cà chua, Đậu phụ")
+    private String contextData;
 }

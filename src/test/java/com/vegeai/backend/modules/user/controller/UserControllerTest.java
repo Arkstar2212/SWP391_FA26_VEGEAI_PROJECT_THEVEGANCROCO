@@ -5,6 +5,7 @@ import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
 import com.vegeai.backend.modules.auth.service.JwtService;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
+import com.vegeai.backend.modules.user.dto.QuickProfileRequest;
 import com.vegeai.backend.modules.user.dto.UpdateUserProfileRequest;
 import com.vegeai.backend.modules.user.entity.AccountStatus;
 import com.vegeai.backend.modules.user.entity.User;
@@ -235,5 +236,47 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.fullName").value("Test Vegetarian"))
                 .andExpect(jsonPath("$.data.email").doesNotExist())
                 .andExpect(jsonPath("$.data.bmi").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/me/quick-profile - Quick updates dietary preferences & allergies from modal")
+    void updateQuickProfile_success() throws Exception {
+        QuickProfileRequest req = QuickProfileRequest.builder()
+                .dietaryPreferences("VEGAN")
+                .allergies("PEANUTS, SOY")
+                .heightCm(175.0)
+                .weightKg(68.0)
+                .dailyCalorieTarget(2000)
+                .build();
+
+        mockMvc.perform(put("/api/users/me/quick-profile")
+                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.dietaryPreferences").value("VEGAN"))
+                .andExpect(jsonPath("$.data.allergies").value("PEANUTS, SOY"))
+                .andExpect(jsonPath("$.data.bmi").value(closeTo(22.2, 0.1)))
+                .andExpect(jsonPath("$.data.isProfileCompleted").value(true));
+
+        User updated = userRepository.findById(testUser.getUserId()).orElseThrow();
+        assertEquals("VEGAN", updated.getDietaryPreferences());
+        assertTrue(updated.isProfileCompleted());
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/me/quick-profile - Blank dietary preferences returns 400 Bad Request")
+    void updateQuickProfile_blankDietary_badRequest() throws Exception {
+        QuickProfileRequest req = QuickProfileRequest.builder()
+                .dietaryPreferences("")
+                .build();
+
+        mockMvc.perform(put("/api/users/me/quick-profile")
+                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
     }
 }

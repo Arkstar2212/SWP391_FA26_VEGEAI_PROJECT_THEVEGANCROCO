@@ -63,9 +63,10 @@ public enum ErrorCode {
     // ── Fridge & Inventory ──────────────────────────────────────────────────
     FRIDGE_ITEM_NOT_FOUND(1801, "Fridge item not found or does not belong to you.", HttpStatus.NOT_FOUND),
 
-    // ── Nutrition ─────────────────────────────────────────────────────────────
+    // ── Nutrition & Health Profile ───────────────────────────────────────────
     NUTRITION_PROFILE_NOT_FOUND(2001, "Nutrition profile not found. Please set up your nutrition profile first.", HttpStatus.NOT_FOUND),
     NUTRITION_AGE_OUT_OF_RANGE(2002, "Age must be between 13 and 100 to calculate nutrition targets.", HttpStatus.BAD_REQUEST),
+    PROFILE_INCOMPLETE(2004, "Vui lòng thiết lập sở thích ăn chay và hồ sơ dinh dưỡng trước khi thực hiện tính năng này.", HttpStatus.FORBIDDEN),
 
     // ── Recipes & Tags ────────────────────────────────────────────────────────
     RECIPE_NOT_FOUND(2101, "Recipe not found.", HttpStatus.NOT_FOUND),

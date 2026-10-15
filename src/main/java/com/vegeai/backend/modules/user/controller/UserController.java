@@ -3,6 +3,7 @@ package com.vegeai.backend.modules.user.controller;
 import com.vegeai.backend.common.dto.ApiResponse;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
 import com.vegeai.backend.modules.user.dto.PublicUserProfileResponse;
+import com.vegeai.backend.modules.user.dto.QuickProfileRequest;
 import com.vegeai.backend.modules.user.dto.UpdateUserProfileRequest;
 import com.vegeai.backend.modules.user.dto.UserProfileResponse;
 import com.vegeai.backend.modules.user.service.UserService;
@@ -62,6 +63,21 @@ public class UserController {
             @Valid @RequestBody UpdateUserProfileRequest req) {
         UserProfileResponse updated = userService.updateMyProfile(userId, req);
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully.", updated));
+    }
+
+    @PutMapping("/me/quick-profile")
+    @Operation(summary = "Quick setup user dietary & health profile", description = """
+            **Thiết lập nhanh hồ sơ sở thích ăn chay và dị ứng (Quick Profile Modal).**
+            
+            - Dùng để hỗ trợ người dùng hoàn tất hồ sơ ngay tại popup modal mà không làm mất trạng thái phiên quét tủ lạnh hoặc đoạn chat AI.
+            - `dietaryPreferences` là bắt buộc (ví dụ: `VEGAN`, `VEGETARIAN`, `LACTO_OVO`, v.v.).
+            - `allergies`, `heightCm`, `weightKg`, `dailyCalorieTarget` là tùy chọn.
+            """)
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateQuickProfile(
+            @AuthenticationPrincipal String userId,
+            @Valid @RequestBody QuickProfileRequest req) {
+        UserProfileResponse updated = userService.updateQuickProfile(userId, req);
+        return ResponseEntity.ok(ApiResponse.success("Hồ sơ ăn chay & dinh dưỡng đã được thiết lập thành công.", updated));
     }
 
     @PutMapping("/me/password")

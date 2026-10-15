@@ -37,6 +37,10 @@ public class FridgeScanResponse {
     @Schema(description = "Thời điểm quét ảnh")
     private Instant scannedAt;
 
+    @Schema(description = "Cờ báo người dùng cần hoàn tất thiết lập hồ sơ dinh dưỡng & sở thích ăn chay trước khi bấm Chế biến (Cook Now)", example = "false")
+    @com.fasterxml.jackson.annotation.JsonProperty("requiresProfileSetup")
+    private boolean requiresProfileSetup;
+
     @Data
     @Builder
     @NoArgsConstructor

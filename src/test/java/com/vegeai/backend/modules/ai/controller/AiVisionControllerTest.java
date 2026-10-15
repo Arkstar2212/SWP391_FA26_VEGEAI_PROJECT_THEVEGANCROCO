@@ -19,14 +19,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.vegeai.backend.modules.ai.dto.GenerateRecipeAiRequest;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import org.springframework.test.context.TestPropertySource;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.List;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@TestPropertySource(properties = {"app.gemini.api-key=", "GEMINI_API_KEY="})
 class AiVisionControllerTest {
 
     @Autowired
@@ -140,5 +146,70 @@ class AiVisionControllerTest {
                 .andExpect(status().isUnsupportedMediaType())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.code", is(1703)));
+    }
+
+    @Test
+    @DisplayName("FEAT-COOK: Member profile complete -> POST /api/ai/generate-recipe succeeds (200 OK)")
+    void generateRecipe_Success_WhenProfileCompleted() throws Exception {
+        GenerateRecipeAiRequest req = GenerateRecipeAiRequest.builder()
+                .recipeName("Canh cải ngọt nấu nấm bào ngư thanh đạm")
+                .availableIngredients(List.of("Cải ngọt", "Nấm bào ngư"))
+                .contextNotes("Nấu thanh đạm, ít dầu")
+                .build();
+
+        mockMvc.perform(post("/api/ai/generate-recipe")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + memberToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.title", is("Canh cải ngọt nấu nấm bào ngư thanh đạm")))
+                .andExpect(jsonPath("$.data.dietaryType", is("VEGAN")))
+                .andExpect(jsonPath("$.data.ingredients", hasSize(greaterThan(0))))
+                .andExpect(jsonPath("$.data.instructions", hasSize(greaterThan(0))))
+                .andExpect(jsonPath("$.data.requiresProfileSetup", is(false)));
+    }
+
+    @Test
+    @DisplayName("FEAT-COOK: Member profile INCOMPLETE -> POST /api/ai/generate-recipe returns 403 PROFILE_INCOMPLETE")
+    void generateRecipe_IncompleteProfile_ThrowsProfileIncomplete() throws Exception {
+        User incompleteUser = User.builder()
+                .username("incomplete_user")
+                .email("incomplete@vegeai.com")
+                .passwordHash(passwordEncoder.encode("hashed_pass"))
+                .fullName("Incomplete User")
+                .role(UserRole.MEMBER)
+                .status(AccountStatus.ACTIVE)
+                .dietaryPreferences(null) // Profile not completed!
+                .build();
+        userRepository.save(incompleteUser);
+        String incompleteToken = jwtService.generateAccessToken(incompleteUser);
+
+        GenerateRecipeAiRequest req = GenerateRecipeAiRequest.builder()
+                .recipeName("Đậu phụ sốt cà chua")
+                .build();
+
+        mockMvc.perform(post("/api/ai/generate-recipe")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + incompleteToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.code", is(2004)));
+    }
+
+    @Test
+    @DisplayName("FEAT-COOK: Guest calling POST /api/ai/generate-recipe returns 401 UNAUTHORIZED")
+    void generateRecipe_Guest_ReturnsUnauthorized() throws Exception {
+        GenerateRecipeAiRequest req = GenerateRecipeAiRequest.builder()
+                .recipeName("Salad bơ")
+                .build();
+
+        mockMvc.perform(post("/api/ai/generate-recipe")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.code", is(1100)));
     }
 }
