@@ -10,6 +10,8 @@ hoac `PageResponse`: `items`, `page`, `size`, `totalElements`, `totalPages`,
 - Khach: doc cau hoi APPROVED, video PUBLISHED va binh luan cua video cong khai.
 - Thanh vien ACTIVE: gui cau hoi, xem cau hoi cua minh, binh luan va luu video.
 - Admin ACTIVE: duyet/tu choi, tra loi, xoa cau hoi; CRUD video; xoa binh luan vi pham.
+- Admin khong gui cau hoi va khong dung `/api/questions/mine`; cac endpoint
+  gui/xem cau hoi ca nhan chi danh cho MEMBER (admin nhan HTTP 403).
 - Quyen va trang thai tai khoan duoc kiem tra lai tu database. Token cu cua
   tai khoan da bi khoa/ha quyen khong cho phep ghi noi dung hay quan tri.
 - API yeu cau dang nhap dung `Authorization: Bearer <accessToken>` cua he thong

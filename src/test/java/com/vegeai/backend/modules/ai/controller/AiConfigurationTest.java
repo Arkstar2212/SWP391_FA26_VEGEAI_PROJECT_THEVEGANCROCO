@@ -1,9 +1,12 @@
 package com.vegeai.backend.modules.ai.controller;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
@@ -13,6 +16,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -20,6 +24,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AiConfigurationTest {
     @Autowired
     private MockMvc mockMvc;
+
+    @MockBean(answer = org.mockito.Answers.RETURNS_DEEP_STUBS)
+    private StringRedisTemplate redis;
+
+    @BeforeEach
+    void isolateGuestQuota() {
+        when(redis.opsForValue().increment(anyString())).thenReturn(1L);
+    }
 
     @Test
     void chatWithoutKeyReturnsUnavailableInsteadOfFakeAdvice() throws Exception {

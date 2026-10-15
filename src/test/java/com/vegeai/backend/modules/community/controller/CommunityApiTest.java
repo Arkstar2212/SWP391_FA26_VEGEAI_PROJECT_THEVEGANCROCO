@@ -95,6 +95,25 @@ class CommunityApiTest {
         call("POST", "/api/admin/videos", null, videoBody("Guest video", "PUBLISHED"), 401);
     }
 
+    @Test void adminManagesQuestionsButCannotCreateOrAccessMemberQuestionLists() throws Exception {
+        long before = questions.count();
+        call("POST", "/api/questions", adminToken, Map.of("content", "Admin must not create questions"), 403);
+        call("GET", "/api/questions/mine", adminToken, null, 403);
+        call("GET", "/api/questions/mine/" + UUID.randomUUID(), adminToken, null, 403);
+        assertThat(questions.count()).isEqualTo(before);
+        call("GET", "/api/admin/questions", adminToken, null, 200);
+        JsonNode q = approve(question("A member asks and the admin reviews"));
+        call("PUT", "/api/admin/questions/" + id(q) + "/answer", adminToken,
+                Map.of("content", "An official admin answer", "version", version(q)), 200);
+    }
+
+    @Test void promotedMemberCannotCreateQuestionsWithAnOldMemberToken() throws Exception {
+        member.setRole(UserRole.ADMIN);
+        users.saveAndFlush(member);
+        call("POST", "/api/questions", memberToken, Map.of("content", "Must check current database role"), 403);
+        call("GET", "/api/questions/mine", memberToken, null, 403);
+    }
+
     @Test void submissionCannotForgeApprovalOrAuthorAndPendingIsPrivate() throws Exception {
         JsonNode q = call("POST", "/api/questions", memberToken, Map.of("content", "How to cook vegetables?", "status", "APPROVED",
                 "authorId", other.getUserId(), "answer", "forged"), 201).path("data");

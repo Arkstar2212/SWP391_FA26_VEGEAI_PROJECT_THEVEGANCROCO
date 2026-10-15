@@ -73,6 +73,8 @@ public enum ErrorCode {
     TAG_NOT_FOUND(2102, "Tag not found.", HttpStatus.NOT_FOUND),
     TAG_ALREADY_EXISTS(2103, "Tag with this code already exists.", HttpStatus.CONFLICT),
     COOKBOOK_RECIPE_NOT_FOUND(2104, "Cookbook recipe not found or does not belong to you.", HttpStatus.NOT_FOUND),
+    BLOG_POST_NOT_FOUND(2201, "Blog post not found.", HttpStatus.NOT_FOUND),
+    BLOG_STATE_CONFLICT(2202, "This action is not allowed for the current blog post status.", HttpStatus.CONFLICT),
     QUESTION_NOT_FOUND(2301, "Question not found.", HttpStatus.NOT_FOUND),
     VIDEO_NOT_FOUND(2401, "Video not found.", HttpStatus.NOT_FOUND),
     VIDEO_COMMENT_NOT_FOUND(2402, "Video comment not found.", HttpStatus.NOT_FOUND),
