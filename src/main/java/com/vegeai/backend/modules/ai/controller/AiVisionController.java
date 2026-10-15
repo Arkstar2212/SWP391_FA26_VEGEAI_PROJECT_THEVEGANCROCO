@@ -2,7 +2,11 @@ package com.vegeai.backend.modules.ai.controller;
 
 import com.vegeai.backend.common.dto.ApiResponse;
 import com.vegeai.backend.modules.ai.dto.FridgeScanResponse;
+import com.vegeai.backend.modules.ai.dto.GenerateRecipeAiRequest;
+import com.vegeai.backend.modules.ai.dto.GeneratedRecipeAiResponse;
 import com.vegeai.backend.modules.ai.service.GeminiAiService;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -94,5 +98,28 @@ public class AiVisionController {
         FridgeScanResponse scanResult = geminiAiService.scanFridge(image, username, isGuest);
 
         return ResponseEntity.ok(ApiResponse.success("Phân tích ảnh tủ lạnh thành công.", scanResult));
+    }
+
+    @PostMapping("/generate-recipe")
+    @Operation(
+            summary = "Tạo công thức món ăn chi tiết từ nguyên liệu đã quét hoặc gợi ý của AI (Bảo vệ bởi Profile Guard)",
+            description = """
+                    **Tính năng Chế biến món ăn (Cook Now / AI Recipe Generator):**
+                    
+                    - Yêu cầu người dùng đăng nhập và **đã hoàn tất thiết lập sở thích ăn chay trong Profile**.
+                    - Nếu tài khoản chưa thiết lập sở thích ăn chay (profile incomplete), hệ thống sẽ trả về mã lỗi `2004` (`PROFILE_INCOMPLETE`), giúp frontend hiển thị popup Quick Profile modal mà không làm mất phiên quét tủ lạnh hoặc đoạn chat.
+                    - AI sẽ tự động tạo công thức chi tiết, tính toán thời gian, calo và **tuyệt đối loại trừ các thành phần trong hồ sơ dị ứng** của người dùng.
+                    """
+    )
+    public ResponseEntity<ApiResponse<GeneratedRecipeAiResponse>> generateRecipe(
+            @Valid @RequestBody GenerateRecipeAiRequest req) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isGuest = (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken);
+        String username = isGuest ? "Guest" : auth.getName();
+
+        log.info("[AI-RECIPE] Generating custom recipe '{}' for user '{}'", req.getRecipeName(), username);
+        GeneratedRecipeAiResponse recipe = geminiAiService.generateCustomRecipe(req, username, isGuest);
+
+        return ResponseEntity.ok(ApiResponse.success("Tạo công thức món ăn thành công.", recipe));
     }
 }

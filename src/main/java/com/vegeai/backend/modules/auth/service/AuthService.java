@@ -243,6 +243,7 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
                 .status(user.getStatus().name())
+                .isProfileCompleted(user.isProfileCompleted())
                 .build();
 
         log.info("[AUTH] Login successful: username={}", user.getUsername());
@@ -290,6 +291,7 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
                 .status(user.getStatus().name())
+                .isProfileCompleted(user.isProfileCompleted())
                 .build();
 
         return new LoginResult(authResponse, newRefreshToken.getToken());

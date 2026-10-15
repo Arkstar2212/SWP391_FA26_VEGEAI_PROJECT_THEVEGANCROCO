@@ -98,4 +98,12 @@ public class User {
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
+
+    /**
+     * Checks if the user has completed their dietary & nutrition preferences.
+     * A profile is deemed complete if dietaryPreferences is explicitly configured.
+     */
+    public boolean isProfileCompleted() {
+        return this.dietaryPreferences != null && !this.dietaryPreferences.trim().isEmpty();
+    }
 }

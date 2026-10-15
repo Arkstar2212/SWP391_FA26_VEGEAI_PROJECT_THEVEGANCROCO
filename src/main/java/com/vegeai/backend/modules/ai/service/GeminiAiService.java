@@ -8,6 +8,8 @@ import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.ai.dto.AiChatRequest;
 import com.vegeai.backend.modules.ai.dto.AiChatResponse;
 import com.vegeai.backend.modules.ai.dto.FridgeScanResponse;
+import com.vegeai.backend.modules.ai.dto.GenerateRecipeAiRequest;
+import com.vegeai.backend.modules.ai.dto.GeneratedRecipeAiResponse;
 import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.repository.UserRepository;
 import com.vegeai.backend.modules.fridge.entity.FridgeItem;
@@ -116,6 +118,39 @@ public class GeminiAiService {
                }
             """;
 
+    private static final String RECIPE_SYSTEM_INSTRUCTION = """
+            Bạn là Chuyên gia Đầu bếp Chay Thượng hạng và Chuyên gia Dinh dưỡng Thực vật của nền tảng VEGEAI.
+
+            NHIỆM VỤ CỦA BẠN:
+            Tạo công thức nấu ăn chi tiết, chuẩn vị, thanh đạm và giàu dưỡng chất dựa trên yêu cầu món ăn và nguyên liệu sẵn có.
+
+            QUY TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ TUYỆT ĐỐI):
+            1. TUYỆT ĐỐI CHỈ DÙNG NGUYÊN LIỆU THỰC VẬT / ĐỒ CHAY theo đúng trường phái ăn chay của người dùng (VEGAN, VEGETARIAN, LACTO_OVO...). Nghiêm cấm thịt động vật, gia cầm, cá, hải sản.
+            2. CẤM TUYỆT ĐỐI CÁC DỊ NGUYÊN: Nghiêm cấm sử dụng bất kỳ nguyên liệu nào mà người dùng đã khai báo dị ứng.
+            3. HƯỚNG DẪN CỤ THỂ: Các bước chế biến rõ ràng, thời gian nấu, nhiệt độ, định lượng gia vị chính xác.
+            4. ĐỊNH DẠNG ĐẦU RA BẮT BUỘC:
+               Bạn PHẢI trả về ĐÚNG cấu trúc JSON sau (không kèm văn bản ngoài JSON):
+               {
+                 "title": "<Tên món ăn đầy đủ>",
+                 "description": "<Mô tả ngắn gọn hương vị và giá trị dinh dưỡng>",
+                 "cookTimeMinutes": <Số phút nấu, ví dụ 20>,
+                 "difficulty": "<EASY | MEDIUM | HARD>",
+                 "estimatedCalories": <Lượng calo ước tính mỗi khẩu phần, ví dụ 220>,
+                 "dietaryType": "<VEGAN | LACTO_OVO | LACTO | OVO | v.v.>",
+                 "ingredients": [
+                   "<Tên nguyên liệu 1 và định lượng cụ thể>",
+                   "<Tên nguyên liệu 2 và định lượng cụ thể>"
+                 ],
+                 "instructions": [
+                   "Bước 1: <Mô tả bước 1>",
+                   "Bước 2: <Mô tả bước 2>"
+                 ],
+                 "safetyNotes": [
+                   "<Lưu ý an toàn thực phẩm, mẹo nấu ngon hoặc cảnh báo dị ứng>"
+                 ]
+               }
+            """;
+
     /**
      * Process chat prompt and return structured AI response.
      */
@@ -124,13 +159,39 @@ public class GeminiAiService {
                 ? req.getSessionId()
                 : UUID.randomUUID().toString();
 
-        // 1. Build Personalized User Health Context
-        String userContext = buildUserHealthContext(currentUsername, isGuest);
+        Optional<User> userOpt = findUserByIdentifier(currentUsername);
+        boolean requiresProfileSetup = !isGuest && userOpt.isPresent() && !userOpt.get().isProfileCompleted();
+
+        // 1. Build Personalized User Health Context + Screen Context
+        StringBuilder contextBuilder = new StringBuilder();
+        String healthContext = buildUserHealthContext(currentUsername, isGuest);
+        if (healthContext != null && !healthContext.isBlank()) {
+            contextBuilder.append(healthContext).append("\n");
+        }
+
+        if (req.getContextScreen() != null && !req.getContextScreen().isBlank()) {
+            contextBuilder.append("[MÀN HÌNH ĐANG XEM]: ").append(req.getContextScreen().trim()).append("\n");
+            if ("FRIDGE".equalsIgnoreCase(req.getContextScreen().trim()) && userOpt.isPresent()) {
+                List<FridgeItem> activeFridgeItems = fridgeItemRepository
+                        .findByUserIdAndStatusOrderByExpiryDateAsc(userOpt.get().getUserId(), FridgeItemStatus.ACTIVE);
+                if (!activeFridgeItems.isEmpty()) {
+                    contextBuilder.append("[NGUYÊN LIỆU TRONG KHO TỦ LẠNH HIỆN CÓ]: ");
+                    String names = activeFridgeItems.stream().map(FridgeItem::getName).reduce((a, b) -> a + ", " + b).orElse("");
+                    contextBuilder.append(names).append("\n");
+                }
+            }
+        }
+
+        if (req.getContextData() != null && !req.getContextData().isBlank()) {
+            contextBuilder.append("[DỮ LIỆU NGỮ CẢNH BỔ SUNG]: ").append(req.getContextData().trim()).append("\n");
+        }
+
+        String userContext = contextBuilder.toString().trim();
 
         // 2. If Gemini API Key is configured, attempt real Gemini call
         if (apiKey != null && !apiKey.trim().isBlank()) {
             try {
-                AiChatResponse geminiResult = callGeminiApi(req.getMessage(), userContext, sessionId, isGuest);
+                AiChatResponse geminiResult = callGeminiApi(req.getMessage(), userContext, sessionId, isGuest, requiresProfileSetup);
                 if (geminiResult != null) {
                     return geminiResult;
                 }
@@ -142,13 +203,13 @@ public class GeminiAiService {
         }
 
         // 3. Fallback: Intelligent Deterministic Nutrition Advisory
-        return buildFallbackResponse(req.getMessage(), userContext, sessionId, isGuest);
+        return buildFallbackResponse(req.getMessage(), userContext, sessionId, isGuest, requiresProfileSetup);
     }
 
     /**
      * Call Google AI Studio Gemini API via RestClient with JSON schema mode.
      */
-    private AiChatResponse callGeminiApi(String userPrompt, String userContext, String sessionId, boolean isGuest) throws Exception {
+    private AiChatResponse callGeminiApi(String userPrompt, String userContext, String sessionId, boolean isGuest, boolean requiresProfileSetup) throws Exception {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(6));
         requestFactory.setReadTimeout(Duration.ofSeconds(25));
@@ -201,7 +262,7 @@ public class GeminiAiService {
             JsonNode textNode = candidatesNode.get(0).path("content").path("parts").get(0).path("text");
             if (!textNode.isMissingNode()) {
                 String rawText = textNode.asText().trim();
-                return parseStructuredJsonOutput(rawText, sessionId, isGuest);
+                return parseStructuredJsonOutput(rawText, sessionId, isGuest, requiresProfileSetup);
             }
         }
 
@@ -211,7 +272,7 @@ public class GeminiAiService {
     /**
      * Parses structured JSON output from Gemini response text.
      */
-    private AiChatResponse parseStructuredJsonOutput(String rawText, String sessionId, boolean isGuest) {
+    private AiChatResponse parseStructuredJsonOutput(String rawText, String sessionId, boolean isGuest, boolean requiresProfileSetup) {
         // Strip markdown code fences if present (e.g. ```json ... ```)
         String cleanJson = rawText;
         if (cleanJson.startsWith("```json")) {
@@ -232,6 +293,7 @@ public class GeminiAiService {
                     .recommendedRecipes(structured.getRecommendedRecipes() != null ? structured.getRecommendedRecipes() : List.of())
                     .timestamp(Instant.now())
                     .isGuestTrial(isGuest)
+                    .requiresProfileSetup(requiresProfileSetup)
                     .build();
         } catch (Exception ex) {
             log.warn("[GEMINI-AI] Output was not strict JSON, using raw response: {}", ex.getMessage());
@@ -241,6 +303,7 @@ public class GeminiAiService {
                     .recommendedRecipes(List.of("Đậu phụ sốt nấm đông cô", "Canh rong biển hạt sen", "Salad bơ rong nho mè rang"))
                     .timestamp(Instant.now())
                     .isGuestTrial(isGuest)
+                    .requiresProfileSetup(requiresProfileSetup)
                     .build();
         }
     }
@@ -283,7 +346,7 @@ public class GeminiAiService {
     /**
      * Fallback response if Gemini API key is missing or internet is disconnected.
      */
-    private AiChatResponse buildFallbackResponse(String message, String userContext, String sessionId, boolean isGuest) {
+    private AiChatResponse buildFallbackResponse(String message, String userContext, String sessionId, boolean isGuest, boolean requiresProfileSetup) {
         String lower = message.toLowerCase();
         String reply;
         List<String> recipes;
@@ -302,12 +365,17 @@ public class GeminiAiService {
             recipes = List.of("Đậu phụ sốt cà chua nấm đông cô", "Salad bơ rong biển mè rang", "Canh chua chay nấm rơm bông so đũa");
         }
 
+        if (requiresProfileSetup) {
+            reply += "\n\n(💡 Mẹo: Bạn chưa cài đặt hồ sơ ăn chay và dị ứng. Hãy bấm thiết lập hồ sơ để CrocVeggie cá nhân hóa thực đơn chính xác nhất cho bạn!)";
+        }
+
         return AiChatResponse.builder()
                 .sessionId(sessionId)
                 .reply(reply)
                 .recommendedRecipes(recipes)
                 .timestamp(Instant.now())
                 .isGuestTrial(isGuest)
+                .requiresProfileSetup(requiresProfileSetup)
                 .build();
     }
 
@@ -331,15 +399,16 @@ public class GeminiAiService {
             throw new AppException(ErrorCode.UNSUPPORTED_IMAGE_FORMAT);
         }
 
+        Optional<User> userOpt = findUserByIdentifier(currentUsername);
+        boolean requiresProfileSetup = !isGuest && userOpt.isPresent() && !userOpt.get().isProfileCompleted();
+
         String userContext = buildUserHealthContext(currentUsername, isGuest);
 
+        FridgeScanResponse scanResult = null;
         if (apiKey != null && !apiKey.trim().isBlank()) {
             try {
                 byte[] bytes = file.getBytes();
-                FridgeScanResponse geminiResult = callGeminiVisionFridgeScan(bytes, contentType, userContext, currentUsername);
-                if (geminiResult != null) {
-                    return geminiResult;
-                }
+                scanResult = callGeminiVisionFridgeScan(bytes, contentType, userContext, currentUsername);
             } catch (Exception ex) {
                 log.warn("[GEMINI-VISION] Vision scan failed ({}). Switching to deterministic fallback.", ex.getMessage());
             }
@@ -347,7 +416,12 @@ public class GeminiAiService {
             log.info("[GEMINI-VISION] GEMINI_API_KEY is not set. Using intelligent deterministic fallback scanner.");
         }
 
-        return buildFallbackFridgeScan(currentUsername);
+        if (scanResult == null) {
+            scanResult = buildFallbackFridgeScan(currentUsername);
+        }
+
+        scanResult.setRequiresProfileSetup(requiresProfileSetup);
+        return scanResult;
     }
 
     /**
@@ -606,6 +680,184 @@ public class GeminiAiService {
             // Not a UUID, proceed with username/email lookup
         }
         return userRepository.findByUsernameOrEmailIgnoreCase(identifier.trim());
+    }
+
+    /**
+     * Generate customized vegan/vegetarian recipe enforcing profile completion guard.
+     */
+    public GeneratedRecipeAiResponse generateCustomRecipe(GenerateRecipeAiRequest req, String currentUsername, boolean isGuest) {
+        if (isGuest || currentUsername == null || currentUsername.isBlank() || "Guest".equalsIgnoreCase(currentUsername)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED, "Vui lòng đăng nhập để sử dụng tính năng tạo công thức món ăn AI.");
+        }
+
+        User user = findUserByIdentifier(currentUsername)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (!user.isProfileCompleted()) {
+            throw new AppException(ErrorCode.PROFILE_INCOMPLETE,
+                    "Vui lòng thiết lập sở thích ăn chay và hồ sơ dinh dưỡng trước khi tạo công thức nấu ăn.");
+        }
+
+        if (apiKey != null && !apiKey.trim().isBlank()) {
+            try {
+                GeneratedRecipeAiResponse geminiRecipe = callGeminiGenerateRecipe(req, user);
+                if (geminiRecipe != null) {
+                    geminiRecipe.setRequiresProfileSetup(false);
+                    return geminiRecipe;
+                }
+            } catch (Exception ex) {
+                log.warn("[GEMINI-RECIPE] Failed to generate recipe via Gemini API ({}), falling back to deterministic recipe generator.", ex.getMessage());
+            }
+        } else {
+            log.info("[GEMINI-RECIPE] GEMINI_API_KEY is not set. Operating in intelligent deterministic recipe generation mode.");
+        }
+
+        return buildFallbackRecipe(req, user);
+    }
+
+    private GeneratedRecipeAiResponse callGeminiGenerateRecipe(GenerateRecipeAiRequest req, User user) throws Exception {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(Duration.ofSeconds(6));
+        requestFactory.setReadTimeout(Duration.ofSeconds(25));
+
+        RestClient restClient = RestClient.builder()
+                .requestFactory(requestFactory)
+                .baseUrl(baseUrl)
+                .build();
+
+        StringBuilder promptBuilder = new StringBuilder();
+        promptBuilder.append("[YÊU CẦU TẠO CÔNG THỨC MÓN ĂN]:\n");
+        promptBuilder.append("- Tên món ăn: ").append(req.getRecipeName()).append("\n");
+        if (req.getAvailableIngredients() != null && !req.getAvailableIngredients().isEmpty()) {
+            promptBuilder.append("- Nguyên liệu sẵn có trong tủ lạnh: ")
+                    .append(String.join(", ", req.getAvailableIngredients())).append("\n");
+        }
+        if (req.getContextNotes() != null && !req.getContextNotes().isBlank()) {
+            promptBuilder.append("- Ghi chú khẩu vị của người dùng: ").append(req.getContextNotes()).append("\n");
+        }
+        promptBuilder.append("\n[HỒ SƠ DINH DƯỠNG CỦA NGƯỜI DÙNG]:\n");
+        promptBuilder.append("- Chế độ ăn chay: ").append(user.getDietaryPreferences()).append("\n");
+        if (user.getAllergies() != null && !user.getAllergies().isBlank()) {
+            promptBuilder.append("- DỊ ỨNG: ").append(user.getAllergies())
+                    .append(" (BẮT BUỘC: TUYỆT ĐỐI KHÔNG SỬ DỤNG BẤT KỲ NGUYÊN LIỆU NÀO TRÙNG VỚI DỊ ỨNG NÀY!)\n");
+        }
+        if (user.getDailyCalorieTarget() != null) {
+            promptBuilder.append("- Mục tiêu calo mỗi ngày: ").append(user.getDailyCalorieTarget()).append(" kcal\n");
+        }
+
+        Map<String, Object> textPart = Map.of("text", promptBuilder.toString());
+        Map<String, Object> contentObj = Map.of("role", "user", "parts", List.of(textPart));
+
+        Map<String, Object> systemPart = Map.of("text", RECIPE_SYSTEM_INSTRUCTION);
+        Map<String, Object> systemInstructionObj = Map.of("parts", List.of(systemPart));
+
+        Map<String, Object> generationConfig = Map.of(
+                "temperature", 0.7,
+                "responseMimeType", "application/json"
+        );
+
+        Map<String, Object> requestBody = Map.of(
+                "contents", List.of(contentObj),
+                "systemInstruction", systemInstructionObj,
+                "generationConfig", generationConfig
+        );
+
+        String endpointUri = String.format("/models/%s:generateContent?key=%s", model, apiKey.trim());
+        log.info("[GEMINI-RECIPE] Requesting custom recipe generation from model '{}' for recipe '{}'...", model, req.getRecipeName());
+
+        String responseJson = restClient.post()
+                .uri(endpointUri)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
+
+        if (responseJson == null || responseJson.isBlank()) {
+            return null;
+        }
+
+        JsonNode rootNode = objectMapper.readTree(responseJson);
+        JsonNode candidatesNode = rootNode.path("candidates");
+        if (candidatesNode.isArray() && !candidatesNode.isEmpty()) {
+            JsonNode textNode = candidatesNode.get(0).path("content").path("parts").get(0).path("text");
+            if (!textNode.isMissingNode()) {
+                String rawText = textNode.asText().trim();
+                return parseStructuredRecipeOutput(rawText, req, user);
+            }
+        }
+        return null;
+    }
+
+    private GeneratedRecipeAiResponse parseStructuredRecipeOutput(String rawText, GenerateRecipeAiRequest req, User user) {
+        String cleanJson = rawText;
+        if (cleanJson.startsWith("```json")) {
+            cleanJson = cleanJson.substring(7);
+        } else if (cleanJson.startsWith("```")) {
+            cleanJson = cleanJson.substring(3);
+        }
+        if (cleanJson.endsWith("```")) {
+            cleanJson = cleanJson.substring(0, cleanJson.length() - 3);
+        }
+        cleanJson = cleanJson.trim();
+
+        try {
+            GeneratedRecipeAiResponse res = objectMapper.readValue(cleanJson, GeneratedRecipeAiResponse.class);
+            if (res.getCreatedAt() == null) {
+                res.setCreatedAt(Instant.now());
+            }
+            res.setRequiresProfileSetup(false);
+            return res;
+        } catch (Exception ex) {
+            log.warn("[GEMINI-RECIPE] Failed to parse strict recipe JSON: {}. Using fallback format.", ex.getMessage());
+            return buildFallbackRecipe(req, user);
+        }
+    }
+
+    private GeneratedRecipeAiResponse buildFallbackRecipe(GenerateRecipeAiRequest req, User user) {
+        String recipeName = req.getRecipeName();
+        String dietary = user.getDietaryPreferences() != null ? user.getDietaryPreferences() : "VEGAN";
+        List<String> ingredients = new ArrayList<>();
+        if (req.getAvailableIngredients() != null && !req.getAvailableIngredients().isEmpty()) {
+            for (String ing : req.getAvailableIngredients()) {
+                ingredients.add(ing + " (khoảng 150g - 200g, rửa sạch, cắt miếng vừa ăn)");
+            }
+        } else {
+            ingredients.add("Đậu phụ non hoặc nấm tươi (200g)");
+            ingredients.add("Rau xanh tươi theo mùa (200g)");
+        }
+        ingredients.add("Hạt nêm nấm thuần chay (1-2 thìa cà phê)");
+        ingredients.add("Muối hồng hoặc nước tương Tamari (1 thìa cà phê)");
+        ingredients.add("Dầu mè hoặc dầu thực vật nguyên chất (1 thìa canh)");
+        ingredients.add("Tiêu xay và ngò rí/hành boa-rô trang trí (tùy thích)");
+
+        List<String> instructions = List.of(
+                "Bước 1: Rửa sạch các nguyên liệu tươi dưới vòi nước chảy. Thái rau củ và nấm/đậu phụ thành miếng vừa ăn.",
+                "Bước 2: Bắc nồi hoặc chảo lên bếp, làm nóng với 1 thìa dầu mè ở lửa vừa.",
+                "Bước 3: Cho nguyên liệu vào đảo đều trong 3-5 phút cho dậy mùi thơm đặc trưng.",
+                "Bước 4: Thêm nước dùng rau củ hoặc nước lọc, đun sôi liu riu trong 10-15 phút để nguyên liệu chín mềm giữ trọn vị ngọt thanh.",
+                "Bước 5: Nêm hạt nêm nấm và muối hồng cho vừa khẩu vị, rắc tiêu xay và thưởng thức ngay khi món ăn còn nóng hổi."
+        );
+
+        List<String> safetyNotes = new ArrayList<>();
+        safetyNotes.add("Công thức đã được cá nhân hóa theo trường phái " + dietary + ".");
+        if (user.getAllergies() != null && !user.getAllergies().isBlank() && !"NONE".equalsIgnoreCase(user.getAllergies().trim())) {
+            safetyNotes.add("Đảm bảo an toàn dị ứng: Tuyệt đối không chứa " + user.getAllergies() + " theo hồ sơ của bạn.");
+        }
+        safetyNotes.add("Nên dùng trong bữa ăn chính để cơ thể hấp thu trọn vẹn chất xơ và vi chất tự nhiên.");
+
+        return GeneratedRecipeAiResponse.builder()
+                .title(recipeName)
+                .description("Món ăn thanh đạm, thơm ngon, đậm đà dinh dưỡng thực vật, được tối ưu riêng theo chế độ " + dietary + " của bạn.")
+                .cookTimeMinutes(20)
+                .difficulty("EASY")
+                .estimatedCalories(user.getDailyCalorieTarget() != null ? Math.min(450, user.getDailyCalorieTarget() / 4) : 220)
+                .dietaryType(dietary)
+                .ingredients(ingredients)
+                .instructions(instructions)
+                .safetyNotes(safetyNotes)
+                .createdAt(Instant.now())
+                .requiresProfileSetup(false)
+                .build();
     }
 
     @Data

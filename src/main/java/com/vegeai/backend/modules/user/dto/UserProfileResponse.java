@@ -33,6 +33,7 @@ public class UserProfileResponse {
     private final Double weightKg;
     private final Double bmi;
     private final Integer dailyCalorieTarget;
+    private final Boolean isProfileCompleted;
     private final LocalDateTime createdAt;
     private final LocalDateTime lastLogin;
 
@@ -54,6 +55,7 @@ public class UserProfileResponse {
                 .weightKg(user.getWeightKg())
                 .bmi(user.getBmi())
                 .dailyCalorieTarget(user.getDailyCalorieTarget())
+                .isProfileCompleted(user.isProfileCompleted())
                 .createdAt(user.getCreatedAt())
                 .lastLogin(user.getLastLogin())
                 .build();
