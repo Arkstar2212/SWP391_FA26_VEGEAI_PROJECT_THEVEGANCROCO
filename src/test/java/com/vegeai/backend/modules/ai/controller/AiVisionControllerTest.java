@@ -1,6 +1,7 @@
 package com.vegeai.backend.modules.ai.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vegeai.backend.support.GeminiIntegrationTestSupport;
 import com.vegeai.backend.modules.auth.service.JwtService;
 import com.vegeai.backend.modules.user.entity.AccountStatus;
 import com.vegeai.backend.modules.user.entity.User;
@@ -24,7 +25,6 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import org.springframework.test.context.TestPropertySource;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
@@ -32,8 +32,7 @@ import java.util.List;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"app.gemini.api-key=", "GEMINI_API_KEY="})
-class AiVisionControllerTest {
+class AiVisionControllerTest extends GeminiIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
