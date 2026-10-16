@@ -106,6 +106,12 @@ SWP391_FA26_VEGEAI_PROJECT/
 └── README.md
 ```
 
+## 🗺️ Verified Restaurant Map & In-App Notifications
+
+The map-specific `GET /api/places/verified/nearby` and `GET /api/places/verified/search` feeds return only real Google Places results with the `vegetarian_restaurant` type. These additive endpoints do not use the legacy demo fallback and return `503` if Google Places is unavailable or not configured. The Google type is a candidate filter, not proof that the venue has no meat dishes; verify venues before treating them as vegetarian-only.
+
+Authenticated in-app notifications are available through `GET /api/notifications?page=0&size=20`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/{id}/read`, and `PATCH /api/notifications/read-all`. Reads and updates are scoped to the authenticated recipient. Notifications are created for profile/nutrition and fridge/meal-plan activity, blog and question moderation, question answers, and video comments/favorites. Hibernate creates the `user_notifications` table from the entity mapping.
+
 ---
 
 ## 🗄️ Database Architecture & Crow's Foot ERD

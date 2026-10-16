@@ -5,6 +5,7 @@ import com.vegeai.backend.common.exception.*;
 import com.vegeai.backend.modules.community.dto.CommunityDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
 import com.vegeai.backend.modules.community.repository.*;
+import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.user.entity.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -21,6 +22,7 @@ public class VideoService {
     private final VideoCommentRepository comments;
     private final VideoFavoriteRepository favorites;
     private final CommunityAccess access;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public PageResponse<VideoResponse> published(String keyword, String category, int page, int size) {
@@ -88,7 +90,13 @@ public class VideoService {
         comment.setAuthor(author);
         comment.setVideo(video);
         comment.setContent(input.content().strip());
-        return response(comments.saveAndFlush(comment));
+        VideoComment saved = comments.saveAndFlush(comment);
+        // Notify the video owner about another member's comment, but do not notify authors about their own comments.
+        if (!video.getCreatedBy().getUserId().equals(author.getUserId())) {
+            notificationService.notifyUser(video.getCreatedBy(), "VIDEO_COMMENT_ADDED", "Video có bình luận mới",
+                    "Một thành viên vừa bình luận trên video của bạn.", "/videos/" + video.getId());
+        }
+        return response(saved);
     }
 
     public CommentResponse editComment(String principal, UUID videoId, UUID commentId, CommentInput input) {
@@ -133,11 +141,17 @@ public class VideoService {
         User user = access.user(principal);
         CommunityVideo video = locked(id);
         requirePublished(video);
-        if (favorites.findByVideoIdAndUserUserId(id, user.getUserId()).isEmpty()) {
+        boolean addedFavorite = favorites.findByVideoIdAndUserUserId(id, user.getUserId()).isEmpty();
+        if (addedFavorite) {
             VideoFavorite favorite = new VideoFavorite();
             favorite.setUser(user);
             favorite.setVideo(video);
             favorites.saveAndFlush(favorite);
+            // Notify the video owner once for each new favorite, never for duplicate requests or self-favorites.
+            if (!video.getCreatedBy().getUserId().equals(user.getUserId())) {
+                notificationService.notifyUser(video.getCreatedBy(), "VIDEO_FAVORITED", "Video của bạn được lưu",
+                        "Một thành viên đã lưu video của bạn vào danh sách yêu thích.", "/videos/" + video.getId());
+            }
         }
         return new FavoriteResponse(id, true);
     }

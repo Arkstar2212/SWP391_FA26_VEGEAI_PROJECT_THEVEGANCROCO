@@ -24,6 +24,35 @@ public class PlaceController {
 
     private final GooglePlacesService googlePlacesService;
 
+    // This endpoint is dedicated to the map and excludes untyped, unverified, and fallback places.
+    @GetMapping("/verified/nearby")
+    @Operation(
+            summary = "Find Google-classified vegetarian restaurants near coordinates",
+            description = "Returns only real Google Places results whose types include vegetarian_restaurant. No fallback/mock results are returned. The Google type is not a guarantee that a restaurant serves no meat."
+    )
+    public ResponseEntity<ApiResponse<List<PlaceResponse>>> getVerifiedVegetarianRestaurants(
+            @RequestParam("lat") double lat,
+            @RequestParam("lng") double lng,
+            @RequestParam(value = "radius", defaultValue = "5000") int radius) {
+        List<PlaceResponse> places = googlePlacesService.findVerifiedVegetarianRestaurants(lat, lng, radius);
+        return ResponseEntity.ok(ApiResponse.success("Tìm thấy " + places.size() + " quán có nhãn vegetarian_restaurant từ Google.", places));
+    }
+
+    // Search uses the same verified-only policy as nearby markers.
+    @GetMapping("/verified/search")
+    @Operation(
+            summary = "Search Google-classified vegetarian restaurants",
+            description = "Search results are restricted to Google Places results whose types include vegetarian_restaurant. No fallback/mock results are returned."
+    )
+    public ResponseEntity<ApiResponse<List<PlaceResponse>>> searchVerifiedVegetarianRestaurants(
+            @RequestParam("query") String query,
+            @RequestParam(value = "lat", required = false) Double lat,
+            @RequestParam(value = "lng", required = false) Double lng,
+            @RequestParam(value = "radius", defaultValue = "10000") int radius) {
+        List<PlaceResponse> places = googlePlacesService.searchVerifiedVegetarianRestaurants(query, lat, lng, radius);
+        return ResponseEntity.ok(ApiResponse.success("Tìm thấy " + places.size() + " quán có nhãn vegetarian_restaurant từ Google.", places));
+    }
+
     @GetMapping("/nearby")
     @Operation(
             summary = "Tìm kiếm quán ăn, siêu thị và cửa hàng chay quanh tọa độ hiện tại",

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.*;
@@ -18,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@TestPropertySource(properties = "app.google.maps.api-key=")
 @DisplayName("Google Places & Vegetarian Maps Integration Tests")
 class PlaceControllerTest {
 
@@ -123,6 +125,18 @@ class PlaceControllerTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data", hasSize(4)))
                 .andExpect(jsonPath("$.data[*].category", containsInAnyOrder("ALL", "RESTAURANT", "SUPERMARKET", "GROCERY_STORE")));
+    }
+
+    @Test
+    @DisplayName("Verified-only map endpoint never substitutes mock places when Google Places is not configured")
+    void verifiedMapSearchDoesNotUseFallback() throws Exception {
+        mockMvc.perform(get("/api/places/verified/nearby")
+                        .param("lat", "10.7769")
+                        .param("lng", "106.7009")
+                        .param("radius", "5000"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message", containsString("Google Places")));
     }
 
     @Test
