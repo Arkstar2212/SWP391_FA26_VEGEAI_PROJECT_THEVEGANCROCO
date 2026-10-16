@@ -16,6 +16,9 @@ import java.util.UUID;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NutritionProfileResponse {
+    private final String phoneNumber;
+    private final String dietaryPreferences;
+    private final String allergies;
 
     private final UUID nutritionProfileId;
     private final UUID userId;
@@ -33,6 +36,9 @@ public class NutritionProfileResponse {
 
     public static NutritionProfileResponse from(NutritionProfile p, int age, NutritionTargetsResponse targets) {
         return NutritionProfileResponse.builder()
+                .phoneNumber(p.getUser().getPhoneNumber())
+                .dietaryPreferences(p.getUser().getDietaryPreferences())
+                .allergies(p.getUser().getAllergies())
                 .nutritionProfileId(p.getNutritionProfileId())
                 .userId(p.getUser().getUserId())
                 .gender(p.getGender().name())

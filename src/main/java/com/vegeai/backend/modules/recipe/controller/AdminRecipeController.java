@@ -29,6 +29,11 @@ public class AdminRecipeController {
     private final RecipeService recipeService;
     private final TagService tagService;
 
+    @GetMapping("/recipes/{id}")
+    public ResponseEntity<ApiResponse<RecipeDetailResponse>> detail(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(recipeService.getAdminRecipe(id)));
+    }
+
     @PostMapping("/recipes")
     @Operation(summary = "Tạo công thức món ăn mới (Admin)", description = "Thêm một công thức món ăn được kiểm định vào hệ thống, bao gồm đầy đủ định lượng calo, protein, nguyên liệu và các thẻ tag phân loại.")
     public ResponseEntity<ApiResponse<RecipeDetailResponse>> createRecipe(

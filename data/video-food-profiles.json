@@ -1,0 +1,542 @@
+{
+  "beanSprouts": {
+    "fdcId": 169957,
+    "description": "Mung beans, mature seeds, sprouted, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169957/nutrients",
+    "per100g": {
+      "fiberGrams": 1.8,
+      "proteinGrams": 3.04,
+      "fatGrams": 0.18,
+      "calories": 30.0,
+      "carbsGrams": 5.94
+    }
+  },
+  "blackPepper": {
+    "fdcId": 170931,
+    "description": "Spices, pepper, black",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170931/nutrients",
+    "per100g": {
+      "fiberGrams": 25.3,
+      "proteinGrams": 10.39,
+      "fatGrams": 3.26,
+      "calories": 251.0,
+      "carbsGrams": 63.95
+    }
+  },
+  "carrot": {
+    "fdcId": 170393,
+    "description": "Carrots, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170393/nutrients",
+    "per100g": {
+      "fiberGrams": 2.8,
+      "proteinGrams": 0.93,
+      "fatGrams": 0.24,
+      "calories": 41.0,
+      "carbsGrams": 9.58
+    }
+  },
+  "cashew": {
+    "fdcId": 170162,
+    "description": "Nuts, cashew nuts, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170162/nutrients",
+    "per100g": {
+      "fiberGrams": 3.3,
+      "proteinGrams": 18.22,
+      "fatGrams": 43.85,
+      "calories": 553.0,
+      "carbsGrams": 30.19
+    }
+  },
+  "chili": {
+    "fdcId": 170106,
+    "description": "Peppers, hot chili, red, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170106/nutrients",
+    "per100g": {
+      "fiberGrams": 1.5,
+      "proteinGrams": 1.87,
+      "fatGrams": 0.44,
+      "calories": 40.0,
+      "carbsGrams": 8.81
+    }
+  },
+  "coconutCream": {
+    "fdcId": 170580,
+    "description": "Nuts, coconut cream, raw (liquid expressed from grated meat)",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170580/nutrients",
+    "per100g": {
+      "fiberGrams": 2.2,
+      "proteinGrams": 3.63,
+      "fatGrams": 34.68,
+      "calories": 330.0,
+      "carbsGrams": 6.65
+    }
+  },
+  "coconutMilk": {
+    "fdcId": 170172,
+    "description": "Nuts, coconut milk, raw (liquid expressed from grated meat and water)",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170172/nutrients",
+    "per100g": {
+      "fiberGrams": 2.2,
+      "proteinGrams": 2.29,
+      "fatGrams": 23.84,
+      "calories": 230.0,
+      "carbsGrams": 5.54
+    }
+  },
+  "coconutWater": {
+    "fdcId": 170174,
+    "description": "Nuts, coconut water (liquid from coconuts)",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170174/nutrients",
+    "per100g": {
+      "fiberGrams": 1.1,
+      "proteinGrams": 0.72,
+      "fatGrams": 0.2,
+      "calories": 19.0,
+      "carbsGrams": 3.71
+    }
+  },
+  "coriander": {
+    "fdcId": 169997,
+    "description": "Coriander (cilantro) leaves, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169997/nutrients",
+    "per100g": {
+      "fiberGrams": 2.8,
+      "proteinGrams": 2.13,
+      "fatGrams": 0.52,
+      "calories": 23.0,
+      "carbsGrams": 3.67
+    }
+  },
+  "corn": {
+    "fdcId": 169998,
+    "description": "Corn, sweet, yellow, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169998/nutrients",
+    "per100g": {
+      "fiberGrams": 2.0,
+      "proteinGrams": 3.27,
+      "fatGrams": 1.35,
+      "calories": 86.0,
+      "carbsGrams": 18.7
+    }
+  },
+  "garlic": {
+    "fdcId": 169230,
+    "description": "Garlic, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169230/nutrients",
+    "per100g": {
+      "fiberGrams": 2.1,
+      "proteinGrams": 6.36,
+      "fatGrams": 0.5,
+      "calories": 149.0,
+      "carbsGrams": 33.06
+    }
+  },
+  "ginger": {
+    "fdcId": 169231,
+    "description": "Ginger root, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169231/nutrients",
+    "per100g": {
+      "fiberGrams": 2.0,
+      "proteinGrams": 1.82,
+      "fatGrams": 0.75,
+      "calories": 80.0,
+      "carbsGrams": 17.77
+    }
+  },
+  "greenBeans": {
+    "fdcId": 169961,
+    "description": "Beans, snap, green, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169961/nutrients",
+    "per100g": {
+      "fiberGrams": 2.7,
+      "proteinGrams": 1.83,
+      "fatGrams": 0.22,
+      "calories": 31.0,
+      "carbsGrams": 6.97
+    }
+  },
+  "instantNoodlesProxy": {
+    "fdcId": 168905,
+    "description": "Noodles, chinese, chow mein",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/168905/nutrients",
+    "per100g": {
+      "fiberGrams": 6.7,
+      "proteinGrams": 10.88,
+      "fatGrams": 21.24,
+      "calories": 471.0,
+      "carbsGrams": 63.64
+    }
+  },
+  "lemonJuice": {
+    "fdcId": 167747,
+    "description": "Lemon juice, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/167747/nutrients",
+    "per100g": {
+      "fiberGrams": 0.3,
+      "proteinGrams": 0.35,
+      "fatGrams": 0.24,
+      "calories": 22.0,
+      "carbsGrams": 6.9
+    }
+  },
+  "lotusSeed": {
+    "fdcId": 168591,
+    "description": "Seeds, lotus seeds, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/168591/nutrients",
+    "per100g": {
+      "fiberGrams": null,
+      "proteinGrams": 4.13,
+      "fatGrams": 0.53,
+      "calories": 89.0,
+      "carbsGrams": 17.28
+    }
+  },
+  "oil": {
+    "fdcId": 172336,
+    "description": "Oil, canola",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/172336/nutrients",
+    "per100g": {
+      "fiberGrams": 0.0,
+      "proteinGrams": 0.0,
+      "fatGrams": 100.0,
+      "calories": 884.0,
+      "carbsGrams": 0.0
+    }
+  },
+  "onion": {
+    "fdcId": 170000,
+    "description": "Onions, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170000/nutrients",
+    "per100g": {
+      "fiberGrams": 1.7,
+      "proteinGrams": 1.1,
+      "fatGrams": 0.1,
+      "calories": 40.0,
+      "carbsGrams": 9.34
+    }
+  },
+  "orangeJuice": {
+    "fdcId": 169098,
+    "description": "Orange juice, raw (Includes foods for USDA's Food Distribution Program)",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169098/nutrients",
+    "per100g": {
+      "fiberGrams": 0.2,
+      "proteinGrams": 0.7,
+      "fatGrams": 0.2,
+      "calories": 45.0,
+      "carbsGrams": 10.4
+    }
+  },
+  "orangePeel": {
+    "fdcId": 169103,
+    "description": "Orange peel, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169103/nutrients",
+    "per100g": {
+      "fiberGrams": 10.6,
+      "proteinGrams": 1.5,
+      "fatGrams": 0.2,
+      "calories": 97.0,
+      "carbsGrams": 25.0
+    }
+  },
+  "oysterMushroom": {
+    "fdcId": 168580,
+    "description": "Mushrooms, oyster, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/168580/nutrients",
+    "per100g": {
+      "fiberGrams": 2.3,
+      "proteinGrams": 3.31,
+      "fatGrams": 0.41,
+      "calories": 33.0,
+      "carbsGrams": 6.09
+    }
+  },
+  "peach": {
+    "fdcId": 169928,
+    "description": "Peaches, yellow, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169928/nutrients",
+    "per100g": {
+      "fiberGrams": 1.5,
+      "proteinGrams": 0.91,
+      "fatGrams": 0.25,
+      "calories": 39.0,
+      "carbsGrams": 9.54
+    }
+  },
+  "peas": {
+    "fdcId": 170419,
+    "description": "Peas, green, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170419/nutrients",
+    "per100g": {
+      "fiberGrams": 5.7,
+      "proteinGrams": 5.42,
+      "fatGrams": 0.4,
+      "calories": 81.0,
+      "carbsGrams": 14.45
+    }
+  },
+  "pineapple": {
+    "fdcId": 169124,
+    "description": "Pineapple, raw, all varieties",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169124/nutrients",
+    "per100g": {
+      "fiberGrams": 1.4,
+      "proteinGrams": 0.54,
+      "fatGrams": 0.12,
+      "calories": 50.0,
+      "carbsGrams": 13.12
+    }
+  },
+  "plum": {
+    "fdcId": 169949,
+    "description": "Plums, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169949/nutrients",
+    "per100g": {
+      "fiberGrams": 1.4,
+      "proteinGrams": 0.7,
+      "fatGrams": 0.28,
+      "calories": 46.0,
+      "carbsGrams": 11.42
+    }
+  },
+  "redPepper": {
+    "fdcId": 170108,
+    "description": "Peppers, sweet, red, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170108/nutrients",
+    "per100g": {
+      "fiberGrams": 2.1,
+      "proteinGrams": 0.99,
+      "fatGrams": 0.3,
+      "calories": 26.0,
+      "carbsGrams": 6.03
+    }
+  },
+  "riceCooked": {
+    "fdcId": 168935,
+    "description": "Rice, white, long-grain, regular, cooked, unenriched, with salt",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/168935/nutrients",
+    "per100g": {
+      "fiberGrams": 0.4,
+      "proteinGrams": 2.69,
+      "fatGrams": 0.28,
+      "calories": 130.0,
+      "carbsGrams": 28.17
+    }
+  },
+  "riceDry": {
+    "fdcId": 169756,
+    "description": "Rice, white, long-grain, regular, raw, unenriched",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169756/nutrients",
+    "per100g": {
+      "fiberGrams": 1.3,
+      "proteinGrams": 7.13,
+      "fatGrams": 0.66,
+      "calories": 365.0,
+      "carbsGrams": 79.95
+    }
+  },
+  "riceNoodlesProxy": {
+    "fdcId": 169742,
+    "description": "Rice noodles, dry",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169742/nutrients",
+    "per100g": {
+      "fiberGrams": 1.6,
+      "proteinGrams": 5.95,
+      "fatGrams": 0.56,
+      "calories": 364.0,
+      "carbsGrams": 80.18
+    }
+  },
+  "salt": {
+    "fdcId": 173468,
+    "description": "Salt, table",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/173468/nutrients",
+    "per100g": {
+      "fiberGrams": 0.0,
+      "proteinGrams": 0.0,
+      "fatGrams": 0.0,
+      "calories": 0.0,
+      "carbsGrams": 0.0
+    }
+  },
+  "scallion": {
+    "fdcId": 170005,
+    "description": "Onions, spring or scallions (includes tops and bulb), raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170005/nutrients",
+    "per100g": {
+      "fiberGrams": 2.6,
+      "proteinGrams": 1.83,
+      "fatGrams": 0.19,
+      "calories": 32.0,
+      "carbsGrams": 7.34
+    }
+  },
+  "sesame": {
+    "fdcId": 170150,
+    "description": "Seeds, sesame seeds, whole, dried",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170150/nutrients",
+    "per100g": {
+      "fiberGrams": 11.8,
+      "proteinGrams": 17.73,
+      "fatGrams": 49.67,
+      "calories": 573.0,
+      "carbsGrams": 23.45
+    }
+  },
+  "sesameOil": {
+    "fdcId": 171016,
+    "description": "Oil, sesame, salad or cooking",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/171016/nutrients",
+    "per100g": {
+      "fiberGrams": 0.0,
+      "proteinGrams": 0.0,
+      "fatGrams": 100.0,
+      "calories": 884.0,
+      "carbsGrams": 0.0
+    }
+  },
+  "shallot": {
+    "fdcId": 170499,
+    "description": "Shallots, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170499/nutrients",
+    "per100g": {
+      "fiberGrams": 3.2,
+      "proteinGrams": 2.5,
+      "fatGrams": 0.1,
+      "calories": 72.0,
+      "carbsGrams": 16.8
+    }
+  },
+  "shiitake": {
+    "fdcId": 169242,
+    "description": "Mushrooms, shiitake, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169242/nutrients",
+    "per100g": {
+      "fiberGrams": 2.5,
+      "proteinGrams": 2.24,
+      "fatGrams": 0.49,
+      "calories": 34.0,
+      "carbsGrams": 6.79
+    }
+  },
+  "soyMilk": {
+    "fdcId": 175215,
+    "description": "Soymilk (all flavors), unsweetened, with added calcium, vitamins A and D",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/175215/nutrients",
+    "per100g": {
+      "fiberGrams": 0.5,
+      "proteinGrams": 2.86,
+      "fatGrams": 1.61,
+      "calories": 33.0,
+      "carbsGrams": 1.74
+    }
+  },
+  "soySauce": {
+    "fdcId": 174277,
+    "description": "Soy sauce made from soy and wheat (shoyu)",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/174277/nutrients",
+    "per100g": {
+      "fiberGrams": 0.8,
+      "proteinGrams": 8.14,
+      "fatGrams": 0.57,
+      "calories": 53.0,
+      "carbsGrams": 4.93
+    }
+  },
+  "sugar": {
+    "fdcId": 169655,
+    "description": "Sugars, granulated",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169655/nutrients",
+    "per100g": {
+      "fiberGrams": 0.0,
+      "proteinGrams": 0.0,
+      "fatGrams": 0.0,
+      "calories": 387.0,
+      "carbsGrams": 99.98
+    }
+  },
+  "tapiocaProxy": {
+    "fdcId": 169717,
+    "description": "Tapioca, pearl, dry",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/169717/nutrients",
+    "per100g": {
+      "fiberGrams": 0.9,
+      "proteinGrams": 0.19,
+      "fatGrams": 0.02,
+      "calories": 358.0,
+      "carbsGrams": 88.69
+    }
+  },
+  "taroShootsProxy": {
+    "fdcId": 168489,
+    "description": "Taro shoots, raw",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/168489/nutrients",
+    "per100g": {
+      "fiberGrams": null,
+      "proteinGrams": 0.92,
+      "fatGrams": 0.09,
+      "calories": 11.0,
+      "carbsGrams": 2.32
+    }
+  },
+  "tofu": {
+    "fdcId": 172475,
+    "description": "Tofu, raw, firm, prepared with calcium sulfate",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/172475/nutrients",
+    "per100g": {
+      "fiberGrams": 2.3,
+      "proteinGrams": 17.27,
+      "fatGrams": 8.72,
+      "calories": 144.0,
+      "carbsGrams": 2.78
+    }
+  },
+  "tofuFried": {
+    "fdcId": 172451,
+    "description": "Tofu, fried",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/172451/nutrients",
+    "per100g": {
+      "fiberGrams": 3.9,
+      "proteinGrams": 18.82,
+      "fatGrams": 20.18,
+      "calories": 270.0,
+      "carbsGrams": 8.86
+    }
+  },
+  "tomato": {
+    "fdcId": 170457,
+    "description": "Tomatoes, red, ripe, raw, year round average",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/170457/nutrients",
+    "per100g": {
+      "fiberGrams": 1.2,
+      "proteinGrams": 0.88,
+      "fatGrams": 0.2,
+      "calories": 18.0,
+      "carbsGrams": 3.89
+    }
+  },
+  "water": {
+    "fdcId": 173647,
+    "description": "Beverages, water, tap, drinking",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/173647/nutrients",
+    "per100g": {
+      "fiberGrams": 0.0,
+      "proteinGrams": 0.0,
+      "fatGrams": 0.0,
+      "calories": 0.0,
+      "carbsGrams": 0.0
+    }
+  },
+  "yogurt": {
+    "fdcId": 171284,
+    "description": "Yogurt, plain, whole milk",
+    "sourceUrl": "https://fdc.nal.usda.gov/food-details/171284/nutrients",
+    "per100g": {
+      "fiberGrams": 0.0,
+      "proteinGrams": 3.47,
+      "fatGrams": 3.25,
+      "calories": 61.0,
+      "carbsGrams": 4.66
+    }
+  }
+}

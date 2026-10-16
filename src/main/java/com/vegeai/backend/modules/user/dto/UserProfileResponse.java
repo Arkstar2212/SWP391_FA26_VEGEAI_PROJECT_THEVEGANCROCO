@@ -60,4 +60,10 @@ public class UserProfileResponse {
                 .lastLogin(user.getLastLogin())
                 .build();
     }
+
+    public static UserProfileResponse forAdministration(User user) {
+        return UserProfileResponse.builder().userId(user.getUserId()).username(user.getUsername())
+                .email(user.getEmail()).fullName(user.getFullName()).role(user.getRole().name())
+                .status(user.getStatus().name()).createdAt(user.getCreatedAt()).lastLogin(user.getLastLogin()).build();
+    }
 }

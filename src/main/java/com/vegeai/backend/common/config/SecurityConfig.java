@@ -54,6 +54,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class SecurityConfig {
+    private final RoleBoundaryFilter roleBoundaryFilter;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final GuestAiChatRateLimitFilter guestAiChatRateLimitFilter;
@@ -120,7 +121,8 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler())
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(guestAiChatRateLimitFilter, JwtAuthenticationFilter.class)
+                .addFilterAfter(roleBoundaryFilter, JwtAuthenticationFilter.class)
+                .addFilterAfter(guestAiChatRateLimitFilter, RoleBoundaryFilter.class)
                 .build();
     }
 

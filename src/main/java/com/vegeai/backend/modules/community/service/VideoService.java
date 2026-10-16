@@ -68,6 +68,7 @@ public class VideoService {
         access.revision(video.getVersion(), version);
         comments.deleteAllForVideo(id);
         favorites.deleteAllForVideo(id);
+        videos.unlinkRecipes(id);
         videos.delete(video);
         videos.flush();
     }

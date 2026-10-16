@@ -79,6 +79,9 @@ public class NutritionService {
         profile.setActivityLevel(req.getActivityLevel());
         profile.setGoal(req.getGoal());
         profile.setCustomDailyCalories(req.getCustomDailyCalories());
+        if (req.getPhoneNumber() != null) user.setPhoneNumber(req.getPhoneNumber().trim());
+        if (req.getDietaryPreferences() != null) user.setDietaryPreferences(req.getDietaryPreferences().trim());
+        if (req.getAllergies() != null) user.setAllergies(req.getAllergies().trim().isEmpty() ? "NONE" : req.getAllergies().trim());
 
         int age = ageOf(profile.getDateOfBirth());
         NutritionCalculation calc = calculate(profile, age);
