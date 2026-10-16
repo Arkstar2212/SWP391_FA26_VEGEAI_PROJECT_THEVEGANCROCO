@@ -3,7 +3,6 @@ package com.vegeai.backend.modules.user.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,18 +17,17 @@ import lombok.Setter;
 public class ChangePasswordRequest {
 
     @NotBlank(message = "Current password is required.")
-    @Schema(description = "Current password", example = "OldPass@123")
+    @Pattern(regexp = "^[A-Fa-f0-9]{64}$", message = "Current password must be a 64-character SHA-256 hex string.")
+    @Schema(description = "Current password - client-side 64-character SHA-256 pre-hashed hex string", example = "aca155e1ad5b7acc67a56e1e04284b914758da42cedc8f05df939811a5b8e093")
     private String currentPassword;
 
     @NotBlank(message = "New password is required.")
-    @Pattern(
-        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,100}$",
-        message = "New password must be between 8 and 100 characters, containing uppercase (A-Z), lowercase (a-z), number (0-9), and special characters."
-    )
-    @Schema(description = "New password", example = "NewPass@123456")
+    @Pattern(regexp = "^[A-Fa-f0-9]{64}$", message = "New password must be a 64-character SHA-256 hex string.")
+    @Schema(description = "New password - client-side 64-character SHA-256 pre-hashed hex string", example = "aca155e1ad5b7acc67a56e1e04284b914758da42cedc8f05df939811a5b8e093")
     private String newPassword;
 
     @NotBlank(message = "Please confirm your new password.")
-    @Schema(description = "Confirmation of new password", example = "NewPass@123456")
+    @Pattern(regexp = "^[A-Fa-f0-9]{64}$", message = "Confirm new password must be a 64-character SHA-256 hex string.")
+    @Schema(description = "Confirmation of new password - matching 64-character SHA-256 pre-hashed hex string", example = "aca155e1ad5b7acc67a56e1e04284b914758da42cedc8f05df939811a5b8e093")
     private String confirmNewPassword;
 }
