@@ -42,6 +42,8 @@ public class SwaggerPasswordHashingTransformer {
 
             async function vegeaiHashPasswords(req) {
               if (typeof req.body !== 'string' || !req.body.trim().startsWith('{')) return req;
+              // Legacy change-password endpoint still takes plain-text passwords.
+              try { if (/\\/api\\/users\\/me\\/password$/.test(new URL(req.url, location.href).pathname)) return req; } catch (e) { return req; }
               let body;
               try { body = JSON.parse(req.body); } catch (e) { return req; }
               let changed = false;
