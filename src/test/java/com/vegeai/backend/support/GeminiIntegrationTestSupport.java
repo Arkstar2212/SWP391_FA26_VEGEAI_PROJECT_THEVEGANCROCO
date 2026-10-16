@@ -14,6 +14,7 @@ import java.util.Map;
 
 /** Runs the real AI service against a loopback provider, without credentials or Google calls. */
 public abstract class GeminiIntegrationTestSupport {
+    protected static volatile JsonNode lastRequest;
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpServer SERVER = startServer();
 
@@ -44,6 +45,7 @@ public abstract class GeminiIntegrationTestSupport {
                 return;
             }
             JsonNode request = MAPPER.readTree(exchange.getRequestBody());
+            lastRequest = request;
             JsonNode contents = request.path("contents");
             JsonNode parts = contents.path(contents.size() - 1).path("parts");
             String prompt = parts.path(0).path("text").asText();
@@ -53,7 +55,13 @@ public abstract class GeminiIntegrationTestSupport {
                 return;
             }
             Object reply;
-            if (parts.path(1).has("inlineData")) {
+            if (prompt.contains("\"task\":\"VEGEAI_MEAL_PLAN\"")) {
+                JsonNode data = MAPPER.readTree(prompt);
+                List<String> ids = new java.util.ArrayList<>();
+                for (JsonNode recipe : data.path("recipes")) ids.add(recipe.path("recipeId").asText());
+                if (prompt.contains("fixture:rank-invalid")) ids = List.of(java.util.UUID.randomUUID().toString());
+                reply = Map.of("recipeIds", ids);
+            } else if (parts.path(1).has("inlineData")) {
                 reply = Map.of("summary", "Test vegetables", "totalItemsDetected", 1,
                         "hasNonVegetarianItem", false,
                         "ingredients", List.of(Map.of("name", "Nấm bào ngư", "category", "VEGAN",
@@ -65,7 +73,7 @@ public abstract class GeminiIntegrationTestSupport {
                         "instructions", List.of("Wash vegetables", "Cook in vegetable broth"),
                         "cookTimeMinutes", 20, "safetyNotes", List.of());
             } else {
-                reply = Map.of("reply", "Test plant-based advice", "recommendedRecipes", List.of("Canh rau"));
+                reply = Map.of("inScope", !prompt.contains("fixture:out-of-scope"), "reply", "Test plant-based advice", "recommendedRecipes", List.of("Canh rau"));
             }
             String text = prompt.contains("fixture:invalid-json") ? "not-json" : MAPPER.writeValueAsString(reply);
             send(exchange, 200, Map.of("candidates", List.of(Map.of("finishReason", "STOP",

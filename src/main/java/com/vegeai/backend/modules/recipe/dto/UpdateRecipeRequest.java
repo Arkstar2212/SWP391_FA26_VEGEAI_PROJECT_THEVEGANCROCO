@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -66,4 +67,6 @@ public class UpdateRecipeRequest {
 
     @Schema(description = "Danh sách mã các thẻ tag mới")
     private List<String> tagCodes;
+    @jakarta.validation.constraints.Size(max = 10)
+    private List<@jakarta.validation.constraints.NotNull UUID> videoIds;
 }

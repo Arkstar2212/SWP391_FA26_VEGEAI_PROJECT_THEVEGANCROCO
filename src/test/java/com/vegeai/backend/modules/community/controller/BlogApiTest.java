@@ -197,6 +197,32 @@ class BlogApiTest {
         review(post, "APPROVE", "", 409);
     }
 
+    @Test void adminDraftPublishesImmediatelyAndCanEditOwnPublishedPost() throws Exception {
+        JsonNode post = call("POST", "/api/blog/my-posts", adminToken, input("Admin kitchen story"), 201).path("data");
+        assertThat(post.path("status").asText()).isEqualTo("DRAFT");
+        call("GET", "/api/blog/posts/" + id(post), null, null, 404);
+        post = call("POST", own(post) + "/submit", adminToken, Map.of("version", version(post)), 200).path("data");
+        assertThat(post.path("status").asText()).isEqualTo("PUBLISHED");
+        assertThat(post.path("publishedAt").asText()).isNotBlank();
+        assertThat(call("GET", "/api/admin/blog/posts?status=PENDING_REVIEW", adminToken, null, 200)
+                .path("data").path("totalElements").asInt()).isZero();
+        JsonNode edited = call("PUT", own(post), adminToken, withVersion(input("Edited admin story"), version(post)), 200).path("data");
+        assertThat(edited.path("status").asText()).isEqualTo("PUBLISHED");
+        call("PUT", own(post), adminToken, withVersion(input("Stale admin story"), version(post)), 409);
+        call("PUT", own(edited), otherToken, withVersion(input("Not my story"), version(edited)), 404);
+        assertThat(call("GET", "/api/blog/posts/" + id(post), null, null, 200).path("data").path("title").asText()).isEqualTo("Edited admin story");
+    }
+
+    @Test void directPublicationUsesCurrentDatabaseRoleAndValidatesContent() throws Exception {
+        var shortInput = input("Hi"); shortInput.put("content", "Short draft");
+        JsonNode shortPost = call("POST", "/api/blog/my-posts", adminToken, shortInput, 201).path("data");
+        call("POST", own(shortPost) + "/submit", adminToken, Map.of("version", version(shortPost)), 400);
+        JsonNode post = call("POST", "/api/blog/my-posts", adminToken, input("Former admin story"), 201).path("data");
+        admin.setRole(UserRole.MEMBER); users.saveAndFlush(admin);
+        post = call("POST", own(post) + "/submit", adminToken, Map.of("version", version(post)), 200).path("data");
+        assertThat(post.path("status").asText()).isEqualTo("PENDING_REVIEW");
+    }
+
     @Test void lockedAccountAndDemotedAdminAreRecheckedDespiteExistingTokens() throws Exception {
         member.setStatus(AccountStatus.LOCKED); users.saveAndFlush(member);
         call("GET", "/api/blog/my-posts", token, null, 403);

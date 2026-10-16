@@ -21,6 +21,11 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Recipe {
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "recipe_videos", joinColumns = @JoinColumn(name = "recipe_id"),
+            inverseJoinColumns = @JoinColumn(name = "video_id"))
+    @Builder.Default
+    private Set<com.vegeai.backend.modules.community.entity.CommunityVideo> videos = new HashSet<>();
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

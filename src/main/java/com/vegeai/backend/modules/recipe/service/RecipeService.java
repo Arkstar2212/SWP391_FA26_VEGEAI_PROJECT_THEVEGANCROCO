@@ -36,6 +36,7 @@ public class RecipeService {
     private final FridgeItemRepository fridgeItemRepository;
     private final UserRepository userRepository;
     private final TagService tagService;
+    private final com.vegeai.backend.modules.community.repository.VideoRepository videos;
 
     /**
      * Tìm kiếm và lọc công thức món chay đa tiêu chí (Faceted Tag Filter with AND/OR & Exclusion Logic).
@@ -62,7 +63,14 @@ public class RecipeService {
     public RecipeDetailResponse getRecipeById(UUID recipeId) {
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new AppException(ErrorCode.RECIPE_NOT_FOUND));
+        if (recipe.getStatus() != RecipeStatus.PUBLISHED) throw new AppException(ErrorCode.RECIPE_NOT_FOUND);
         return mapToDetailResponse(recipe);
+    }
+
+    @Transactional(readOnly = true)
+    public RecipeDetailResponse getAdminRecipe(UUID id) {
+        return mapToDetailResponse(recipeRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.RECIPE_NOT_FOUND)), true);
     }
 
     /**
@@ -72,6 +80,7 @@ public class RecipeService {
     public RecipeDetailResponse getRecipeBySlug(String slug) {
         Recipe recipe = recipeRepository.findBySlug(slug)
                 .orElseThrow(() -> new AppException(ErrorCode.RECIPE_NOT_FOUND));
+        if (recipe.getStatus() != RecipeStatus.PUBLISHED) throw new AppException(ErrorCode.RECIPE_NOT_FOUND);
         return mapToDetailResponse(recipe);
     }
 
@@ -237,9 +246,10 @@ public class RecipeService {
             }
         }
 
+        applyVideos(recipe, request.getVideoIds());
         Recipe saved = recipeRepository.save(recipe);
         log.info("[RECIPE] Admin created recipe id='{}', title='{}'", saved.getRecipeId(), saved.getTitle());
-        return mapToDetailResponse(saved);
+        return mapToDetailResponse(saved, true);
     }
 
     /**
@@ -314,9 +324,10 @@ public class RecipeService {
             }
         }
 
+        applyVideos(recipe, request.getVideoIds());
         Recipe saved = recipeRepository.save(recipe);
         log.info("[RECIPE] Admin updated recipe id='{}', title='{}'", saved.getRecipeId(), saved.getTitle());
-        return mapToDetailResponse(saved);
+        return mapToDetailResponse(saved, true);
     }
 
     /**
@@ -352,6 +363,18 @@ public class RecipeService {
     }
 
     public RecipeDetailResponse mapToDetailResponse(Recipe recipe) {
+        return mapToDetailResponse(recipe, false);
+    }
+
+    private void applyVideos(Recipe recipe, List<UUID> ids) {
+        if (ids == null) return;
+        Set<UUID> unique = new HashSet<>(ids);
+        var found = videos.findAllById(unique);
+        if (found.size() != unique.size()) throw new AppException(ErrorCode.VIDEO_NOT_FOUND);
+        recipe.setVideos(new HashSet<>(found));
+    }
+
+    private RecipeDetailResponse mapToDetailResponse(Recipe recipe, boolean admin) {
         List<TagDto> tagDtos = recipe.getTags().stream()
                 .map(tagService::mapToDto)
                 .toList();
@@ -388,6 +411,11 @@ public class RecipeService {
                 .ingredients(ingDtos)
                 .instructions(new ArrayList<>(recipe.getInstructions()))
                 .tags(tagDtos)
+                .videos(recipe.getVideos().stream().filter(v -> admin || v.getStatus() == com.vegeai.backend.modules.community.entity.VideoStatus.PUBLISHED)
+                        .sorted(Comparator.comparing(com.vegeai.backend.modules.community.entity.CommunityVideo::getTitle))
+                        .map(v -> new com.vegeai.backend.modules.community.dto.CommunityDtos.VideoResponse(v.getId(), v.getTitle(),
+                                v.getDescription(), v.getVideoUrl(), v.getThumbnailUrl(), v.getCategory(), v.getDurationSeconds(),
+                                v.getStatus(), v.getCreatedBy().getFullName(), v.getCreatedAt(), v.getUpdatedAt(), v.getVersion())).toList())
                 .createdAt(recipe.getCreatedAt())
                 .updatedAt(recipe.getUpdatedAt())
                 .build();

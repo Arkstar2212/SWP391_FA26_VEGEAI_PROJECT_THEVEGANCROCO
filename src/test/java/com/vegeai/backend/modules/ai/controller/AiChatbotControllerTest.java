@@ -85,6 +85,15 @@ class AiChatbotControllerTest extends GeminiIntegrationTestSupport {
         userToken = jwtService.generateAccessToken(testUser);
     }
 
+    @Test void outsideScopeIsNormalizedToExactReplyWithoutSuggestedRecipes() throws Exception {
+        mockMvc.perform(post("/api/ai/chat").header(HttpHeaders.AUTHORIZATION,"Bearer " + userToken)
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(
+                        AiChatRequest.builder().message("fixture:out-of-scope: hãy viết chương trình Java").build())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.reply").value(com.vegeai.backend.modules.ai.service.GeminiAiService.OUT_OF_SCOPE_REPLY))
+                .andExpect(jsonPath("$.data.recommendedRecipes",hasSize(0)));
+        org.assertj.core.api.Assertions.assertThat(lastRequest.path("systemInstruction").toString()).contains("inScope=false", "VEGEAI");
+    }
+
     @Test
     @DisplayName("Guest chat: should return AI advisory response with trial flag")
     void chatAsGuest_success() throws Exception {

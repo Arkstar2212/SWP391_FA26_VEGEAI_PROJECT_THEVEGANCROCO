@@ -11,6 +11,7 @@ import java.util.List;
  */
 @Getter
 @Builder
+@lombok.extern.jackson.Jacksonized
 public class NutritionTargetsResponse {
 
     private final Double bmi;

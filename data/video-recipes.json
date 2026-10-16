@@ -1,0 +1,88 @@
+[
+  {
+    "slug":"com-chien-mi-goi-chay", "title":"Cơm chiên mì gói chay",
+    "sourceUrl":"https://ducankitchen.com/cach-lam-com-chien-mi-goi-chay/", "youtubeId":"ao_tEpz6niU",
+    "servings":1, "prepTimeMinutes":10, "cookTimeMinutes":10, "tags":["VEGAN","STIR_FRY"],
+    "notes":"Chọn mì và gia vị thuần chay; kiểm tra nhãn mì, nước tương khi có dị ứng.",
+    "ingredients":[{"name":"Mì gói chay","amount":1,"unit":"gói","allergenType":"GLUTEN"},{"name":"Cơm nguội","amount":150,"unit":"g"},{"name":"Đậu phụ chiên","amount":30,"unit":"g","allergenType":"SOY"},{"name":"Đậu Hà Lan","amount":20,"unit":"g"},{"name":"Ngô ngọt","amount":20,"unit":"g"},{"name":"Nước tương","amount":0.5,"unit":"thìa canh","allergenType":"SOY,GLUTEN"},{"name":"Hành tím","amount":1,"unit":"củ"},{"name":"Dầu ăn","amount":0.5,"unit":"thìa canh"},{"name":"Hành lá","unit":"vừa đủ"},{"name":"Vừng","unit":"vừa đủ","allergenType":"SESAME"}],
+    "instructions":["Bẻ nhỏ mì; thái đậu phụ, hành tím và hành lá.","Phi hành với dầu, đảo cơm cho tơi. Thêm đậu, ngô, đậu phụ và nước tương; xào chín.","Cho mì vào đảo nhanh, thêm chút nước nếu khô. Rắc hành lá và vừng khi dọn."]
+  },
+  {
+    "slug":"sua-dac-hat-dieu-thuan-chay", "title":"Sữa đặc hạt điều thuần chay",
+    "sourceUrl":"https://ducankitchen.com/video-2-cach-lam-sua-dac-thuan-chay-don-gian/", "youtubeId":"wTqClpgLWWs",
+    "prepTimeMinutes":10, "cookTimeMinutes":10, "tags":["VEGAN"],
+    "notes":"Cần ngâm hạt điều qua đêm. Nguồn không xác định số khẩu phần.",
+    "ingredients":[{"name":"Hạt điều sống","amount":200,"unit":"g","allergenType":"TREE_NUTS"},{"name":"Nước cốt dừa","amount":320,"unit":"ml"},{"name":"Đường","amount":80,"unit":"g"},{"name":"Muối","unit":"vừa đủ"}],
+    "instructions":["Ngâm hạt điều qua đêm, rửa rồi luộc khoảng 10 phút; để nguội.","Xay nhuyễn cùng cốt dừa, đường và muối. Cho vào lọ sạch, bảo quản lạnh."]
+  },
+  {
+    "slug":"sua-dac-tu-sua-thuc-vat", "title":"Sữa đặc từ sữa thực vật",
+    "sourceUrl":"https://ducankitchen.com/video-2-cach-lam-sua-dac-thuan-chay-don-gian/", "youtubeId":"wTqClpgLWWs",
+    "cookTimeMinutes":50, "tags":["VEGAN"],
+    "notes":"Dị nguyên tùy loại sữa thực vật: đọc nhãn trước khi dùng. Nguồn không xác định số khẩu phần.",
+    "ingredients":[{"name":"Sữa thực vật","amount":750,"unit":"ml","allergenType":"CHECK_LABEL"},{"name":"Đường","amount":120,"unit":"g"},{"name":"Muối","unit":"vừa đủ"}],
+    "instructions":["Khuấy sữa với đường và muối trong nồi đáy dày.","Đun nhỏ lửa khoảng 50 phút, đảo để tránh bén đáy, đến khi sánh. Để nguội rồi cất lạnh trong lọ sạch."]
+  },
+  {
+    "slug":"bun-lut-xao-rau-cu", "title":"Bún lứt xào rau củ",
+    "sourceUrl":"https://ducankitchen.com/cach-lam-bun-lut-xao-rau-cu/", "youtubeId":"22rmN4AYkkk",
+    "servings":2, "prepTimeMinutes":15, "cookTimeMinutes":10, "tags":["VEGAN","STIR_FRY","NOODLE"],
+    "ingredients":[{"name":"Bún gạo lứt khô","amount":100,"unit":"g"},{"name":"Đậu phụ","amount":100,"unit":"g","allergenType":"SOY"},{"name":"Hành tây","amount":50,"unit":"g"},{"name":"Ớt chuông đỏ","amount":50,"unit":"g"},{"name":"Đậu cô ve","amount":50,"unit":"g"},{"name":"Nấm đùi gà","amount":50,"unit":"g"},{"name":"Cà rốt","amount":50,"unit":"g"},{"name":"Tỏi","amount":1,"unit":"tép lớn"},{"name":"Gừng","amount":1,"unit":"miếng nhỏ"},{"name":"Hành lá","unit":"vừa đủ"},{"name":"Dầu mè","unit":"vừa đủ","allergenType":"SESAME"},{"name":"Vừng rang","unit":"vừa đủ","allergenType":"SESAME"},{"name":"Muối","unit":"vừa đủ"},{"name":"Nước tương","amount":3,"unit":"thìa canh","allergenType":"SOY,GLUTEN"},{"name":"Dầu chiên đậu","unit":"vừa đủ"}],
+    "instructions":["Thái rau, nấm; băm tỏi gừng. Chiên đậu rồi thái miếng. Luộc bún 6–8 phút, xả và để ráo.","Phi thơm tỏi gừng; xào rau, nấm với hai thìa nước tương.","Đảo bún và đậu cùng phần nước tương còn lại. Tắt bếp, thêm dầu mè, hành và vừng."]
+  },
+  {
+    "slug":"canh-chua-rau-cu-thanh-mat", "title":"Canh chua rau củ thanh mát",
+    "sourceUrl":"https://ducankitchen.com/video-cach-lam-canh-chua-thanh-mat-cho-mua-he/", "youtubeId":"9gG--xBmSa8",
+    "prepTimeMinutes":15, "cookTimeMinutes":15, "tags":["VEGAN","SOUP"],
+    "notes":"Nguồn ghi 3–4 khẩu phần. Sơ chế dọc mùng kỹ theo hướng dẫn trong video.",
+    "ingredients":[{"name":"Cà chua chín","amount":400,"unit":"g"},{"name":"Nấm sò nâu","amount":150,"unit":"g"},{"name":"Hành tây","amount":90,"unit":"g"},{"name":"Rễ rau mùi","unit":"vài rễ"},{"name":"Dứa chín","amount":100,"unit":"g"},{"name":"Nước tương","amount":3,"unit":"thìa canh","allergenType":"SOY,GLUTEN"},{"name":"Muối","unit":"vừa đủ"},{"name":"Giá đỗ","unit":"vừa đủ"},{"name":"Dọc mùng đã sơ chế","unit":"vừa đủ"},{"name":"Hành lá","unit":"vừa đủ"},{"name":"Rau mùi","unit":"vừa đủ"},{"name":"Ớt","unit":"tùy khẩu vị"},{"name":"Dầu ăn","unit":"vừa đủ"},{"name":"Nước","unit":"vừa đủ"}],
+    "instructions":["Làm sạch, thái nguyên liệu. Phi rễ mùi và hành tây; xào nấm, cà chua với nước tương.","Thêm nước và dứa, nấu khoảng 5–10 phút. Cho dọc mùng đã sơ chế và giá vào nấu chín.","Nêm lại, thêm hành, mùi và ớt khi dùng."]
+  },
+  {
+    "slug":"dau-khia-nuoc-dua", "title":"Đậu khìa nước dừa",
+    "sourceUrl":"https://ducankitchen.com/video-cach-lam-dau-khia-nuoc-dua-dua-com/", "youtubeId":"JqMTUKuL2_U",
+    "servings":2, "prepTimeMinutes":10, "cookTimeMinutes":25, "tags":["VEGAN","BRAISED"],
+    "ingredients":[{"name":"Đậu phụ","amount":500,"unit":"g","allergenType":"SOY"},{"name":"Tỏi","amount":1,"unit":"tép lớn"},{"name":"Hành tím","amount":4,"unit":"củ nhỏ"},{"name":"Nước tương","amount":5,"unit":"thìa","allergenType":"SOY,GLUTEN"},{"name":"Mật mía hoặc đường","amount":2,"unit":"thìa"},{"name":"Nước dừa","amount":500,"unit":"ml"},{"name":"Ớt","unit":"tùy khẩu vị"},{"name":"Tiêu","unit":"vừa đủ"},{"name":"Dầu ăn","unit":"vừa đủ"}],
+    "instructions":["Cắt đậu, chiên vàng và để ráo. Băm tỏi, hành tím.","Phi hành tỏi, cho đậu cùng nước tương, mật mía và nước dừa vào.","Khìa lửa nhỏ khoảng 20 phút đến khi nước rút sánh. Thêm tiêu và ớt."]
+  },
+  {
+    "slug":"si-ro-man", "title":"Si rô mận",
+    "sourceUrl":"https://ducankitchen.com/video-cach-lam-si-ro-man-va-mut-man/", "youtubeId":"8GKi8myWT1w",
+    "prepTimeMinutes":20, "cookTimeMinutes":15, "tags":["VEGAN"],
+    "notes":"Thêm thời gian ướp đường 3–4 giờ. Nguồn không xác định số khẩu phần.",
+    "ingredients":[{"name":"Mận chín","amount":1,"unit":"kg"},{"name":"Đường","amount":300,"unit":"g"},{"name":"Nước","amount":250,"unit":"ml"}],
+    "instructions":["Rửa mận, bỏ hạt, bổ miếng; ướp với đường 3–4 giờ.","Thêm nước, đun khoảng 10–15 phút cho mềm. Để nguội, cho vào lọ sạch và giữ lạnh."]
+  },
+  {
+    "slug":"mut-man", "title":"Mứt mận",
+    "sourceUrl":"https://ducankitchen.com/video-cach-lam-si-ro-man-va-mut-man/", "youtubeId":"8GKi8myWT1w",
+    "prepTimeMinutes":20, "cookTimeMinutes":60, "tags":["VEGAN"],
+    "notes":"Nguồn không xác định số khẩu phần.",
+    "ingredients":[{"name":"Mận chín","amount":1,"unit":"kg"},{"name":"Đường","amount":250,"unit":"g"},{"name":"Muối","unit":"vừa đủ"},{"name":"Chanh vắt lấy nước","amount":0.5,"unit":"quả"},{"name":"Nước","unit":"vừa đủ"}],
+    "instructions":["Bỏ vỏ, hạt mận. Cho thịt mận, đường, muối và ít nước vào nồi.","Sên nhỏ lửa khoảng một giờ, đảo tránh cháy. Khi đặc, thêm nước chanh, để nguội và cất lạnh trong lọ sạch."]
+  },
+  {
+    "slug":"kem-tra-dao-cam-sa", "title":"Kem trà đào cam sả",
+    "sourceUrl":"https://ducankitchen.com/video-cach-lam-kem-tra-dao-cam-sa-khong-can-may-lam-kem/", "youtubeId":"mdODLbXFaLI",
+    "servings":4, "prepTimeMinutes":20, "cookTimeMinutes":10, "tags":["VEGAN"],
+    "notes":"Cần ngâm hạt qua đêm và đông lạnh 6–8 giờ; không cần máy làm kem.",
+    "ingredients":[{"name":"Thịt đào chín làm nền","amount":600,"unit":"g"},{"name":"Đường","amount":30,"unit":"g"},{"name":"Nước cam","amount":10,"unit":"ml"},{"name":"Bột năng","amount":1,"unit":"thìa canh"},{"name":"Hạt điều sống","amount":150,"unit":"g","allergenType":"TREE_NUTS"},{"name":"Cốt dừa đặc","amount":200,"unit":"g"},{"name":"Vỏ cam bào","amount":1,"unit":"thìa cà phê"},{"name":"Trà đào túi lọc","amount":1,"unit":"túi"},{"name":"Sả","amount":1,"unit":"cây"},{"name":"Đào chín thái hạt lựu","amount":100,"unit":"g"}],
+    "instructions":["Ngâm hạt điều qua đêm, luộc 10 phút, để ráo. Nấu phần đào nền với đường, nước cam và bột năng khoảng 10 phút; làm nguội.","Xay nền đào với hạt điều, cốt dừa, vỏ cam, trà và sả. Trộn đào hạt lựu.","Đậy kín, đông lạnh 6–8 giờ; để mềm khoảng 15 phút trước khi múc."]
+  },
+  {
+    "slug":"com-hap-la-sen-chay", "title":"Cơm hấp lá sen chay",
+    "sourceUrl":"https://ducankitchen.com/cach-lam-com-hap-la-sen-chay/", "youtubeId":"EhM4zdA2txI",
+    "prepTimeMinutes":20, "cookTimeMinutes":10, "tags":["VEGAN","STEAMED"],
+    "notes":"Nguồn ghi 1–2 khẩu phần; thời gian chưa gồm toàn bộ công đoạn nấu cơm.",
+    "ingredients":[{"name":"Gạo","amount":150,"unit":"g"},{"name":"Hạt sen tươi","amount":50,"unit":"g"},{"name":"Đậu Hà Lan","amount":50,"unit":"g"},{"name":"Cà rốt","amount":50,"unit":"g"},{"name":"Ngô ngọt","amount":50,"unit":"g"},{"name":"Nấm đùi gà","amount":0.5,"unit":"cây"},{"name":"Nấm hương","amount":4,"unit":"mũ"},{"name":"Hành lá","unit":"vừa đủ"},{"name":"Nước tương","amount":2,"unit":"thìa canh","allergenType":"SOY,GLUTEN"},{"name":"Muối","unit":"vừa đủ"},{"name":"Dầu ăn","amount":1,"unit":"thìa canh"},{"name":"Lá sen","unit":"1–2 lá"},{"name":"Nước luộc hạt sen để nấu cơm","amount":150,"unit":"g"}],
+    "instructions":["Luộc sen 5–10 phút, giữ nước. Nấu gạo với phần nước sen đã đong.","Thái rau và nấm; xào với dầu, hạt sen, nước tương. Đảo cùng cơm, nêm vừa ăn.","Gói cơm bằng lá sen sạch, hấp khoảng 7–10 phút rồi dùng nóng."]
+  },
+  {
+    "slug":"sua-chua-dau-nanh-up-nguoc", "title":"Sữa chua đậu nành úp ngược",
+    "sourceUrl":"https://ducankitchen.com/cach-lam-sua-chua-dau-nanh-up-nguoc-thom-ngon/", "youtubeId":"XG-3d3uPJgo",
+    "tags":["LACTO_OVO"],
+    "notes":"Nguồn chưa xác nhận men cái thuần chay nên không gắn nhãn VEGAN; kiểm tra thành phần men, có thể chứa sữa động vật. Cần ủ 6–8 giờ rồi làm lạnh ít nhất một ngày. Chưa xác định số khẩu phần.",
+    "ingredients":[{"name":"Sữa đậu nành không đường","amount":1000,"unit":"ml","allergenType":"SOY"},{"name":"Đường","amount":100,"unit":"g"},{"name":"Sữa chua cái (kiểm tra thành phần sữa)","amount":100,"unit":"ml","allergenType":"DAIRY"}],
+    "instructions":["Vệ sinh dụng cụ; để men cái về nhiệt độ phòng. Đun 500 ml sữa với đường, cô còn khoảng một nửa.","Để nguội bớt, thêm 500 ml sữa còn lại; kiểm tra hỗn hợp ở 40–44°C rồi nhẹ nhàng trộn men, chia lọ và đậy kín.","Ủ ở 40–44°C trong 6–8 giờ; chuyển vào tủ lạnh ít nhất một ngày trước khi dùng."]
+  }
+]

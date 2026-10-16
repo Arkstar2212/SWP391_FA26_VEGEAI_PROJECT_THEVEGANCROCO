@@ -20,13 +20,17 @@ Pagination uses the common `items/page/size/totalElements/totalPages/first/last`
 - `GET /api/blog/my-posts/{id}`
 - `POST /api/blog/my-posts`: `{title, excerpt, content, coverImage, category}` -> 201 DRAFT
 - `PUT /api/blog/my-posts/{id}`: same body plus current `version`
-- `POST /api/blog/my-posts/{id}/submit`: `{version}` -> PENDING_REVIEW
+- `POST /api/blog/my-posts/{id}/submit`: `{version}` -> PENDING_REVIEW for members, PUBLISHED for admins
 - `POST /api/blog/my-posts/{id}/withdraw`: `{version}` -> DRAFT (pending only)
 - `DELETE /api/blog/my-posts/{id}?version=...` (draft/rejected only)
 
 Authors cannot read or modify another author's private post, even if an ID is known.
 The author and initial status come from the server, not request-supplied fields.
-Only drafts/rejected posts can be edited. Submission requires a title >=5 characters
+Members can edit only drafts/rejected posts. Admins can also edit their own
+published posts, retaining publication status; ownership and version checks still apply.
+Admin drafts remain private until explicitly published with `submit`, which bypasses
+the review queue using the author's current database role, not a client-supplied role.
+Submission and published edits require a title >=5 characters
 and content >=80 characters. Limits are title 150, excerpt 400, content 50000,
 cover URL 1000 characters. Content is plain text, not trusted HTML. Cover images
 accept HTTP(S) without credentials or a local `/images/filename` path.

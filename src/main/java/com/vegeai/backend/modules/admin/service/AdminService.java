@@ -70,7 +70,7 @@ public class AdminService {
 
         Page<User> userPage = userRepository.findAll(spec, pageRequest);
         List<UserProfileResponse> dtos = userPage.getContent().stream()
-                .map(UserProfileResponse::from)
+                .map(UserProfileResponse::forAdministration)
                 .toList();
 
         return PageResponse.from(userPage, dtos);
@@ -83,7 +83,7 @@ public class AdminService {
     public UserProfileResponse getUserById(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        return UserProfileResponse.from(user);
+        return UserProfileResponse.forAdministration(user);
     }
 
     /**
@@ -120,7 +120,7 @@ public class AdminService {
         log.info("[ADMIN] Status updated for user: {} to {} by admin: {}. Reason: {}",
                 targetUser.getUsername(), req.getStatus(), adminCallerIdStr, req.getReason());
 
-        return UserProfileResponse.from(saved);
+        return UserProfileResponse.forAdministration(saved);
     }
 
     /**
@@ -145,7 +145,7 @@ public class AdminService {
         log.info("[ADMIN] Role updated for user: {} to {} by admin: {}",
                 targetUser.getUsername(), req.getRole(), adminCallerIdStr);
 
-        return UserProfileResponse.from(saved);
+        return UserProfileResponse.forAdministration(saved);
     }
 
     /**
@@ -224,7 +224,6 @@ public class AdminService {
                         .latencyMs(245)
                         .userType("MEMBER")
                         .status("SUCCESS")
-                        .promptSummary("Query regarding high-protein vegan dinner with tofu and seaweed")
                         .build(),
                 AiAuditLogEntry.builder()
                         .logId("AI-LOG-1091")
@@ -234,7 +233,6 @@ public class AdminService {
                         .latencyMs(198)
                         .userType("GUEST")
                         .status("SUCCESS")
-                        .promptSummary("Guest trial query: Vegetarian diet for beginners")
                         .build(),
                 AiAuditLogEntry.builder()
                         .logId("AI-LOG-1090")
@@ -244,7 +242,6 @@ public class AdminService {
                         .latencyMs(15)
                         .userType("MEMBER")
                         .status("FLAGGED")
-                        .promptSummary("Detected fish sauce keyword in vegan recipe submission draft")
                         .build()
         );
     }

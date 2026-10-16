@@ -77,6 +77,7 @@ public class RecipeDetailResponse {
 
     @Schema(description = "Danh sách thẻ tags phân loại")
     private List<TagDto> tags;
+    private List<com.vegeai.backend.modules.community.dto.CommunityDtos.VideoResponse> videos;
 
     @Schema(description = "Thời điểm tạo")
     private LocalDateTime createdAt;

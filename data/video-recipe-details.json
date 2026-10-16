@@ -1,0 +1,79 @@
+[
+  {
+    "slug":"com-chien-mi-goi-chay", "servings":1, "prepTimeMinutes":10, "cookTimeMinutes":10, "difficulty":"EASY", "category":"MAIN_DISH",
+    "summary":"Cơm rang với mì giòn, đậu phụ và rau củ; ăn ngay để mì không bị mềm.",
+    "notes":"Bản chuẩn hóa dùng một gói mì 70 g. Dinh dưỡng mì ước tính bằng mì chiên khô tương đương, không gồm gói gia vị; kiểm tra nhãn sản phẩm chay. Lượng dầu là phần dự kiến được ăn.",
+    "ingredients":{"Mì gói chay":{"grams":70,"food":"instantNoodlesProxy"},"Cơm nguội":{"grams":150,"food":"riceCooked"},"Đậu phụ chiên":{"grams":30,"food":"tofuFried"},"Đậu Hà Lan":{"grams":20,"food":"peas"},"Ngô ngọt":{"grams":20,"food":"corn"},"Nước tương":{"grams":8,"food":"soySauce"},"Hành tím":{"grams":15,"food":"shallot"},"Dầu ăn":{"grams":7,"food":"oil"},"Hành lá":{"grams":5,"food":"scallion"},"Vừng":{"grams":3,"food":"sesame"}},
+    "instructions":["Đong nguyên liệu cho một phần. Dùng cơm nguội đã giữ lạnh đúng cách; tách hạt cơm trước khi rang.","Cắt đậu thành miếng nhỏ, băm hành tím và thái hành lá. Bẻ mì khô thành đoạn vừa ăn; không dùng gói gia vị nếu chưa kiểm tra thành phần.","Làm nóng chảo với dầu, phi hành tím thơm. Cho cơm vào đảo đều cho tơi, tiếp đến cho đậu, ngô và đậu phụ.","Thêm nước tương, đảo đến khi rau củ chín và cơm nóng đều. Cho mì vào sau cùng, đảo ngắn để còn độ giòn; nếu quá khô chỉ thêm ít nước.","Tắt bếp, rắc hành lá và vừng. Dùng ngay; lượng nguyên liệu là cho cả một phần, không phải cho 100 g món ăn."]
+  },
+  {
+    "slug":"sua-dac-hat-dieu-thuan-chay", "servings":20, "prepTimeMinutes":15, "cookTimeMinutes":10, "difficulty":"EASY", "category":"CONDIMENT",
+    "summary":"Sữa đặc hạt điều và cốt dừa dùng kèm đồ uống hoặc món tráng miệng, không phải một bữa ăn độc lập.",
+    "notes":"Chia đều thành 20 phần dùng kèm; mỗi phần là 1/20 mẻ, không khẳng định khối lượng sau ngâm/nấu. Ngâm hạt qua đêm không tính vào thời gian chuẩn bị. Cốt dừa quy đổi gần đúng 1 ml = 1 g.",
+    "ingredients":{"Hạt điều sống":{"grams":200,"food":"cashew"},"Nước cốt dừa":{"grams":320,"food":"coconutMilk","unit":"ml"},"Đường":{"grams":80,"food":"sugar"},"Muối":{"grams":1,"food":"salt"}},
+    "instructions":["Chọn hạt điều không tẩm gia vị, cân đủ nguyên liệu. Ngâm hạt trong nước sạch qua đêm trong tủ lạnh.","Đổ nước ngâm, rửa hạt rồi luộc khoảng 10 phút. Vớt ra, để ráo và nguội bớt.","Cho hạt, cốt dừa, đường và muối vào máy; xay đến khi mịn. Vét thành cối và xay lại nếu còn lợn cợn.","Chia mẻ thành 20 phần dùng kèm tương đương. Cho vào hộp sạch có nắp, giữ lạnh; kiểm tra chất lượng trước khi dùng, không tự suy ra hạn bảo quản dài."]
+  },
+  {
+    "slug":"sua-dac-tu-sua-thuc-vat", "servings":20, "prepTimeMinutes":5, "cookTimeMinutes":50, "difficulty":"EASY", "category":"CONDIMENT",
+    "summary":"Sữa đặc nấu từ sữa đậu nành không đường, dùng pha đồ uống hoặc làm bánh.",
+    "notes":"Chuẩn hóa loại sữa thực vật thành sữa đậu nành không đường để tính dinh dưỡng và xác định dị nguyên SOY. Chia đều 20 phần (1/20 mẻ); độ cô đặc không làm tăng tổng năng lượng của cả mẻ. Quy đổi sữa gần đúng 1 ml = 1 g.",
+    "ingredients":{"Sữa thực vật":{"name":"Sữa đậu nành không đường","grams":750,"food":"soyMilk","unit":"ml","allergenType":"SOY"},"Đường":{"grams":120,"food":"sugar"},"Muối":{"grams":1,"food":"salt"}},
+    "instructions":["Chọn sữa đậu nành không đường; nếu đổi loại hoặc thương hiệu sữa, cần tính lại dinh dưỡng. Cho sữa, đường và muối vào nồi đáy dày.","Khuấy tan đường rồi đun nhỏ lửa, để nắp mở. Khuấy sát đáy nồi thường xuyên, tránh sôi trào hoặc cháy sữa.","Nấu khoảng 50 phút đến khi sánh vừa ý; thời gian thay đổi theo nồi và nhiệt. Không coi thể tích còn lại là lượng sữa ban đầu.","Để nguội, chuyển sang lọ sạch và giữ lạnh. Chia đều thành 20 phần dùng kèm, không dùng thay bữa chính."]
+  },
+  {
+    "slug":"bun-lut-xao-rau-cu", "servings":2, "prepTimeMinutes":15, "cookTimeMinutes":15, "difficulty":"EASY", "category":"MAIN_DISH",
+    "summary":"Bún lứt xào đậu phụ, nấm và rau củ; rau thái đều để chín nhanh mà vẫn giữ độ giòn.",
+    "notes":"Bún cân khô; dùng dữ liệu bún gạo khô làm tương đương cho bún lứt. Nấm đùi gà dùng nấm sò làm tương đương. Lượng dầu chuẩn hóa là lượng dự kiến giữ trong món, không phải toàn bộ dầu trong chảo chiên.",
+    "ingredients":{"Bún gạo lứt khô":{"grams":100,"food":"riceNoodlesProxy"},"Đậu phụ":{"grams":100,"food":"tofu"},"Hành tây":{"grams":50,"food":"onion"},"Ớt chuông đỏ":{"grams":50,"food":"redPepper"},"Đậu cô ve":{"grams":50,"food":"greenBeans"},"Nấm đùi gà":{"grams":50,"food":"oysterMushroom"},"Cà rốt":{"grams":50,"food":"carrot"},"Tỏi":{"grams":5,"food":"garlic"},"Gừng":{"grams":5,"food":"ginger"},"Hành lá":{"grams":10,"food":"scallion"},"Dầu mè":{"grams":5,"food":"sesameOil"},"Vừng rang":{"grams":3,"food":"sesame"},"Muối":{"grams":1,"food":"salt"},"Nước tương":{"grams":48,"food":"soySauce"},"Dầu chiên đậu":{"grams":10,"food":"oil"}},
+    "instructions":["Thái hành tây, ớt, đậu cô ve, cà rốt và nấm thành sợi hoặc miếng đều nhau. Băm tỏi, gừng; thái hành lá.","Cắt đậu, áp chảo với dầu đã đong rồi để riêng. Tránh tự thêm dầu vì sẽ làm thay đổi năng lượng ước tính.","Luộc bún theo hướng dẫn trên gói, dừng khi vừa chín. Xả nhanh và để thật ráo để khi xào không nhão.","Phi tỏi gừng, cho nấm và rau củ vào xào. Thêm khoảng 2/3 nước tương, đảo đến khi rau chín vừa.","Cho bún, đậu và nước tương còn lại vào; đảo nhẹ cho thấm. Tắt bếp rồi thêm dầu mè, hành lá và vừng.","Chia đều hai phần, ăn nóng. Nếu dùng loại nước tương khác hoặc bún có thành phần khác, kiểm tra lại dị nguyên."]
+  },
+  {
+    "slug":"canh-chua-rau-cu-thanh-mat", "servings":4, "prepTimeMinutes":20, "cookTimeMinutes":15, "difficulty":"MEDIUM", "category":"SIDE_DISH",
+    "summary":"Canh rau củ vị chua từ cà chua và dứa, dùng như món canh trong bữa cơm, không thay toàn bộ bữa chính.",
+    "notes":"Chọn 4 phần từ khoảng 3–4 phần của nguồn; rau và gia vị được chuẩn hóa. Dọc mùng dùng dữ liệu chồi khoai môn làm tương đương, không phải giá trị đo đúng giống cây; rễ mùi dùng lá mùi làm tương đương. Chưa có đủ số chất xơ nên để trống. Sơ chế dọc mùng kỹ theo video.",
+    "ingredients":{"Cà chua chín":{"grams":400,"food":"tomato"},"Nấm sò nâu":{"grams":150,"food":"oysterMushroom"},"Hành tây":{"grams":90,"food":"onion"},"Rễ rau mùi":{"grams":5,"food":"coriander"},"Dứa chín":{"grams":100,"food":"pineapple"},"Nước tương":{"grams":48,"food":"soySauce"},"Muối":{"grams":2,"food":"salt"},"Giá đỗ":{"grams":100,"food":"beanSprouts"},"Dọc mùng đã sơ chế":{"grams":100,"food":"taroShootsProxy"},"Hành lá":{"grams":10,"food":"scallion"},"Rau mùi":{"grams":5,"food":"coriander"},"Ớt":{"grams":2,"food":"chili"},"Dầu ăn":{"grams":5,"food":"oil"},"Nước":{"grams":1000,"food":"water","unit":"ml"}},
+    "instructions":["Rửa sạch rau, nấm. Cắt cà chua múi nhỏ, thái dứa và hành tây; sơ chế dọc mùng đúng hướng dẫn trong video trước khi cho vào nồi.","Đun dầu, phi rễ mùi và hành tây cho thơm. Thêm nấm, cà chua và nước tương, đảo đến khi cà chua bắt đầu mềm.","Thêm nước và dứa, đun sôi rồi hạ lửa. Nấu đến khi nấm và rau chín, khoảng 5–10 phút.","Cho dọc mùng đã sơ chế và giá vào, nấu chín. Nêm lượng muối đã đong; có thể giảm gia vị theo khẩu vị.","Tắt bếp, thêm hành lá, rau mùi và ớt. Chia bốn bát dùng kèm cơm và món đạm chay; dinh dưỡng hiển thị chỉ tính riêng canh."]
+  },
+  {
+    "slug":"dau-khia-nuoc-dua", "servings":4, "prepTimeMinutes":10, "cookTimeMinutes":25, "difficulty":"EASY", "category":"SIDE_DISH",
+    "summary":"Đậu phụ khìa nước dừa có lớp sốt mặn ngọt, dùng cùng cơm và rau.",
+    "notes":"Chia thành 4 phần món ăn kèm thay cho 2 phần lớn ở nguồn. Chuẩn hóa dùng đường; 5 thìa nước tương quy đổi thành 80 g, 2 thìa đường thành 25 g. Dầu là lượng ước tính giữ lại sau áp chảo; số liệu tính cả phần sốt được ăn. Nước dừa quy đổi gần đúng 1 ml = 1 g.",
+    "ingredients":{"Đậu phụ":{"grams":500,"food":"tofu"},"Tỏi":{"grams":5,"food":"garlic"},"Hành tím":{"grams":40,"food":"shallot"},"Nước tương":{"grams":80,"food":"soySauce"},"Mật mía hoặc đường":{"name":"Đường","grams":25,"food":"sugar"},"Nước dừa":{"grams":500,"food":"coconutWater","unit":"ml"},"Ớt":{"grams":2,"food":"chili"},"Tiêu":{"grams":1,"food":"blackPepper"},"Dầu ăn":{"grams":15,"food":"oil"}},
+    "instructions":["Thấm ráo đậu, cắt miếng vừa ăn. Băm hành tím và tỏi; đong riêng nước tương, đường và nước dừa.","Áp chảo đậu với lượng dầu đã đong, trở các mặt cho vàng rồi gắp ra. Không tính thêm cả chảo dầu chiên ngập vào công thức này.","Phi hành tỏi trong chảo, cho đậu trở lại. Thêm nước tương, đường và nước dừa, đảo nhẹ tránh vỡ đậu.","Đun sôi rồi khìa lửa nhỏ khoảng 20 phút. Trở đậu nhẹ tay để thấm sốt; dừng khi sốt sánh, không để cạn cháy.","Thêm ớt và tiêu, chia đều bốn phần. Ăn với cơm và rau; cơm, rau ăn kèm chưa nằm trong dinh dưỡng của món này."]
+  },
+  {
+    "slug":"si-ro-man", "servings":20, "prepTimeMinutes":20, "cookTimeMinutes":15, "difficulty":"EASY", "category":"CONDIMENT",
+    "summary":"Mận nấu đường dùng pha đồ uống hoặc ăn kèm; phần tính dinh dưỡng bao gồm cả nước và thịt mận.",
+    "notes":"Chuẩn hóa 1 kg thịt mận đã bỏ hạt và chia 20 phần bằng nhau. Mỗi phần là 1/20 mẻ, không phải một cốc nước pha sẵn. Nếu lọc bỏ thịt mận, số liệu không còn áp dụng. Thời gian ướp đường 3–4 giờ chưa nằm trong thời gian nấu.",
+    "ingredients":{"Mận chín":{"name":"Thịt mận chín đã bỏ hạt","grams":1000,"food":"plum"},"Đường":{"grams":300,"food":"sugar"},"Nước":{"grams":250,"food":"water","unit":"ml"}},
+    "instructions":["Rửa mận, bỏ hạt rồi cân đủ 1 kg phần ăn được. Cắt miếng và trộn với đường trong dụng cụ sạch.","Ướp khoảng 3–4 giờ để đường tan và mận ra nước. Sau đó cho cả phần nước và thịt mận vào nồi.","Thêm nước đã đong, đun sôi nhẹ rồi nấu 10–15 phút, đảo cho đều. Giữ cả thịt mận cho bản công thức này.","Để nguội, chia đều 20 phần hoặc đánh dấu lượng dùng tương đương trên hộp. Giữ lạnh; khi pha chỉ thêm nước hoặc đá nếu muốn giữ nguyên năng lượng mỗi phần."]
+  },
+  {
+    "slug":"mut-man", "servings":25, "prepTimeMinutes":20, "cookTimeMinutes":60, "difficulty":"EASY", "category":"CONDIMENT",
+    "summary":"Mứt mận chua ngọt dùng phết bánh hoặc làm nhân; không tính bánh ăn kèm vào phần dinh dưỡng.",
+    "notes":"Chuẩn hóa 1 kg thịt mận đã bỏ vỏ/hạt; nửa quả chanh quy đổi 15 g nước cốt. Chia đều 25 phần (1/25 mẻ), không khẳng định trọng lượng thành phẩm vì lượng nước bay hơi thay đổi.",
+    "ingredients":{"Mận chín":{"name":"Thịt mận đã bỏ vỏ và hạt","grams":1000,"food":"plum"},"Đường":{"grams":250,"food":"sugar"},"Muối":{"grams":1,"food":"salt"},"Chanh vắt lấy nước":{"name":"Nước cốt chanh","grams":15,"food":"lemonJuice"},"Nước":{"grams":50,"food":"water","unit":"ml"}},
+    "instructions":["Bỏ vỏ và hạt, cân phần thịt mận. Cho mận, đường, muối và nước vào nồi đáy dày.","Đun nhỏ lửa, đảo và miết cho mận nhuyễn. Sên khoảng một giờ; khuấy sát đáy khi hỗn hợp bắt đầu đặc.","Khi mứt đạt độ sệt mong muốn, thêm nước chanh, đảo đều rồi tắt bếp. Tránh nấu quá đặc vì mứt còn sánh hơn khi nguội.","Để nguội rồi cất trong hộp sạch, giữ lạnh. Chia thành 25 phần bằng nhau; nếu dùng kèm bánh cần cộng dinh dưỡng của bánh riêng."]
+  },
+  {
+    "slug":"kem-tra-dao-cam-sa", "servings":8, "prepTimeMinutes":25, "cookTimeMinutes":15, "difficulty":"MEDIUM", "category":"DESSERT",
+    "summary":"Kem thực vật từ đào, hạt điều và cốt dừa, chia thành các phần tráng miệng nhỏ.",
+    "notes":"Chia 8 phần nhỏ thay 4 phần lớn của nguồn. Ngâm hạt qua đêm và cấp đông 6–8 giờ tính riêng. Bản này ủ trà, sả trong cốt dừa rồi lọc bỏ bã; không tính bã vào dinh dưỡng. Bột năng dùng tapioca khô làm tương đương; cốt dừa là loại đặc, không phải nước dừa.",
+    "ingredients":{"Thịt đào chín làm nền":{"grams":600,"food":"peach"},"Đường":{"grams":30,"food":"sugar"},"Nước cam":{"grams":10,"food":"orangeJuice","unit":"ml"},"Bột năng":{"grams":8,"food":"tapiocaProxy"},"Hạt điều sống":{"grams":150,"food":"cashew"},"Cốt dừa đặc":{"grams":200,"food":"coconutCream"},"Vỏ cam bào":{"grams":2,"food":"orangePeel"},"Trà đào túi lọc":{"grams":2,"notEaten":true},"Sả":{"grams":10,"notEaten":true},"Đào chín thái hạt lựu":{"grams":100,"food":"peach"}},
+    "instructions":["Ngâm hạt điều qua đêm trong tủ lạnh; rửa, luộc khoảng 10 phút rồi để ráo. Rửa đào, cân riêng phần làm nền và phần hạt lựu.","Nấu đào nền với đường, nước cam và bột năng ở lửa nhỏ, đảo khoảng 10 phút đến khi mềm và sánh; làm nguội.","Đập dập sả, làm ấm nhẹ cốt dừa rồi ủ sả và túi trà cho thơm. Lấy bỏ túi trà, lọc sả; để nguội. Đây là điều chỉnh của bản chuẩn hóa.","Xay mịn hạt điều cùng nền đào, cốt dừa đã tạo hương và vỏ cam. Trộn phần đào hạt lựu vào sau cùng.","Cho vào hộp có nắp, cấp đông 6–8 giờ. Trước khi múc, để mềm bớt khoảng 15 phút; chia tám phần tương đương."]
+  },
+  {
+    "slug":"com-hap-la-sen-chay", "servings":2, "prepTimeMinutes":20, "cookTimeMinutes":40, "difficulty":"MEDIUM", "category":"MAIN_DISH",
+    "summary":"Cơm trộn sen, nấm và rau củ rồi hấp trong lá sen để tạo mùi thơm.",
+    "notes":"Chọn 2 phần từ khoảng 1–2 phần của nguồn. Gạo cân khô; nửa cây nấm chuẩn hóa 50 g, bốn mũ nấm hương 20 g. Lá sen chỉ để gói, không ăn. Nấm đùi gà dùng nấm sò làm tương đương. USDA chưa có số chất xơ hạt sen tươi, nên tổng chất xơ để trống; chưa dùng món này cho thực đơn tự động.",
+    "ingredients":{"Gạo":{"grams":150,"food":"riceDry"},"Hạt sen tươi":{"grams":50,"food":"lotusSeed"},"Đậu Hà Lan":{"grams":50,"food":"peas"},"Cà rốt":{"grams":50,"food":"carrot"},"Ngô ngọt":{"grams":50,"food":"corn"},"Nấm đùi gà":{"grams":50,"food":"oysterMushroom"},"Nấm hương":{"grams":20,"food":"shiitake"},"Hành lá":{"grams":10,"food":"scallion"},"Nước tương":{"grams":32,"food":"soySauce"},"Muối":{"grams":1,"food":"salt"},"Dầu ăn":{"grams":14,"food":"oil"},"Lá sen":{"amount":1,"unit":"lá","notEaten":true},"Nước luộc hạt sen để nấu cơm":{"grams":150,"food":"water","unit":"ml"}},
+    "instructions":["Rửa lá sen và các nguyên liệu. Luộc sen 5–10 phút, giữ lại nước; thái hạt lựu cà rốt và nấm, thái nhỏ hành.","Vo gạo, dùng phần nước sen đã đong để nấu cơm. Điều chỉnh nước theo loại gạo nếu cần; thời gian khoảng 20–25 phút tùy dụng cụ.","Làm nóng dầu, xào nấm, cà rốt, đậu, ngô và sen. Thêm nước tương, muối; đảo đến khi rau chín vừa.","Trộn cơm chín với rau, nấm và hành lá. Trải lá sen, cho cơm vào giữa rồi gói kín vừa phải, không nén quá chặt.","Hấp gói cơm khoảng 7–10 phút trong xửng có hơi nước. Mở lá khi dùng, chia hai phần; không ăn lá gói."]
+  },
+  {
+    "slug":"sua-chua-dau-nanh-up-nguoc", "servings":6, "prepTimeMinutes":15, "cookTimeMinutes":20, "difficulty":"MEDIUM", "category":"DESSERT",
+    "summary":"Sữa chua đậu nành được chia thành sáu hũ ăn nhẹ hoặc tráng miệng.",
+    "notes":"Chuẩn hóa men thành sữa chua sữa bò không đường để xác định dinh dưỡng: món này có SOY và DAIRY, không thuần chay. Sữa quy đổi gần đúng 1 ml = 1 g. Chia 6 hũ bằng nhau; thời gian ủ và làm lạnh tính riêng. Chỉ số theo nguyên liệu trước lên men nên lượng đường thực tế có thể khác.",
+    "ingredients":{"Sữa đậu nành không đường":{"grams":1000,"food":"soyMilk","unit":"ml"},"Đường":{"grams":100,"food":"sugar"},"Sữa chua cái (kiểm tra thành phần sữa)":{"name":"Sữa chua sữa bò không đường làm men cái","grams":100,"food":"yogurt","allergenType":"DAIRY"}},
+    "instructions":["Làm sạch dụng cụ và các hũ theo hướng dẫn của men. Dùng sữa chua cái không đường, để bớt lạnh trước khi trộn.","Đun 500 ml sữa đậu nành với đường, khuấy tránh cháy đáy. Cô đến khi phần sữa này còn khoảng một nửa.","Để nguội bớt rồi thêm 500 ml sữa còn lại. Đo nhiệt độ hỗn hợp, chỉ trộn men khi ở khoảng 40–44°C; không cho men vào sữa còn nóng.","Khuấy nhẹ cho đều, chia sáu hũ sạch rồi đậy nắp. Ủ theo hướng dẫn của men, khoảng 6–8 giờ ở 40–44°C; tránh di chuyển mạnh.","Chuyển vào tủ lạnh ít nhất một ngày trước khi ăn. Không dùng nếu có dấu hiệu hư hỏng; nếu thay men thực vật phải kiểm tra lại chế độ ăn và tính dinh dưỡng."]
+  }
+]

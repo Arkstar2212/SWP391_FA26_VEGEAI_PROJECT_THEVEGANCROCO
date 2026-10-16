@@ -18,6 +18,12 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NutritionProfileRequest {
+    @Pattern(regexp = "^$|^(?:(?:\\+84|84|0)(?:3|5|7|8|9)\\d{8})$", message = "Số điện thoại không hợp lệ.")
+    private String phoneNumber;
+    @Pattern(regexp = "^$|VEGAN|VEGETARIAN|LACTO_OVO|LACTO|OVO|PESCATARIAN|FLEXITARIAN|RAW_VEGAN")
+    private String dietaryPreferences;
+    @Size(max = 255)
+    private String allergies;
 
     @NotNull(message = "Gender is required.")
     @Schema(description = "Giới tính sinh học (dùng cho công thức BMR)", example = "MALE")

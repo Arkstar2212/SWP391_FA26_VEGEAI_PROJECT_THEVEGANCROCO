@@ -6,6 +6,7 @@ import com.vegeai.backend.modules.community.dto.BlogDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
 import com.vegeai.backend.modules.community.repository.BlogPostRepository;
 import com.vegeai.backend.modules.user.entity.User;
+import com.vegeai.backend.modules.user.entity.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -55,8 +56,10 @@ public class BlogService {
 
     public PostResponse update(String principal, UUID id, PostInput input) {
         BlogPost post = ownedForUpdate(principal, id, input.version());
-        requireEditable(post);
+        boolean directEdit = post.getStatus() == BlogStatus.PUBLISHED && access.user(principal).getRole() == UserRole.ADMIN;
+        if (!directEdit) requireEditable(post);
         apply(post, input);
+        if (directEdit) requirePublicationContent(post);
         posts.flush();
         return response(post, true, true);
     }
@@ -64,13 +67,13 @@ public class BlogService {
     public PostResponse submit(String principal, UUID id, long version) {
         BlogPost post = ownedForUpdate(principal, id, version);
         requireEditable(post);
-        if (post.getTitle().length() < 5 || post.getContent().strip().length() < 80) {
-            throw new AppException(ErrorCode.VALIDATION_ERROR, "Title must contain at least 5 characters and content at least 80 characters before submission.");
-        }
-        post.setStatus(BlogStatus.PENDING_REVIEW);
-        post.setSubmittedAt(LocalDateTime.now());
-        post.setReviewer(null);
-        post.setReviewedAt(null);
+        requirePublicationContent(post);
+        boolean directPublish = access.user(principal).getRole() == UserRole.ADMIN;
+        post.setStatus(directPublish ? BlogStatus.PUBLISHED : BlogStatus.PENDING_REVIEW);
+        post.setSubmittedAt(directPublish ? null : LocalDateTime.now());
+        post.setReviewer(directPublish ? post.getAuthor() : null);
+        post.setReviewedAt(directPublish ? LocalDateTime.now() : null);
+        post.setPublishedAt(directPublish ? LocalDateTime.now() : null);
         post.setModerationReason(null);
         posts.flush();
         return response(post, true, true);
@@ -152,6 +155,11 @@ public class BlogService {
     private void requireEditable(BlogPost post) {
         if (post.getStatus() != BlogStatus.DRAFT && post.getStatus() != BlogStatus.REJECTED) {
             throw new AppException(ErrorCode.BLOG_STATE_CONFLICT);
+        }
+    }
+    private void requirePublicationContent(BlogPost post) {
+        if (post.getTitle().length() < 5 || post.getContent().strip().length() < 80) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Title must contain at least 5 characters and content at least 80 characters before publication.");
         }
     }
     private void requireStatus(BlogPost post, BlogStatus status) {

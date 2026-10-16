@@ -12,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -73,4 +74,6 @@ public class CreateRecipeRequest {
 
     @Schema(description = "Danh sách mã các thẻ tag gắn cho món ăn (VD: [\"VEGAN\", \"HIGH_PROTEIN\", \"QUICK_15\"])", example = "[\"VEGAN\", \"HIGH_PROTEIN\", \"QUICK_15\"]")
     private List<String> tagCodes;
+    @jakarta.validation.constraints.Size(max = 10)
+    private List<@jakarta.validation.constraints.NotNull UUID> videoIds;
 }
