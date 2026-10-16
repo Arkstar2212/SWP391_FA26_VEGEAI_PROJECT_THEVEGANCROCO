@@ -66,6 +66,6 @@ public class PlaceResponse implements Serializable {
     @Schema(description = "Danh sách thẻ loại hình từ Google Places", example = "[\"vegetarian_restaurant\", \"food\", \"point_of_interest\"]")
     private List<String> types;
 
-    @Schema(description = "Đã được xác minh thuần chay 100% bởi VEGEAI", example = "true")
+    @Schema(description = "Google Places có gắn loại vegetarian_restaurant; không phải xác nhận quán không phục vụ món mặn", example = "true")
     private boolean isVerified;
 }

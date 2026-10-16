@@ -7,6 +7,7 @@ import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import com.vegeai.backend.modules.community.service.CommunityAccess;
 import com.vegeai.backend.modules.nutrition.dto.*;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
+import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.recipe.entity.*;
 import com.vegeai.backend.modules.recipe.dto.RecipeSummaryDto;
 import com.vegeai.backend.modules.recipe.repository.RecipeRepository;
@@ -30,6 +31,7 @@ public class MealPlanService {
     private final CommunityAccess access;
     private final GeminiAiService ai;
     private final ObjectMapper mapper;
+    private final NotificationService notificationService;
     private User member(String principal) {
         User user = access.user(principal);
         if (user.getRole() != UserRole.MEMBER) throw new AppException(ErrorCode.FORBIDDEN);
@@ -110,7 +112,11 @@ public class MealPlanService {
         }
         Snapshot snap = new Snapshot(request.period(), request.startDate(), end.minusDays(1), request.mealsPerDay(), profile.getTargets(), days, warnings(days, profile.getTargets(), available.size()));
         MealPlan plan = new MealPlan(); plan.setUserId(user.getUserId()); plan.setStatus("DRAFT"); plan.setSnapshot(json(snap)); plan.setProfileSignature(signature(profile));
-        return view(plans.saveAndFlush(plan));
+        MealPlan created = plans.saveAndFlush(plan);
+        // Generation is a user-requested activity and is confirmed in the in-app notification center.
+        notificationService.notifyUser(user, "MEAL_PLAN_GENERATED", "Thực đơn cá nhân đã được tạo",
+                "Thực đơn nháp của bạn đã sẵn sàng để xem và chỉnh sửa.", "/meal-plans/" + created.getId());
+        return view(created);
     }
     private double portions(Recipe recipe, double calories) { return Math.max(0.5, Math.min(3, Math.round(calories / recipe.getCalories() * 4) / 4.0)); }
     private double cost(Recipe r, double portions, NutritionTargetsResponse t, int meals) {
@@ -176,6 +182,11 @@ public class MealPlanService {
             days.add(new Day(day.date(),meals,sum(meals)));
         }
         plan.setSnapshot(json(new Snapshot(s.period(),s.startDate(),s.endDate(),s.mealsPerDay(),s.targets(),days,warnings(days,s.targets(),current.size()))));
-        plan.setStatus("SAVED"); plan.setSavedAt(LocalDateTime.now()); return view(plans.saveAndFlush(plan));
+        plan.setStatus("SAVED"); plan.setSavedAt(LocalDateTime.now());
+        MealPlan saved = plans.saveAndFlush(plan);
+        // Saving a draft is a distinct activity; already-saved plans return above without duplicate notices.
+        notificationService.notifyUser(user, "MEAL_PLAN_SAVED", "Thực đơn đã được lưu",
+                "Thực đơn của bạn đã được lưu vào danh sách kế hoạch cá nhân.", "/meal-plans/" + saved.getId());
+        return view(saved);
     }
 }

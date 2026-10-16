@@ -3,6 +3,7 @@ package com.vegeai.backend.modules.user.service;
 import com.vegeai.backend.common.exception.AppException;
 import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
+import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.nutrition.service.NutritionCalculator;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
@@ -32,6 +33,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final NutritionCalculator nutritionCalculator;
     private final NutritionService nutritionService;
+    private final NotificationService notificationService;
 
     /**
      * Get the profile of the authenticated user (identified by userId from JWT).
@@ -123,6 +125,9 @@ public class UserService {
 
         User saved = userRepository.save(user);
         log.info("[USER] Profile updated for userId={}", saved.getUserId());
+        // Inform the account owner when their personal profile activity is complete.
+        notificationService.notifyUser(saved, "ACCOUNT_PROFILE_UPDATED", "Hồ sơ cá nhân đã được cập nhật",
+                "Thông tin hồ sơ của bạn đã được lưu thành công.", "/dashboard");
         return UserProfileResponse.from(saved);
     }
 
@@ -167,6 +172,9 @@ public class UserService {
 
         User saved = userRepository.save(user);
         log.info("[USER] Quick profile updated for userId={}, dietaryPreferences={}", saved.getUserId(), saved.getDietaryPreferences());
+        // Quick profile setup is a separate user activity and receives its own in-app confirmation.
+        notificationService.notifyUser(saved, "ACCOUNT_QUICK_PROFILE_UPDATED", "Hồ sơ dinh dưỡng đã được thiết lập",
+                "Sở thích ăn chay và thông tin sức khỏe của bạn đã được lưu.", "/nutrition");
         return UserProfileResponse.from(saved);
     }
 
@@ -197,6 +205,9 @@ public class UserService {
         // Security best practice: Revoke all refresh tokens on password change
         refreshTokenRepository.revokeAllByUser(user);
         log.info("[USER] Password changed and refresh tokens revoked for userId={}", user.getUserId());
+        // The notice confirms the security-sensitive change without including password data.
+        notificationService.notifyUser(user, "ACCOUNT_PASSWORD_CHANGED", "Mật khẩu đã được thay đổi",
+                "Mật khẩu tài khoản của bạn đã được cập nhật thành công.", "/change-password");
     }
 
     /**

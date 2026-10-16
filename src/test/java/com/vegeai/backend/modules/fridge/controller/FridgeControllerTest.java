@@ -2,6 +2,7 @@ package com.vegeai.backend.modules.fridge.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vegeai.backend.modules.auth.service.JwtService;
+import com.vegeai.backend.modules.auth.repository.EmailVerificationTokenRepository;
 import com.vegeai.backend.modules.fridge.dto.*;
 import com.vegeai.backend.modules.fridge.entity.FreshnessStatus;
 import com.vegeai.backend.modules.fridge.entity.FridgeItem;
@@ -48,6 +49,9 @@ class FridgeControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private EmailVerificationTokenRepository emailVerificationTokenRepository;
+
+    @Autowired
     private FridgeItemRepository fridgeItemRepository;
 
     @Autowired
@@ -65,6 +69,8 @@ class FridgeControllerTest {
     @BeforeEach
     void setUp() {
         fridgeItemRepository.deleteAll();
+        // Verification tokens reference users created by other test classes.
+        emailVerificationTokenRepository.deleteAll();
         userRepository.deleteAll();
 
         primaryUser = User.builder()

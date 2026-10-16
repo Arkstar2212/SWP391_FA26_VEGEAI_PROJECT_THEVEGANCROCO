@@ -95,6 +95,43 @@ class CommunityApiTest {
         call("POST", "/api/admin/videos", null, videoBody("Guest video", "PUBLISHED"), 401);
     }
 
+    @Test void notificationsArePrivateAndCommunityEventsCanBeReadAndCleared() throws Exception {
+        call("GET", "/api/notifications", null, null, 401);
+        call("GET", "/api/notifications/unread-count", null, null, 401);
+
+        JsonNode submitted = question("How do I keep leafy greens fresh?");
+        JsonNode adminPage = call("GET", "/api/notifications?page=0&size=20", adminToken, null, 200).path("data");
+        JsonNode submissionNotice = null;
+        for (JsonNode item : adminPage.path("items")) {
+            if ("QUESTION_SUBMITTED".equals(item.path("eventType").asText())) submissionNotice = item;
+        }
+        assertThat(submissionNotice).isNotNull();
+        assertThat(submissionNotice.path("isRead").asBoolean()).isFalse();
+        assertThat(submissionNotice.path("redirectUrl").asText()).contains("/admin/questions/");
+
+        JsonNode beforeAnswer = call("GET", "/api/notifications", memberToken, null, 200).path("data");
+        assertThat(beforeAnswer.path("items")).isEmpty();
+        JsonNode answered = call("PUT", "/api/admin/questions/" + id(submitted) + "/answer", adminToken,
+                Map.of("content", "Keep greens dry and store them in a sealed container.", "version", version(submitted)), 200).path("data");
+        JsonNode memberPage = call("GET", "/api/notifications?page=0&size=20", memberToken, null, 200).path("data");
+        JsonNode answerNotice = null;
+        for (JsonNode item : memberPage.path("items")) {
+            if ("QUESTION_ANSWERED".equals(item.path("eventType").asText())) answerNotice = item;
+        }
+        assertThat(answerNotice).isNotNull();
+        assertThat(answerNotice.path("redirectUrl").asText()).isEqualTo("/questions/mine/" + id(answered));
+        assertThat(call("GET", "/api/notifications/unread-count", memberToken, null, 200)
+                .path("data").path("unreadCount").asLong()).isEqualTo(1);
+
+        call("PATCH", "/api/notifications/" + answerNotice.path("id").asText() + "/read", otherToken, null, 404);
+        call("PATCH", "/api/notifications/" + answerNotice.path("id").asText() + "/read", memberToken, null, 200);
+        assertThat(call("GET", "/api/notifications/unread-count", memberToken, null, 200)
+                .path("data").path("unreadCount").asLong()).isZero();
+        call("PATCH", "/api/notifications/read-all", adminToken, null, 200);
+        assertThat(call("GET", "/api/notifications/unread-count", adminToken, null, 200)
+                .path("data").path("unreadCount").asLong()).isZero();
+    }
+
     @Test void adminManagesQuestionsButCannotCreateOrAccessMemberQuestionLists() throws Exception {
         long before = questions.count();
         call("POST", "/api/questions", adminToken, Map.of("content", "Admin must not create questions"), 403);

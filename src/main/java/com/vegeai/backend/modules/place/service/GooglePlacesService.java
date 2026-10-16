@@ -3,6 +3,8 @@ package com.vegeai.backend.modules.place.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vegeai.backend.common.exception.AppException;
+import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.place.dto.CategoryMetadataDto;
 import com.vegeai.backend.modules.place.dto.PlaceCategory;
 import com.vegeai.backend.modules.place.dto.PlaceResponse;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Duration;
 import java.util.*;
@@ -32,6 +35,105 @@ public class GooglePlacesService {
     private String placesBaseUrl;
 
     private static final Duration CACHE_TTL = Duration.ofHours(24);
+    private static final String GOOGLE_VEGETARIAN_RESTAURANT_TYPE = "vegetarian_restaurant";
+
+    /**
+     * New map-only search path: it returns actual Google results carrying the specific
+     * vegetarian_restaurant type and never uses the legacy demo fallback.
+     */
+    public List<PlaceResponse> findVerifiedVegetarianRestaurants(double userLat,
+                                                                 double userLng,
+                                                                 int radiusMeters) {
+        requirePlacesApiKey();
+        int boundedRadius = Math.max(500, Math.min(radiusMeters, 50000));
+        String cacheKey = buildCacheKey("verified-nearby", userLat, userLng, boundedRadius, PlaceCategory.RESTAURANT, null);
+        List<PlaceResponse> cached = getFromCache(cacheKey);
+        if (cached != null) return cached;
+
+        String url = UriComponentsBuilder.fromUriString(placesBaseUrl)
+                .path("/nearbysearch/json")
+                .queryParam("location", "{location}")
+                .queryParam("radius", "{radius}")
+                .queryParam("keyword", "{keyword}")
+                .queryParam("key", "{key}")
+                .queryParam("language", "vi")
+                .encode()
+                .buildAndExpand(Map.of(
+                        "location", String.format(Locale.US, "%f,%f", userLat, userLng),
+                        "radius", boundedRadius,
+                        "keyword", GOOGLE_VEGETARIAN_RESTAURANT_TYPE,
+                        "key", apiKey))
+                .toUriString();
+        List<PlaceResponse> results = fetchGoogleVerifiedRestaurants(url, userLat, userLng);
+        saveToCache(cacheKey, results);
+        return results;
+    }
+
+    /**
+     * Searches Google for restaurant candidates while applying the same strict type check
+     * used by the nearby map path; unlike the legacy search this never returns mock data.
+     */
+    public List<PlaceResponse> searchVerifiedVegetarianRestaurants(String query,
+                                                                   Double userLat,
+                                                                   Double userLng,
+                                                                   int radiusMeters) {
+        requirePlacesApiKey();
+        String safeQuery = query == null ? "" : query.trim();
+        if (safeQuery.isEmpty()) throw new AppException(ErrorCode.VALIDATION_ERROR, "Search query cannot be empty.");
+        double effectiveLat = userLat != null ? userLat : 10.7769;
+        double effectiveLng = userLng != null ? userLng : 106.7009;
+        int boundedRadius = Math.max(500, Math.min(radiusMeters, 50000));
+        String cacheKey = buildCacheKey("verified-search", effectiveLat, effectiveLng, boundedRadius,
+                PlaceCategory.RESTAURANT, safeQuery);
+        List<PlaceResponse> cached = getFromCache(cacheKey);
+        if (cached != null) return cached;
+
+        String url = UriComponentsBuilder.fromUriString(placesBaseUrl)
+                .path("/textsearch/json")
+                .queryParam("query", "{query}")
+                .queryParam("location", "{location}")
+                .queryParam("radius", "{radius}")
+                .queryParam("key", "{key}")
+                .queryParam("language", "vi")
+                .encode()
+                .buildAndExpand(Map.of(
+                        "query", GOOGLE_VEGETARIAN_RESTAURANT_TYPE + " " + safeQuery,
+                        "location", String.format(Locale.US, "%f,%f", effectiveLat, effectiveLng),
+                        "radius", boundedRadius,
+                        "key", apiKey))
+                .toUriString();
+        List<PlaceResponse> results = fetchGoogleVerifiedRestaurants(url, effectiveLat, effectiveLng);
+        saveToCache(cacheKey, results);
+        return results;
+    }
+
+    private List<PlaceResponse> fetchGoogleVerifiedRestaurants(String url, double userLat, double userLng) {
+        try {
+            String rawJson = RestClient.create().get().uri(url).retrieve().body(String.class);
+            JsonNode root = objectMapper.readTree(rawJson);
+            String status = root.path("status").asText("");
+            if (!"OK".equals(status) && !"ZERO_RESULTS".equals(status)) {
+                log.warn("[PLACES-VERIFIED] Google Places returned status={}", status);
+                throw new AppException(ErrorCode.PLACES_PROVIDER_UNAVAILABLE);
+            }
+            return parseGooglePlacesResponse(rawJson, userLat, userLng, PlaceCategory.RESTAURANT).stream()
+                    .filter(PlaceResponse::isVerified)
+                    .filter(place -> place.getCategory() == PlaceCategory.RESTAURANT)
+                    .filter(place -> place.getPlaceId() != null && !place.getPlaceId().startsWith("mock_"))
+                    .toList();
+        } catch (AppException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            log.warn("[PLACES-VERIFIED] Google Places request failed: {}", exception.getMessage());
+            throw new AppException(ErrorCode.PLACES_PROVIDER_UNAVAILABLE);
+        }
+    }
+
+    private void requirePlacesApiKey() {
+        if (apiKey == null || apiKey.isBlank() || apiKey.equalsIgnoreCase("API_KEY_NOT_CONFIGURED")) {
+            throw new AppException(ErrorCode.PLACES_NOT_CONFIGURED);
+        }
+    }
 
     /**
      * Tìm kiếm các địa điểm chay quanh tọa độ (lat, lng) trong bán kính radiusMeters.
@@ -226,7 +328,8 @@ public class GooglePlacesService {
                             .photoUrl(photoUrl)
                             .googleMapsUrl(GeoUtils.buildGoogleMapsDirectionsUrl(pLat, pLng, placeId))
                             .types(types)
-                            .isVerified(true)
+                            // This flag means Google explicitly classified this result as vegetarian_restaurant.
+                            .isVerified(types.contains(GOOGLE_VEGETARIAN_RESTAURANT_TYPE))
                             .build();
 
                     places.add(place);
@@ -344,7 +447,8 @@ public class GooglePlacesService {
                 .googleMapsUrl(GeoUtils.buildGoogleMapsDirectionsUrl(lat, lng, mockId))
                 .phoneNumber(phone)
                 .types(List.of(category.name().toLowerCase(), "vegetarian", "food"))
-                .isVerified(true)
+                // Demo records are never marked verified and are excluded from the dedicated map feed.
+                .isVerified(false)
                 .build());
     }
 
