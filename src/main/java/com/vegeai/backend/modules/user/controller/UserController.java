@@ -85,7 +85,7 @@ public class UserController {
             **Đổi mật khẩu tài khoản.**
             
             - Nhập `currentPassword` (mật khẩu hiện tại), `newPassword` và `confirmNewPassword` (mật khẩu mới).
-            - `newPassword` & `confirmNewPassword`: Mật khẩu mới (tối thiểu 8 ký tự, có đủ chữ hoa, thường, số, ký tự đặc biệt).
+            - `newPassword` & `confirmNewPassword`: Mật khẩu mới. Cả 3 trường đều là chuỗi SHA-256 hex 64 ký tự do client băm trước (giống login/reset-password); độ mạnh mật khẩu do frontend kiểm tra.
             - *Lưu ý: Sau khi đổi mật khẩu thành công, toàn bộ phiên đăng nhập cũ trên các thiết bị khác sẽ tự động bị hủy (thu hồi Refresh Tokens).*
             """)
     public ResponseEntity<ApiResponse<Void>> changePassword(
