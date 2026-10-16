@@ -1,6 +1,7 @@
 package com.vegeai.backend.modules.user.controller;
 
 import com.vegeai.backend.common.dto.ApiResponse;
+import com.vegeai.backend.modules.user.dto.ChangePasswordHashedRequest;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
 import com.vegeai.backend.modules.user.dto.PublicUserProfileResponse;
 import com.vegeai.backend.modules.user.dto.QuickProfileRequest;
@@ -85,13 +86,32 @@ public class UserController {
             **Đổi mật khẩu tài khoản.**
             
             - Nhập `currentPassword` (mật khẩu hiện tại), `newPassword` và `confirmNewPassword` (mật khẩu mới).
-            - `newPassword` & `confirmNewPassword`: Mật khẩu mới. Cả 3 trường đều là chuỗi SHA-256 hex 64 ký tự do client băm trước (giống login/reset-password); độ mạnh mật khẩu do frontend kiểm tra.
+            - `newPassword` & `confirmNewPassword`: Mật khẩu mới (tối thiểu 8 ký tự, có đủ chữ hoa, thường, số, ký tự đặc biệt).
             - *Lưu ý: Sau khi đổi mật khẩu thành công, toàn bộ phiên đăng nhập cũ trên các thiết bị khác sẽ tự động bị hủy (thu hồi Refresh Tokens).*
             """)
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @AuthenticationPrincipal String userId,
             @Valid @RequestBody ChangePasswordRequest req) {
         userService.changePassword(userId, req);
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully. Please log in with your new password on other devices.", null));
+    }
+
+    @PutMapping("/me/password-hashed")
+    @Operation(summary = "Change password (SHA-256 pre-hashed)", description = """
+            **Đổi mật khẩu tài khoản với mật khẩu đã băm SHA-256 phía client.**
+
+            - Cả 3 trường `currentPassword`, `newPassword`, `confirmNewPassword` là chuỗi SHA-256 hex 64 ký tự do client băm trước (giống login/register/reset-password).
+            - Độ mạnh mật khẩu mới do frontend kiểm tra trước khi băm.
+            - *Lưu ý: Sau khi đổi mật khẩu thành công, toàn bộ phiên đăng nhập cũ trên các thiết bị khác sẽ tự động bị hủy (thu hồi Refresh Tokens).*
+            """)
+    public ResponseEntity<ApiResponse<Void>> changePasswordHashed(
+            @AuthenticationPrincipal String userId,
+            @Valid @RequestBody ChangePasswordHashedRequest req) {
+        userService.changePassword(userId, ChangePasswordRequest.builder()
+                .currentPassword(req.getCurrentPassword())
+                .newPassword(req.getNewPassword())
+                .confirmNewPassword(req.getConfirmNewPassword())
+                .build());
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully. Please log in with your new password on other devices.", null));
     }
 
