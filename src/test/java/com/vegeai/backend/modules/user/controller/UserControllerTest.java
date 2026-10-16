@@ -23,7 +23,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDate;
+import java.util.HexFormat;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,15 +59,21 @@ class UserControllerTest {
     private User testUser;
     private String userToken;
 
+    /** Mirrors the frontend, which sends SHA-256 hex instead of the raw password. */
+    private static String sha256(String raw) throws Exception {
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(raw.getBytes(StandardCharsets.UTF_8));
+        return HexFormat.of().formatHex(digest);
+    }
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 
         testUser = User.builder()
                 .username("test_vege")
                 .email("user@vegeai.com")
-                .passwordHash(passwordEncoder.encode("CurrentPass@123"))
+                .passwordHash(passwordEncoder.encode(sha256("CurrentPass@123")))
                 .fullName("Test Vegetarian")
                 .role(UserRole.MEMBER)
                 .status(AccountStatus.ACTIVE)
@@ -153,8 +162,8 @@ class UserControllerTest {
     @DisplayName("PUT /api/users/me/password - Fails with 400 when currentPassword is missing")
     void changePassword_missingCurrentPassword_fails() throws Exception {
         ChangePasswordRequest req = ChangePasswordRequest.builder()
-                .newPassword("BrandNewPass@456")
-                .confirmNewPassword("BrandNewPass@456")
+                .newPassword(sha256("BrandNewPass@456"))
+                .confirmNewPassword(sha256("BrandNewPass@456"))
                 .build();
 
         mockMvc.perform(put("/api/users/me/password")
@@ -169,9 +178,9 @@ class UserControllerTest {
     @DisplayName("PUT /api/users/me/password - Successfully updates password")
     void changePassword_success() throws Exception {
         ChangePasswordRequest req = ChangePasswordRequest.builder()
-                .currentPassword("CurrentPass@123")
-                .newPassword("BrandNewPass@456")
-                .confirmNewPassword("BrandNewPass@456")
+                .currentPassword(sha256("CurrentPass@123"))
+                .newPassword(sha256("BrandNewPass@456"))
+                .confirmNewPassword(sha256("BrandNewPass@456"))
                 .build();
 
         mockMvc.perform(put("/api/users/me/password")
@@ -182,16 +191,16 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(true));
 
         User updatedUser = userRepository.findById(testUser.getUserId()).orElseThrow();
-        assertTrue(passwordEncoder.matches("BrandNewPass@456", updatedUser.getPasswordHash()));
+        assertTrue(passwordEncoder.matches(sha256("BrandNewPass@456"), updatedUser.getPasswordHash()));
     }
 
     @Test
     @DisplayName("PUT /api/users/me/password - Fails when current password is wrong")
     void changePassword_wrongCurrentPassword() throws Exception {
         ChangePasswordRequest req = ChangePasswordRequest.builder()
-                .currentPassword("WrongPassword@123")
-                .newPassword("BrandNewPass@456")
-                .confirmNewPassword("BrandNewPass@456")
+                .currentPassword(sha256("WrongPassword@123"))
+                .newPassword(sha256("BrandNewPass@456"))
+                .confirmNewPassword(sha256("BrandNewPass@456"))
                 .build();
 
         mockMvc.perform(put("/api/users/me/password")
