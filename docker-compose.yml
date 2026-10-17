@@ -67,6 +67,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}
+      APP_COMMUNITY_SEED_DEFAULTS: "true"
     ports:
       - "8081:8081"
     networks:

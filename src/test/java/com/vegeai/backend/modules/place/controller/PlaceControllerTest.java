@@ -115,14 +115,25 @@ class PlaceControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/places/categories: Trả về đầy đủ 4 danh mục phân loại bản đồ")
-    void getCategories_returnsAllFour() throws Exception {
+    @DisplayName("GET /api/places: Trả về toàn bộ địa điểm trên bản đồ bao gồm quán chay và Điện Máy Xanh")
+    void getAllMapPlaces_returnsPlacesIncludingDienMayXanh() throws Exception {
+        mockMvc.perform(get("/api/places")
+                        .param("category", "DIEN_MAY_XANH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data", hasSize(greaterThan(0))))
+                .andExpect(jsonPath("$.data[*].category", everyItem(is("DIEN_MAY_XANH"))));
+    }
+
+    @Test
+    @DisplayName("GET /api/places/categories: Trả về đầy đủ 5 danh mục phân loại bản đồ (bao gồm DIEN_MAY_XANH)")
+    void getCategories_returnsAllFive() throws Exception {
         mockMvc.perform(get("/api/places/categories"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data", hasSize(4)))
-                .andExpect(jsonPath("$.data[*].category", containsInAnyOrder("ALL", "RESTAURANT", "SUPERMARKET", "GROCERY_STORE")));
+                .andExpect(jsonPath("$.data", hasSize(5)))
+                .andExpect(jsonPath("$.data[*].category", containsInAnyOrder("ALL", "RESTAURANT", "SUPERMARKET", "GROCERY_STORE", "DIEN_MAY_XANH")));
     }
 
     @Test

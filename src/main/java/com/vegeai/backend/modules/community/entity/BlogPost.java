@@ -23,9 +23,13 @@ public class BlogPost {
     @Column(length = 400) private String excerpt;
     @Column(nullable = false, length = 50000) private String content;
     @Column(length = 1000) private String coverImage;
+    @Column(name = "video_url", length = 1000) private String videoUrl;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30) private BlogCategory category;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30) private BlogStatus status;
     @Column(length = 2000) private String moderationReason;
+    @Column(name = "ai_moderation_status", length = 40) private String aiModerationStatus;
+    @Column(name = "ai_safety_score") private Integer aiSafetyScore;
+    @Column(name = "ai_moderation_notes", length = 2000) private String aiModerationNotes;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "reviewer_id") private User reviewer;
     @CreationTimestamp @Column(name = "created_at", updatable = false) private LocalDateTime createdAt;
     @UpdateTimestamp private LocalDateTime updatedAt;

@@ -197,15 +197,18 @@ class BlogApiTest {
         review(post, "APPROVE", "", 409);
     }
 
-    @Test void adminDraftPublishesImmediatelyAndCanEditOwnPublishedPost() throws Exception {
+    @Test void adminDraftGoesThroughAiAndAdminModerationAndCanEditOwnPublishedPost() throws Exception {
         JsonNode post = call("POST", "/api/blog/my-posts", adminToken, input("Admin kitchen story"), 201).path("data");
         assertThat(post.path("status").asText()).isEqualTo("DRAFT");
         call("GET", "/api/blog/posts/" + id(post), null, null, 404);
         post = call("POST", own(post) + "/submit", adminToken, Map.of("version", version(post)), 200).path("data");
+        assertThat(post.path("status").asText()).isEqualTo("PENDING_REVIEW");
+        assertThat(post.path("aiModerationStatus").asText()).isEqualTo("AI_PASSED");
+        assertThat(call("GET", "/api/admin/blog/posts?status=PENDING_REVIEW", adminToken, null, 200)
+                .path("data").path("totalElements").asInt()).isEqualTo(1);
+        post = review(post, "APPROVE", "", 200);
         assertThat(post.path("status").asText()).isEqualTo("PUBLISHED");
         assertThat(post.path("publishedAt").asText()).isNotBlank();
-        assertThat(call("GET", "/api/admin/blog/posts?status=PENDING_REVIEW", adminToken, null, 200)
-                .path("data").path("totalElements").asInt()).isZero();
         JsonNode edited = call("PUT", own(post), adminToken, withVersion(input("Edited admin story"), version(post)), 200).path("data");
         assertThat(edited.path("status").asText()).isEqualTo("PUBLISHED");
         call("PUT", own(post), adminToken, withVersion(input("Stale admin story"), version(post)), 409);
@@ -213,14 +216,18 @@ class BlogApiTest {
         assertThat(call("GET", "/api/blog/posts/" + id(post), null, null, 200).path("data").path("title").asText()).isEqualTo("Edited admin story");
     }
 
-    @Test void directPublicationUsesCurrentDatabaseRoleAndValidatesContent() throws Exception {
+    @Test void submissionRunsAiModerationAndFlagsNonVegetarianContentForAdminReview() throws Exception {
         var shortInput = input("Hi"); shortInput.put("content", "Short draft");
         JsonNode shortPost = call("POST", "/api/blog/my-posts", adminToken, shortInput, 201).path("data");
         call("POST", own(shortPost) + "/submit", adminToken, Map.of("version", version(shortPost)), 400);
-        JsonNode post = call("POST", "/api/blog/my-posts", adminToken, input("Former admin story"), 201).path("data");
-        admin.setRole(UserRole.MEMBER); users.saveAndFlush(admin);
-        post = call("POST", own(post) + "/submit", adminToken, Map.of("version", version(post)), 200).path("data");
-        assertThat(post.path("status").asText()).isEqualTo("PENDING_REVIEW");
+
+        var nonVegInput = input("Suspect recipe post");
+        nonVegInput.put("content", "Hướng dẫn nấu món canh có cho thêm thịt bò và nước mắm mặn truyền thống không phù hợp thuần chay. ".repeat(2));
+        JsonNode flaggedPost = call("POST", "/api/blog/my-posts", token, nonVegInput, 201).path("data");
+        flaggedPost = call("POST", own(flaggedPost) + "/submit", token, Map.of("version", version(flaggedPost)), 200).path("data");
+        assertThat(flaggedPost.path("status").asText()).isEqualTo("PENDING_REVIEW");
+        assertThat(flaggedPost.path("aiModerationStatus").asText()).isEqualTo("AI_FLAGGED");
+        assertThat(flaggedPost.path("aiSafetyScore").asInt()).isLessThan(50);
     }
 
     @Test void lockedAccountAndDemotedAdminAreRecheckedDespiteExistingTokens() throws Exception {
