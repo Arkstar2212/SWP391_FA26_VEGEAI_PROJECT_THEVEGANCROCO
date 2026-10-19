@@ -212,7 +212,89 @@ class BlogApiTest {
         JsonNode post = draft("Review permission");
         call("GET", "/api/admin/blog/posts/" + id(post), token, null, 403);
         call("POST", "/api/admin/blog/posts/" + id(post) + "/review", token, Map.of("version", 0, "decision", "APPROVE"), 403);
+        call("PUT", "/api/admin/blog/posts/" + id(post), token, withVersion(input("Unauthorized edit"), version(post)), 403);
+        call("POST", "/api/admin/blog/posts/" + id(post) + "/archive", token, Map.of("version", version(post)), 403);
+        call("DELETE", "/api/admin/blog/posts/" + id(post) + "?version=" + version(post), token, null, 403);
         review(post, "APPROVE", "", 409);
+    }
+
+    @Test void adminCanEditArchiveRestoreAndPermanentlyDeleteManagedPosts() throws Exception {
+        JsonNode post = publish(draft("Admin-managed story"));
+        String path = "/api/admin/blog/posts/" + id(post);
+        Map<String, Object> edit = withVersion(input("Admin-edited story"), version(post));
+
+        call("PUT", path, token, edit, 403);
+        JsonNode edited = call("PUT", path, adminToken, edit, 200).path("data");
+        assertThat(edited.path("title").asText()).isEqualTo("Admin-edited story");
+        assertThat(edited.path("status").asText()).isEqualTo("PUBLISHED");
+        call("PUT", path, adminToken, withVersion(input("Stale admin edit"), version(post)), 409);
+
+        JsonNode archived = call("POST", path + "/archive", adminToken,
+                Map.of("version", version(edited)), 200).path("data");
+        assertThat(archived.path("status").asText()).isEqualTo("ARCHIVED");
+        call("GET", "/api/blog/posts/" + id(post), null, null, 404);
+        JsonNode restored = call("POST", path + "/restore", adminToken,
+                Map.of("version", version(archived)), 200).path("data");
+        assertThat(restored.path("status").asText()).isEqualTo("PUBLISHED");
+        assertThat(call("GET", "/api/blog/posts/" + id(post), null, null, 200)
+                .path("data").path("title").asText()).isEqualTo("Admin-edited story");
+    }
+
+    @Test void adminPermanentDeleteRemovesBlogCommentsAndRatings() throws Exception {
+        JsonNode post = publish(draft("Admin delete story"));
+        UUID postId = UUID.fromString(id(post));
+        ContentComment comment = new ContentComment();
+        comment.setTargetType(InteractionTarget.BLOG);
+        comment.setTargetId(postId);
+        comment.setAuthor(member);
+        comment.setContent("A comment on this post.");
+        comments.saveAndFlush(comment);
+        ContentRating rating = new ContentRating();
+        rating.setTargetType(InteractionTarget.BLOG);
+        rating.setTargetId(postId);
+        rating.setUser(member);
+        rating.setStars(4);
+        ratings.saveAndFlush(rating);
+
+        call("DELETE", "/api/admin/blog/posts/" + postId + "?version=" + version(post),
+                token, null, 403);
+        call("DELETE", "/api/admin/blog/posts/" + postId + "?version=" + (version(post) - 1),
+                adminToken, null, 409);
+        call("DELETE", "/api/admin/blog/posts/" + postId + "?version=" + version(post),
+                adminToken, null, 200);
+
+        assertThat(posts.findById(postId)).isEmpty();
+        assertThat(comments.findByTargetTypeAndTargetId(InteractionTarget.BLOG, postId, PageRequest.of(0, 10))
+                .getTotalElements()).isZero();
+        assertThat(ratings.countByTargetTypeAndTargetId(InteractionTarget.BLOG, postId)).isZero();
+    }
+
+    @Test void publishedBlogReadersCanCommentAndVote() throws Exception {
+        JsonNode post = publish(draft("Community interaction story"));
+        String contentPath = "/api/public/content-interactions/BLOG/" + id(post);
+
+        assertThat(call("GET", contentPath, null, null, 200).path("data").path("rating").path("ratingCount").asLong())
+                .isZero();
+        call("PUT", "/api/content-interactions/BLOG/" + id(post) + "/rating", null, Map.of("stars", 5), 401);
+        JsonNode vote = call("PUT", "/api/content-interactions/BLOG/" + id(post) + "/rating",
+                token, Map.of("stars", 5), 200).path("data");
+        assertThat(vote.path("myRating").asInt()).isEqualTo(5);
+        assertThat(vote.path("ratingCount").asLong()).isEqualTo(1);
+
+        JsonNode comment = call("POST", "/api/content-interactions/BLOG/" + id(post) + "/comments",
+                token, Map.of("content", "A useful blog comment."), 201).path("data");
+        String commentPath = "/api/content-interactions/BLOG/" + id(post) + "/comments/" + comment.path("id").asText();
+        JsonNode edited = call("PUT", commentPath, token,
+                Map.of("content", "An updated blog comment.", "version", comment.path("version").asLong()), 200)
+                .path("data");
+        assertThat(edited.path("content").asText()).isEqualTo("An updated blog comment.");
+        assertThat(call("GET", contentPath, null, null, 200).path("data").path("comments").path("totalElements").asLong())
+                .isEqualTo(1);
+        call("DELETE", commentPath + "?version=" + edited.path("version").asLong(), otherToken, null, 404);
+        call("DELETE", commentPath + "?version=" + edited.path("version").asLong(), token, null, 200);
+        call("DELETE", "/api/content-interactions/BLOG/" + id(post) + "/rating", token, null, 200);
+        assertThat(call("GET", contentPath, null, null, 200).path("data").path("rating").path("ratingCount").asLong())
+                .isZero();
     }
 
     @Test void adminDraftPublishesImmediatelyAndCanEditOwnPublishedPost() throws Exception {

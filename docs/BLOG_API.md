@@ -47,10 +47,16 @@ accept HTTP(S) without credentials or a local `/images/filename` path.
 - `GET /api/admin/blog/posts?status=PENDING_REVIEW&keyword=&page=0&size=10`
 - `GET /api/admin/blog/posts/{id}`
 - `POST /api/admin/blog/posts/{id}/review`: `{version, decision: "APPROVE"|"REJECT", reason}`
+- `PUT /api/admin/blog/posts/{id}`: edit any post with its current `version`
+- `POST /api/admin/blog/posts/{id}/archive`: `{version}` -> hide the post without deleting it
+- `POST /api/admin/blog/posts/{id}/restore`: `{version}` -> restore its previous status
+- `DELETE /api/admin/blog/posts/{id}?version=...`: permanently delete the post, comments, and ratings
 
 Only pending posts can be reviewed. Rejection requires a nonblank reason <=2000
 characters. Approval publishes the post; rejection leaves it private and editable
 by its author. Resubmitting clears the previous review metadata.
+Admin edits preserve the current post status. Deletion is permanent; use the archive
+action when the post should only be hidden.
 
 All mutations require the current version. Stale revisions or invalid state
 transitions return 409, missing/invalid revisions return 400. Database row locks

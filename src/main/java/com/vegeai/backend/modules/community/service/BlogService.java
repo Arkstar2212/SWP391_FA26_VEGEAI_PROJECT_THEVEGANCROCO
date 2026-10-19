@@ -5,6 +5,9 @@ import com.vegeai.backend.common.exception.*;
 import com.vegeai.backend.modules.community.dto.BlogDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
 import com.vegeai.backend.modules.community.repository.BlogPostRepository;
+import com.vegeai.backend.modules.interactions.entity.InteractionTarget;
+import com.vegeai.backend.modules.interactions.repository.ContentCommentRepository;
+import com.vegeai.backend.modules.interactions.repository.ContentRatingRepository;
 import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.entity.UserRole;
@@ -22,6 +25,8 @@ public class BlogService {
     private final BlogPostRepository posts;
     private final CommunityAccess access;
     private final NotificationService notificationService;
+    private final ContentCommentRepository comments;
+    private final ContentRatingRepository ratings;
 
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> published(String keyword, BlogCategory category, int page, int size) {
@@ -156,6 +161,53 @@ public class BlogService {
                         : "Bài viết của bạn chưa được duyệt. Mở trang bài viết để xem lý do.",
                 "/blog/my-posts/" + post.getId());
         return response(post, true, true);
+    }
+
+    public PostResponse adminUpdate(String principal, UUID id, PostInput input) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), input.version());
+        apply(post, input);
+        if (post.getStatus() == BlogStatus.PUBLISHED
+                || (post.getStatus() == BlogStatus.ARCHIVED && post.getArchivedFromStatus() == BlogStatus.PUBLISHED)) {
+            requirePublicationContent(post);
+        }
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public PostResponse adminArchive(String principal, UUID id, Long version) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), version);
+        if (post.getStatus() == BlogStatus.ARCHIVED) throw new AppException(ErrorCode.BLOG_STATE_CONFLICT);
+        post.setArchivedFromStatus(post.getStatus());
+        post.setStatus(BlogStatus.ARCHIVED);
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public PostResponse adminRestore(String principal, UUID id, Long version) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), version);
+        requireStatus(post, BlogStatus.ARCHIVED);
+        BlogStatus previousStatus = post.getArchivedFromStatus();
+        post.setStatus(previousStatus == null || previousStatus == BlogStatus.ARCHIVED
+                ? BlogStatus.DRAFT : previousStatus);
+        post.setArchivedFromStatus(null);
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public void adminDelete(String principal, UUID id, Long version) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), version);
+        comments.deleteByTargetTypeAndTargetId(InteractionTarget.BLOG, id);
+        ratings.deleteByTargetTypeAndTargetId(InteractionTarget.BLOG, id);
+        posts.delete(post);
+        posts.flush();
     }
 
     private PageResponse<PostResponse> list(UUID author, BlogStatus status, String keyword,
