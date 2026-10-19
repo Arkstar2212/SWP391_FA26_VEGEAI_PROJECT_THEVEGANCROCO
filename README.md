@@ -116,6 +116,10 @@ Authenticated in-app notifications are available through `GET /api/notifications
 
 OpenStreetMap endpoints can be overridden with `APP_OPENSTREETMAP_OVERPASS_URL` and `APP_OPENSTREETMAP_NOMINATIM_URL`. Respect provider rate limits; the backend caches place queries for one hour.
 
+### Community ratings and comments
+
+Shared content-interaction endpoints accept `BLOG`, `RECIPE`, and `VIDEO` targets. Before deploying this change to an existing PostgreSQL database, apply `scripts/migrate-video-content-interactions.sql` so its target-type constraints allow video ratings and comments, then apply `scripts/migrate-content-review-metadata.sql` for review tags, photos, star scores, and public-name preferences. Review photos are stored in the persistent `vegeai_content_uploads` Docker volume (or the directory configured by `CONTENT_UPLOAD_DIR`).
+
 ---
 
 ## 🗄️ Database Architecture & Crow's Foot ERD

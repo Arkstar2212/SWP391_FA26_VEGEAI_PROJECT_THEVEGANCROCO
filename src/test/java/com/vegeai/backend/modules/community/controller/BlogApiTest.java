@@ -4,11 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vegeai.backend.modules.auth.service.*;
 import com.vegeai.backend.modules.community.repository.BlogPostRepository;
+import com.vegeai.backend.modules.community.repository.VideoRepository;
+import com.vegeai.backend.modules.community.entity.CommunityVideo;
+import com.vegeai.backend.modules.community.entity.VideoStatus;
 import com.vegeai.backend.modules.interactions.entity.ContentComment;
 import com.vegeai.backend.modules.interactions.entity.ContentRating;
 import com.vegeai.backend.modules.interactions.entity.InteractionTarget;
 import com.vegeai.backend.modules.interactions.repository.ContentCommentRepository;
 import com.vegeai.backend.modules.interactions.repository.ContentRatingRepository;
+import com.vegeai.backend.modules.interactions.service.ContentInteractionAssetService;
 import com.vegeai.backend.modules.user.entity.*;
 import com.vegeai.backend.modules.user.repository.UserRepository;
 import org.junit.jupiter.api.*;
@@ -18,14 +22,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.*;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import java.net.URI;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test") @Transactional
@@ -34,8 +43,10 @@ class BlogApiTest {
     @Autowired ObjectMapper mapper;
     @Autowired UserRepository users;
     @Autowired BlogPostRepository posts;
+    @Autowired VideoRepository videos;
     @Autowired ContentCommentRepository comments;
     @Autowired ContentRatingRepository ratings;
+    @Autowired ContentInteractionAssetService interactionAssets;
     @Autowired JwtService jwt;
     @MockBean TokenBlacklistService blacklist;
     User member, other, admin;
@@ -60,7 +71,7 @@ class BlogApiTest {
         if (body != null) builder.contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(body));
         var result = mvc.perform(builder).andExpect(status().is(code))
                 .andExpect(header().doesNotExist(HttpHeaders.WWW_AUTHENTICATE)).andReturn();
-        return mapper.readTree(result.getResponse().getContentAsString());
+        return mapper.readTree(result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
     }
     Map<String, Object> input(String title) {
         return new HashMap<>(Map.of("title", title, "excerpt", "A plant-based kitchen story", "category", "GREEN_LIVING",
@@ -89,6 +100,59 @@ class BlogApiTest {
         assertThat(call("GET", "/api/blog/my-posts", token, null, 200).path("data").path("items").size()).isZero();
     }
 
+    @Test void membersCanRatePublishedVideosAndGuestsCanReadTheirScore() throws Exception {
+        CommunityVideo video = new CommunityVideo();
+        video.setTitle("Video fixture");
+        video.setVideoUrl("https://example.test/video.mp4");
+        video.setStatus(VideoStatus.PUBLISHED);
+        video.setCreatedBy(member);
+        video = videos.saveAndFlush(video);
+        String target = "/api/content-interactions/VIDEO/" + video.getId();
+
+        call("GET", "/api/public/content-interactions/VIDEO/" + video.getId() + "?page=0&size=10", null, null, 200);
+        call("PUT", target + "/rating", null, Map.of("stars", 4), 401);
+        JsonNode saved = call("PUT", target + "/rating", token, Map.of("stars", 4), 200).path("data");
+        assertThat(saved.path("targetType").asText()).isEqualTo("VIDEO");
+        assertThat(saved.path("averageStars").asDouble()).isEqualTo(4.0);
+        assertThat(saved.path("ratingCount").asInt()).isEqualTo(1);
+
+        JsonNode summary = call("GET", "/api/public/content-interactions/VIDEO/ratings?ids=" + video.getId(),
+                null, null, 200).path("data").get(0);
+        assertThat(summary.path("averageStars").asDouble()).isEqualTo(4.0);
+        assertThat(summary.path("ratingCount").asInt()).isEqualTo(1);
+        call("DELETE", target + "/rating", token, null, 200);
+    }
+
+    @Test void membersCanSubmitStructuredReviewsAndHideTheirPublicName() throws Exception {
+        JsonNode post = publish(draft("Structured review story"));
+        String postId = id(post);
+        MockMultipartFile review = new MockMultipartFile("review", "", "application/json",
+                mapper.writeValueAsBytes(Map.of("content", "A lovely, easy recipe to make.",
+                        "stars", 5, "tags", List.of("Dễ làm", "Cả nhà đều thích"),
+                        "publicDisplayName", false, "photoUrls", List.of())));
+        ByteArrayOutputStream imageBytes = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), "png", imageBytes);
+        MockMultipartFile photo = new MockMultipartFile("photos", "dish.png", "image/png", imageBytes.toByteArray());
+        JsonNode saved = mapper.readTree(mvc.perform(multipart("/api/content-interactions/BLOG/{id}/reviews", postId)
+                        .file(review).file(photo).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8)).path("data");
+
+        assertThat(saved.path("reviewStars").asInt()).isEqualTo(5);
+        assertThat(saved.path("tags").size()).isEqualTo(2);
+        assertThat(saved.path("photoUrls").size()).isEqualTo(1);
+        assertThat(saved.path("publicDisplayName").asBoolean()).isFalse();
+        String photoUrl = saved.path("photoUrls").get(0).asText();
+        mvc.perform(request(HttpMethod.GET, URI.create(photoUrl)))
+                .andExpect(status().isOk()).andExpect(content().contentType(MediaType.IMAGE_PNG));
+        interactionAssets.delete(List.of(photoUrl));
+        JsonNode listed = call("GET", "/api/public/content-interactions/BLOG/" + postId, null, null, 200)
+                .path("data").path("comments").path("items").get(0);
+        assertThat(listed.path("authorName").asText()).isEqualTo("Ẩn danh");
+        assertThat(listed.path("content").asText()).isEqualTo("A lovely, easy recipe to make.");
+        assertThat(call("GET", "/api/public/content-interactions/BLOG/" + postId, null, null, 200)
+                .path("data").path("rating").path("ratingCount").asLong()).isEqualTo(1);
+    }
+
     @Test void cannotForgePublicationAuthorOrReadAnotherAuthorsDraft() throws Exception {
         var input = input("Private draft");
         input.put("status", "PUBLISHED"); input.put("authorId", other.getUserId()); input.put("moderationReason", "forged");
@@ -110,6 +174,14 @@ class BlogApiTest {
         assertThat(post.path("submittedAt").asText()).isNotBlank();
         call("GET", "/api/blog/posts/" + id(post), null, null, 404);
         assertThat(call("GET", "/api/admin/blog/posts?status=PENDING_REVIEW", adminToken, null, 200).path("data").path("totalElements").asInt()).isEqualTo(1);
+        JsonNode reviewDetail = call("GET", "/api/admin/blog/posts/" + id(post), adminToken, null, 200).path("data");
+        assertThat(reviewDetail.path("title").asText()).isEqualTo("A green kitchen story");
+        assertThat(reviewDetail.path("excerpt").asText()).isEqualTo("A plant-based kitchen story");
+        assertThat(reviewDetail.path("content").asText()).contains("vegetables and plant-based cooking");
+        assertThat(reviewDetail.path("coverImage").asText()).isEqualTo("/images/fresh-vegetables.png");
+        assertThat(reviewDetail.path("category").asText()).isEqualTo("GREEN_LIVING");
+        assertThat(reviewDetail.path("authorName").asText()).isEqualTo(member.getFullName());
+        assertThat(reviewDetail.path("submittedAt").asText()).isNotBlank();
         post = review(post, "APPROVE", "", 200);
         assertThat(post.path("status").asText()).isEqualTo("PUBLISHED");
         assertThat(post.path("readingMinutes").asInt()).isPositive();

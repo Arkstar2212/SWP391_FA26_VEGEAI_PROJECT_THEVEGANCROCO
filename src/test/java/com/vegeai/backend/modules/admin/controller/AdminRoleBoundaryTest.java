@@ -125,4 +125,20 @@ class AdminRoleBoundaryTest {
         call("GET", "/api/recipes/" + draft.path("recipeId").asText(), null, null, 404);
         call("GET", "/api/admin/recipes/" + draft.path("recipeId").asText(), adminToken, null, 200);
     }
+    @Test void adminRecipeListIncludesAllStatusesAndSupportsFiltering() throws Exception {
+        for (String status : List.of("PUBLISHED", "DRAFT", "ARCHIVED")) {
+            var body = recipe(List.of());
+            body.put("title", "Admin catalog " + status);
+            body.put("status", status);
+            call("POST", "/api/admin/recipes", adminToken, body, 201);
+        }
+        JsonNode all = call("GET", "/api/admin/recipes?keyword=Admin%20catalog&page=0&size=10", adminToken, null, 200).path("data");
+        assertThat(all.path("totalElements").asInt()).isEqualTo(3);
+        assertThat(all.path("items").findValuesAsText("status"))
+                .containsExactlyInAnyOrder("PUBLISHED", "DRAFT", "ARCHIVED");
+        JsonNode drafts = call("GET", "/api/admin/recipes?status=DRAFT", adminToken, null, 200).path("data");
+        assertThat(drafts.path("totalElements").asInt()).isEqualTo(1);
+        assertThat(drafts.path("items").get(0).path("status").asText()).isEqualTo("DRAFT");
+        call("GET", "/api/admin/recipes", memberToken, null, 403);
+    }
 }

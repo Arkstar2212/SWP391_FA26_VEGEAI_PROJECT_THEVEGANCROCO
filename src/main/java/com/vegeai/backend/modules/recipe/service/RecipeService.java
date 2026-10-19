@@ -61,6 +61,39 @@ public class RecipeService {
         return PageResponse.from(recipePage, dtos);
     }
 
+    @Transactional(readOnly = true)
+    public PageResponse<AdminRecipeSummaryDto> listAdminRecipes(String keyword, RecipeStatus status, int page, int size) {
+        Specification<Recipe> spec = (root, query, cb) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            if (status != null) predicates.add(cb.equal(root.get("status"), status));
+            if (keyword != null && !keyword.isBlank()) {
+                String pattern = "%" + keyword.trim().toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("title")), pattern),
+                        cb.like(cb.lower(root.get("description")), pattern)));
+            }
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+        PageRequest pageRequest = PageRequest.of(Math.max(0, page), Math.max(1, Math.min(size, 50)),
+                Sort.by(Sort.Direction.DESC, "updatedAt"));
+        Page<Recipe> recipePage = recipeRepository.findAll(spec, pageRequest);
+        List<AdminRecipeSummaryDto> items = recipePage.getContent().stream()
+                .map(recipe -> AdminRecipeSummaryDto.builder()
+                        .recipeId(recipe.getRecipeId())
+                        .title(recipe.getTitle())
+                        .slug(recipe.getSlug())
+                        .imageUrl(recipe.getImageUrl())
+                        .cookTimeMinutes(recipe.getCookTimeMinutes())
+                        .difficulty(recipe.getDifficulty())
+                        .calories(recipe.getCalories())
+                        .proteinGrams(recipe.getProteinGrams())
+                        .status(recipe.getStatus())
+                        .tags(recipe.getTags().stream().map(tagService::mapToDto).toList())
+                        .build())
+                .toList();
+        return PageResponse.from(recipePage, items);
+    }
+
     /**
      * Xem chi tiết một công thức món ăn bằng ID.
      */

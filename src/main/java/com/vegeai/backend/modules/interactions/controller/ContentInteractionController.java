@@ -10,10 +10,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 import java.util.List;
 
-/** Public reads and member-only writes for ratings and comments on blogs and recipes. */
+/** Public reads and member-only writes for ratings and comments on community content. */
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -53,6 +54,25 @@ public class ContentInteractionController {
     public ApiResponse<CommentView> addComment(@AuthenticationPrincipal String userId,
             @PathVariable InteractionTarget type,@PathVariable UUID id,@Valid @RequestBody CommentInput input) {
         return ApiResponse.created("Comment created.",service.addComment(userId,type,id,input));
+    }
+
+    @PostMapping(value="/content-interactions/{type}/{id}/reviews", consumes="multipart/form-data")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('MEMBER')")
+    public ApiResponse<CommentView> addReview(@AuthenticationPrincipal String userId,
+            @PathVariable InteractionTarget type,@PathVariable UUID id,
+            @Valid @RequestPart("review") ReviewInput input,
+            @RequestPart(value="photos", required=false) List<MultipartFile> photos) {
+        return ApiResponse.created("Review created.",service.addReview(userId,type,id,input,photos));
+    }
+
+    @PutMapping(value="/content-interactions/{type}/{id}/comments/{commentId}/review", consumes="multipart/form-data")
+    @PreAuthorize("hasRole('MEMBER')")
+    public ApiResponse<CommentView> editReview(@AuthenticationPrincipal String userId,
+            @PathVariable InteractionTarget type,@PathVariable UUID id,@PathVariable UUID commentId,
+            @Valid @RequestPart("review") ReviewInput input,
+            @RequestPart(value="photos", required=false) List<MultipartFile> photos) {
+        return ApiResponse.success(service.editReview(userId,type,id,commentId,input,photos));
     }
 
     @PutMapping("/content-interactions/{type}/{id}/comments/{commentId}")
