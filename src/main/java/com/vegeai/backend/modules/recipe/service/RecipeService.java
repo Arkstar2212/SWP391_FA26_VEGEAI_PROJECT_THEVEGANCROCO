@@ -6,6 +6,9 @@ import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.fridge.entity.FridgeItem;
 import com.vegeai.backend.modules.fridge.entity.FridgeItemStatus;
 import com.vegeai.backend.modules.fridge.repository.FridgeItemRepository;
+import com.vegeai.backend.modules.interactions.entity.InteractionTarget;
+import com.vegeai.backend.modules.interactions.repository.ContentCommentRepository;
+import com.vegeai.backend.modules.interactions.repository.ContentRatingRepository;
 import com.vegeai.backend.modules.recipe.dto.*;
 import com.vegeai.backend.modules.recipe.entity.*;
 import com.vegeai.backend.modules.recipe.repository.RecipeRepository;
@@ -37,6 +40,8 @@ public class RecipeService {
     private final UserRepository userRepository;
     private final TagService tagService;
     private final com.vegeai.backend.modules.community.repository.VideoRepository videos;
+    private final ContentCommentRepository contentComments;
+    private final ContentRatingRepository contentRatings;
 
     /**
      * Tìm kiếm và lọc công thức món chay đa tiêu chí (Faceted Tag Filter with AND/OR & Exclusion Logic).
@@ -337,6 +342,8 @@ public class RecipeService {
     public void deleteRecipe(UUID recipeId) {
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new AppException(ErrorCode.RECIPE_NOT_FOUND));
+        contentComments.deleteByTargetTypeAndTargetId(InteractionTarget.RECIPE, recipeId);
+        contentRatings.deleteByTargetTypeAndTargetId(InteractionTarget.RECIPE, recipeId);
         recipeRepository.delete(recipe);
         log.info("[RECIPE] Admin deleted recipe id='{}'", recipeId);
     }

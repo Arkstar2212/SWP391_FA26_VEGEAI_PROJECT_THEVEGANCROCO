@@ -25,6 +25,8 @@ public class BlogPost {
     @Column(length = 1000) private String coverImage;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30) private BlogCategory category;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30) private BlogStatus status;
+    @Enumerated(EnumType.STRING) @Column(name = "archived_from_status", length = 30)
+    private BlogStatus archivedFromStatus;
     @Column(length = 2000) private String moderationReason;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "reviewer_id") private User reviewer;
     @CreationTimestamp @Column(name = "created_at", updatable = false) private LocalDateTime createdAt;

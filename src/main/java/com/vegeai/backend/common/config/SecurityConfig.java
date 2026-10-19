@@ -107,7 +107,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/recipes/fridge-match").authenticated()
                         .requestMatchers("/api/recipes/cookbook/**", "/api/recipes/cookbook").authenticated()
                         .requestMatchers("/api/recipes/**").permitAll()
-                        // Google Maps & Places (Public nearby search)
+                        // OpenStreetMap places (Public nearby search)
                         .requestMatchers("/api/places/**").permitAll()
                         // Admin only
                         .requestMatchers("/api/questions/mine", "/api/questions/mine/**", "/api/videos/favorites", "/api/videos/*/favorite").authenticated()

@@ -52,6 +52,16 @@ public class BlogController {
     public ApiResponse<PostResponse> withdraw(@AuthenticationPrincipal String userId, @PathVariable UUID id, @Valid @RequestBody Revision input) {
         return ApiResponse.success(service.withdraw(userId, id, input.version()));
     }
+    @PostMapping("/my-posts/{id}/archive")
+    public ApiResponse<PostResponse> archive(@AuthenticationPrincipal String userId, @PathVariable UUID id,
+            @Valid @RequestBody Revision input) {
+        return ApiResponse.success("Blog post moved to the archive.", service.archive(userId, id, input.version()));
+    }
+    @PostMapping("/my-posts/{id}/restore")
+    public ApiResponse<PostResponse> restore(@AuthenticationPrincipal String userId, @PathVariable UUID id,
+            @Valid @RequestBody Revision input) {
+        return ApiResponse.success("Blog post restored.", service.restore(userId, id, input.version()));
+    }
     @DeleteMapping("/my-posts/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal String userId, @PathVariable UUID id, @RequestParam(required = false) Long version) {
         service.delete(userId, id, version);

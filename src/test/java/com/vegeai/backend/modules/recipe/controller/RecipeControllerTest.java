@@ -6,6 +6,11 @@ import com.vegeai.backend.modules.fridge.entity.FreshnessStatus;
 import com.vegeai.backend.modules.fridge.entity.FridgeItem;
 import com.vegeai.backend.modules.fridge.entity.FridgeItemStatus;
 import com.vegeai.backend.modules.fridge.repository.FridgeItemRepository;
+import com.vegeai.backend.modules.interactions.entity.ContentComment;
+import com.vegeai.backend.modules.interactions.entity.ContentRating;
+import com.vegeai.backend.modules.interactions.entity.InteractionTarget;
+import com.vegeai.backend.modules.interactions.repository.ContentCommentRepository;
+import com.vegeai.backend.modules.interactions.repository.ContentRatingRepository;
 import com.vegeai.backend.modules.recipe.dto.CreateRecipeRequest;
 import com.vegeai.backend.modules.recipe.dto.RecipeFilterRequest;
 import com.vegeai.backend.modules.recipe.dto.RecipeIngredientDto;
@@ -35,6 +40,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -59,6 +65,12 @@ class RecipeControllerTest {
 
     @Autowired
     private FridgeItemRepository fridgeItemRepository;
+
+    @Autowired
+    private ContentCommentRepository contentCommentRepository;
+
+    @Autowired
+    private ContentRatingRepository contentRatingRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -274,10 +286,29 @@ class RecipeControllerTest {
         String recipeId = objectMapper.readTree(resBody).path("data").path("recipeId").asText();
         assertNotNull(recipeId);
 
-        // 2. Xóa
+        ContentComment comment = new ContentComment();
+        comment.setTargetType(InteractionTarget.RECIPE);
+        comment.setTargetId(java.util.UUID.fromString(recipeId));
+        comment.setAuthor(memberUser);
+        comment.setContent("Recipe deletion cleanup test");
+        contentCommentRepository.saveAndFlush(comment);
+
+        ContentRating rating = new ContentRating();
+        rating.setTargetType(InteractionTarget.RECIPE);
+        rating.setTargetId(java.util.UUID.fromString(recipeId));
+        rating.setUser(memberUser);
+        rating.setStars(4);
+        contentRatingRepository.saveAndFlush(rating);
+
+        // Delete the recipe and its polymorphic interactions together.
         mockMvc.perform(delete("/api/admin/recipes/" + recipeId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk());
+        assertEquals(0, contentCommentRepository.findByTargetTypeAndTargetId(InteractionTarget.RECIPE,
+                java.util.UUID.fromString(recipeId), org.springframework.data.domain.PageRequest.of(0, 10))
+                .getTotalElements());
+        assertEquals(0, contentRatingRepository.countByTargetTypeAndTargetId(InteractionTarget.RECIPE,
+                java.util.UUID.fromString(recipeId)));
     }
 
     @Test

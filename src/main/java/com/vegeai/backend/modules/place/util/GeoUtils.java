@@ -3,7 +3,7 @@ package com.vegeai.backend.modules.place.util;
 import java.util.Locale;
 
 /**
- * Tiện ích tính toán khoảng cách địa lý (Haversine Formula) và URL bản đồ Google Maps.
+ * Tiện ích tính toán khoảng cách địa lý (Haversine Formula).
  */
 public final class GeoUtils {
 
@@ -46,13 +46,4 @@ public final class GeoUtils {
         return String.format(Locale.US, "%.1f km", distanceKm);
     }
 
-    /**
-     * Tạo đường link Google Maps chỉ đường trực tiếp (Deep-link mở Google Maps app hoặc website).
-     */
-    public static String buildGoogleMapsDirectionsUrl(double lat, double lng, String placeId) {
-        if (placeId != null && !placeId.isBlank()) {
-            return "https://www.google.com/maps/dir/?api=1&destination=" + lat + "," + lng + "&destination_place_id=" + placeId;
-        }
-        return "https://www.google.com/maps/dir/?api=1&destination=" + lat + "," + lng;
-    }
 }

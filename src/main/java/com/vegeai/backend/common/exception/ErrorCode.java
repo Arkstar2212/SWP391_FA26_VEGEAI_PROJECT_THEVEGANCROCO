@@ -79,8 +79,8 @@ public enum ErrorCode {
     VIDEO_NOT_FOUND(2401, "Video not found.", HttpStatus.NOT_FOUND),
     VIDEO_COMMENT_NOT_FOUND(2402, "Video comment not found.", HttpStatus.NOT_FOUND),
     COMMUNITY_CONFLICT(2501, "Content changed. Reload before updating or deleting.", HttpStatus.CONFLICT),
-    PLACES_NOT_CONFIGURED(2601, "Google Places is not configured for verified restaurant search.", HttpStatus.SERVICE_UNAVAILABLE),
-    PLACES_PROVIDER_UNAVAILABLE(2602, "Google Places could not complete the verified restaurant search.", HttpStatus.SERVICE_UNAVAILABLE),
+    PLACES_NOT_CONFIGURED(2601, "Places provider is not configured.", HttpStatus.SERVICE_UNAVAILABLE),
+    PLACES_PROVIDER_UNAVAILABLE(2602, "OpenStreetMap place search is temporarily unavailable.", HttpStatus.SERVICE_UNAVAILABLE),
 
 
     // ── Email ─────────────────────────────────────────────────────────────────

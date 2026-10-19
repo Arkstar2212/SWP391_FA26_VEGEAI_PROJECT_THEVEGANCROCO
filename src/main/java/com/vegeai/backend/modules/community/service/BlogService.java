@@ -95,11 +95,29 @@ public class BlogService {
         return response(post, true, true);
     }
 
-    public void delete(String principal, UUID id, Long version) {
+    public PostResponse archive(String principal, UUID id, Long version) {
         BlogPost post = ownedForUpdate(principal, id, version);
-        requireEditable(post);
-        posts.delete(post);
+        if (post.getStatus() == BlogStatus.ARCHIVED) throw new AppException(ErrorCode.BLOG_STATE_CONFLICT);
+        // Keep the prior state so restoring a published post does not turn it into an unpublished draft.
+        post.setArchivedFromStatus(post.getStatus());
+        post.setStatus(BlogStatus.ARCHIVED);
         posts.flush();
+        return response(post, true, true);
+    }
+
+    public PostResponse restore(String principal, UUID id, Long version) {
+        BlogPost post = ownedForUpdate(principal, id, version);
+        requireStatus(post, BlogStatus.ARCHIVED);
+        BlogStatus previousStatus = post.getArchivedFromStatus();
+        post.setStatus(previousStatus == null || previousStatus == BlogStatus.ARCHIVED
+                ? BlogStatus.DRAFT : previousStatus);
+        post.setArchivedFromStatus(null);
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public void delete(String principal, UUID id, Long version) {
+        archive(principal, id, version);
     }
 
     @PreAuthorize("hasRole('ADMIN')") @Transactional(readOnly = true)
