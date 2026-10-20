@@ -5,6 +5,7 @@ import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.community.dto.BlogDtos.PostInput;
 import com.vegeai.backend.modules.community.dto.BlogDtos.PostResponse;
 import com.vegeai.backend.modules.community.entity.BlogPost;
+import com.vegeai.backend.modules.community.entity.AiModerationStatus;
 import com.vegeai.backend.modules.community.entity.BlogStatus;
 import com.vegeai.backend.modules.community.repository.BlogPostRepository;
 import com.vegeai.backend.modules.interactions.entity.InteractionTarget;
@@ -45,6 +46,7 @@ public class PersonalBlogActionsService {
             throw new AppException(ErrorCode.VALIDATION_ERROR, "Title must contain at least 5 characters and content at least 80 characters before review.");
         }
         post.setStatus(BlogStatus.PENDING_REVIEW);
+        post.queueAiModeration();
         post.setSubmittedAt(LocalDateTime.now());
         post.setReviewedAt(null);
         post.setReviewer(null);
@@ -73,7 +75,9 @@ public class PersonalBlogActionsService {
         return new PostResponse(p.getId(), author.getUserId(), access.name(author), p.getTitle(), p.getExcerpt(),
                 p.getContent(), p.getCoverImage(), p.getCategory(), p.getStatus(), p.getVersion(),
                 Math.max(1, (int) Math.ceil(words / 200.0)), p.getCreatedAt(), p.getUpdatedAt(),
-                p.getSubmittedAt(), p.getReviewedAt(), p.getPublishedAt(), null, p.getModerationReason());
+                p.getSubmittedAt(), p.getReviewedAt(), p.getPublishedAt(),
+                p.getAiModerationStatus() == null ? AiModerationStatus.NOT_CHECKED : p.getAiModerationStatus(),
+                p.getAiModerationReason(), p.getAiModerationAgreedWithAdmin(), null, p.getModerationReason());
     }
 
     private String validateCover(String value) {

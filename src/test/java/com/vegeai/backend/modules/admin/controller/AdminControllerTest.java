@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.admin.dto.UpdateUserRoleRequest;
 import com.vegeai.backend.modules.admin.dto.UpdateUserStatusRequest;
+import com.vegeai.backend.modules.admin.entity.AiAuditLog;
+import com.vegeai.backend.modules.admin.repository.AiAuditLogRepository;
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
 import com.vegeai.backend.modules.auth.service.JwtService;
 import com.vegeai.backend.modules.user.entity.AccountStatus;
@@ -45,6 +47,9 @@ class AdminControllerTest {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private AiAuditLogRepository aiAuditLogRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -60,6 +65,7 @@ class AdminControllerTest {
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
+        aiAuditLogRepository.deleteAll();
         userRepository.deleteAll();
 
         adminUser = User.builder()
@@ -207,21 +213,46 @@ class AdminControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/admin/ai/status - Returns AI Ops and model status")
-    void getAiOpsStatus_success() throws Exception {
+    @DisplayName("GET /api/admin/ai/status - Reports no telemetry before AI requests")
+    void getAiOpsStatus_noRequestsYet() throws Exception {
+        mockMvc.perform(get("/api/admin/ai/status")
+                        .header(HttpHeaders.AUTHORIZATION, adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.systemHealth").value("NO_DATA"))
+                .andExpect(jsonPath("$.data.totalAiRequests").value(0))
+                .andExpect(jsonPath("$.data.successRatePercentage").doesNotExist())
+                .andExpect(jsonPath("$.data.averageLatencyMs").doesNotExist())
+                .andExpect(jsonPath("$.data.generatedAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.models", hasSize(1)));
+    }
+
+    @Test
+    @DisplayName("GET /api/admin/ai/status - Aggregates persisted AI request telemetry")
+    void getAiOpsStatus_usesPersistedRequests() throws Exception {
+        AiAuditLog entry = new AiAuditLog();
+        entry.setModel("gemini-3.8-flash");
+        entry.setOperation("NUTRITION_CHAT");
+        entry.setStatus("SUCCESS");
+        entry.setUserType("GUEST");
+        entry.setLatencyMs(123);
+        aiAuditLogRepository.saveAndFlush(entry);
+
         mockMvc.perform(get("/api/admin/ai/status")
                         .header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.systemHealth").value("HEALTHY"))
-                .andExpect(jsonPath("$.data.models", hasSize(3)));
+                .andExpect(jsonPath("$.data.totalAiRequests").value(1))
+                .andExpect(jsonPath("$.data.successRatePercentage").value(100))
+                .andExpect(jsonPath("$.data.guestAiRequestsToday").value(1))
+                .andExpect(jsonPath("$.data.averageLatencyMs").value(123));
     }
 
     @Test
-    @DisplayName("GET /api/admin/ai/audit-logs - Returns AI audit logs")
-    void getAiAuditLogs_success() throws Exception {
+    @DisplayName("GET /api/admin/ai/audit-logs - Returns an empty list before AI requests")
+    void getAiAuditLogs_emptyBeforeRequests() throws Exception {
         mockMvc.perform(get("/api/admin/ai/audit-logs")
                         .header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(1))));
+                .andExpect(jsonPath("$.data", hasSize(0)));
     }
 }

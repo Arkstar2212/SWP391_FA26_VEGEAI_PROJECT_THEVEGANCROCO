@@ -2,6 +2,7 @@ package com.vegeai.backend.modules.community.controller;
 
 import com.vegeai.backend.common.dto.*;
 import com.vegeai.backend.modules.community.dto.BlogDtos.*;
+import com.vegeai.backend.modules.community.entity.AiModerationStatus;
 import com.vegeai.backend.modules.community.entity.BlogStatus;
 import com.vegeai.backend.modules.community.service.BlogService;
 import com.vegeai.backend.modules.community.dto.BlogDtos.Revision;
@@ -20,9 +21,11 @@ public class AdminBlogController {
 
     @GetMapping
     public ApiResponse<PageResponse<PostResponse>> queue(@AuthenticationPrincipal String userId,
-            @RequestParam(required = false) BlogStatus status, @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) BlogStatus status,
+            @RequestParam(required = false) AiModerationStatus aiStatus,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.success(service.queue(userId, status, keyword, page, size));
+        return ApiResponse.success(service.queue(userId, status, aiStatus, keyword, page, size));
     }
     @GetMapping("/{id}")
     public ApiResponse<PostResponse> detail(@AuthenticationPrincipal String userId, @PathVariable UUID id) {

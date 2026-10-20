@@ -21,5 +21,7 @@ public final class BlogDtos {
                                String content, String coverImage, BlogCategory category, BlogStatus status,
                                long version, int readingMinutes, LocalDateTime createdAt, LocalDateTime updatedAt,
                                LocalDateTime submittedAt, LocalDateTime reviewedAt, LocalDateTime publishedAt,
+                               AiModerationStatus aiModerationStatus, String aiModerationReason,
+                               Boolean aiModerationAgreedWithAdmin,
                                String reviewerName, String moderationReason) {}
 }

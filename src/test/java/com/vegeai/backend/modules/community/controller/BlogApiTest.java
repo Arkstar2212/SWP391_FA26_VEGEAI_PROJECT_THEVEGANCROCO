@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vegeai.backend.modules.auth.service.*;
 import com.vegeai.backend.modules.community.repository.BlogPostRepository;
 import com.vegeai.backend.modules.community.repository.VideoRepository;
+import com.vegeai.backend.modules.community.entity.AiModerationStatus;
+import com.vegeai.backend.modules.community.entity.BlogPost;
+import com.vegeai.backend.modules.community.entity.BlogStatus;
 import com.vegeai.backend.modules.community.entity.CommunityVideo;
 import com.vegeai.backend.modules.community.entity.VideoStatus;
 import com.vegeai.backend.modules.interactions.entity.ContentComment;
@@ -27,6 +30,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import javax.imageio.ImageIO;
@@ -172,6 +176,8 @@ class BlogApiTest {
         JsonNode post = submit(draft("A green kitchen story"));
         assertThat(post.path("status").asText()).isEqualTo("PENDING_REVIEW");
         assertThat(post.path("submittedAt").asText()).isNotBlank();
+        assertThat(post.path("aiModerationStatus").asText()).isEqualTo("CHECKING");
+        assertThat(post.path("aiModerationReason").asText()).contains("Admin vẫn là người quyết định cuối cùng");
         call("GET", "/api/blog/posts/" + id(post), null, null, 404);
         assertThat(call("GET", "/api/admin/blog/posts?status=PENDING_REVIEW", adminToken, null, 200).path("data").path("totalElements").asInt()).isEqualTo(1);
         JsonNode reviewDetail = call("GET", "/api/admin/blog/posts/" + id(post), adminToken, null, 200).path("data");
@@ -184,11 +190,13 @@ class BlogApiTest {
         assertThat(reviewDetail.path("submittedAt").asText()).isNotBlank();
         post = review(post, "APPROVE", "", 200);
         assertThat(post.path("status").asText()).isEqualTo("PUBLISHED");
+        assertThat(post.path("aiModerationStatus").asText()).isEqualTo("NOT_CHECKED");
         assertThat(post.path("readingMinutes").asInt()).isPositive();
         assertThat(post.path("publishedAt").asText()).isNotBlank();
         JsonNode publicPost = call("GET", "/api/blog/posts/" + id(post), null, null, 200).path("data");
         assertThat(publicPost.path("content").asText()).contains("vegetables");
-        for (String field : List.of("moderationReason", "reviewerName", "reviewedAt", "email", "passwordHash")) {
+        for (String field : List.of("moderationReason", "reviewerName", "reviewedAt", "aiModerationStatus",
+                "aiModerationReason", "aiModerationAgreedWithAdmin", "email", "passwordHash")) {
             assertThat(publicPost.has(field)).isFalse();
         }
         call("PUT", own(post), token, withVersion(input("Updated title"), version(post)), 409);
@@ -214,6 +222,56 @@ class BlogApiTest {
         assertThat(post.path("status").asText()).isEqualTo("PUBLISHED");
     }
 
+    @Test void publishedEditQueuesFreshAiModerationAndClearsThePreviousDecision() throws Exception {
+        JsonNode published = publish(draft("Published kitchen story"));
+        UUID postId = UUID.fromString(id(published));
+        BlogPost stored = posts.findById(postId).orElseThrow();
+        stored.setAiModerationStatus(AiModerationStatus.FLAGGED);
+        stored.setAiModerationReason("Result for the old content");
+        stored.setAiModerationAgreedWithAdmin(true);
+        stored.setAiModerationClaimToken(UUID.randomUUID());
+        stored.setAiModerationClaimedAt(LocalDateTime.now());
+        posts.flush();
+
+        JsonNode current = call("GET", own(published), token, null, 200).path("data");
+        JsonNode edited = call("PUT", own(current) + "/request-review", token,
+                withVersion(input("Updated kitchen story"), version(current)), 200).path("data");
+
+        assertThat(edited.path("status").asText()).isEqualTo("PENDING_REVIEW");
+        assertThat(edited.path("aiModerationStatus").asText()).isEqualTo("CHECKING");
+        assertThat(edited.path("aiModerationReason").asText())
+                .contains("Admin vẫn là người quyết định cuối cùng");
+        assertThat(edited.has("aiModerationAgreedWithAdmin")).isFalse();
+        BlogPost updated = posts.findById(postId).orElseThrow();
+        assertThat(updated.getAiModerationClaimToken()).isNull();
+        assertThat(updated.getAiModerationClaimedAt()).isNull();
+    }
+
+    @Test void moderationJobClaimIsExclusiveAndCanBeReclaimedAfterItsLeaseExpires() throws Exception {
+        JsonNode pending = submit(draft("Claimed kitchen story"));
+        BlogPost post = posts.findById(UUID.fromString(id(pending))).orElseThrow();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiredBefore = now.minusMinutes(2);
+        UUID firstClaim = UUID.randomUUID();
+        UUID secondClaim = UUID.randomUUID();
+
+        assertThat(posts.findAvailableModerationJobs(BlogStatus.PENDING_REVIEW, AiModerationStatus.CHECKING,
+                expiredBefore, PageRequest.of(0, 1))).extracting(BlogPost::getId).containsExactly(post.getId());
+        assertThat(posts.claimModerationJob(post.getId(), post.getVersion(), BlogStatus.PENDING_REVIEW,
+                AiModerationStatus.CHECKING, firstClaim, now, expiredBefore)).isEqualTo(1);
+
+        assertThat(posts.findAvailableModerationJobs(BlogStatus.PENDING_REVIEW, AiModerationStatus.CHECKING,
+                expiredBefore, PageRequest.of(0, 1))).isEmpty();
+        assertThat(posts.claimModerationJob(post.getId(), post.getVersion(), BlogStatus.PENDING_REVIEW,
+                AiModerationStatus.CHECKING, secondClaim, now.plusSeconds(1), expiredBefore)).isZero();
+
+        assertThat(posts.claimModerationJob(post.getId(), post.getVersion(), BlogStatus.PENDING_REVIEW,
+                AiModerationStatus.CHECKING, secondClaim, now.plusMinutes(2), now.plusMinutes(1))).isEqualTo(1);
+        BlogPost reclaimed = posts.findById(post.getId()).orElseThrow();
+        assertThat(reclaimed.getAiModerationClaimToken()).isEqualTo(secondClaim);
+        assertThat(reclaimed.getAiModerationClaimedAt()).isNotNull();
+    }
+
     @Test void pendingPostCanBeArchivedAndRestoredBeforeWithdrawal() throws Exception {
         JsonNode post = submit(draft("Pending story"));
         call("PUT", own(post), token, withVersion(input("Changed while pending"), version(post)), 409);
@@ -224,6 +282,7 @@ class BlogApiTest {
         assertThat(post.path("status").asText()).isEqualTo("PENDING_REVIEW");
         post = call("POST", own(post) + "/withdraw", token, Map.of("version", version(post)), 200).path("data");
         assertThat(post.path("status").asText()).isEqualTo("DRAFT");
+        assertThat(post.path("aiModerationStatus").asText()).isEqualTo("NOT_CHECKED");
         call("DELETE", own(post) + "?version=" + version(post), token, null, 200);
         JsonNode archived = call("GET", own(post), token, null, 200).path("data");
         assertThat(archived.path("status").asText()).isEqualTo("ARCHIVED");
@@ -299,6 +358,7 @@ class BlogApiTest {
         JsonNode edited = call("PUT", path, adminToken, edit, 200).path("data");
         assertThat(edited.path("title").asText()).isEqualTo("Admin-edited story");
         assertThat(edited.path("status").asText()).isEqualTo("PUBLISHED");
+        assertThat(edited.path("aiModerationStatus").asText()).isEqualTo("NOT_CHECKED");
         call("PUT", path, adminToken, withVersion(input("Stale admin edit"), version(post)), 409);
 
         JsonNode archived = call("POST", path + "/archive", adminToken,
@@ -310,6 +370,30 @@ class BlogApiTest {
         assertThat(restored.path("status").asText()).isEqualTo("PUBLISHED");
         assertThat(call("GET", "/api/blog/posts/" + id(post), null, null, 200)
                 .path("data").path("title").asText()).isEqualTo("Admin-edited story");
+    }
+
+    @Test void adminEditingPendingContentQueuesANewModerationPass() throws Exception {
+        JsonNode pending = submit(draft("Pending admin edit story"));
+        UUID postId = UUID.fromString(id(pending));
+        BlogPost stored = posts.findById(postId).orElseThrow();
+        stored.setAiModerationStatus(AiModerationStatus.SAFE);
+        stored.setAiModerationReason("Result for previous content");
+        stored.setAiModerationAgreedWithAdmin(true);
+        stored.setAiModerationClaimToken(UUID.randomUUID());
+        stored.setAiModerationClaimedAt(LocalDateTime.now());
+        posts.flush();
+
+        JsonNode current = call("GET", "/api/admin/blog/posts/" + postId, adminToken, null, 200).path("data");
+        JsonNode edited = call("PUT", "/api/admin/blog/posts/" + postId, adminToken,
+                withVersion(input("Admin revised pending story"), version(current)), 200).path("data");
+
+        assertThat(edited.path("aiModerationStatus").asText()).isEqualTo("CHECKING");
+        assertThat(edited.path("aiModerationReason").asText())
+                .contains("Admin vẫn là người quyết định cuối cùng");
+        assertThat(edited.has("aiModerationAgreedWithAdmin")).isFalse();
+        BlogPost updated = posts.findById(postId).orElseThrow();
+        assertThat(updated.getAiModerationClaimToken()).isNull();
+        assertThat(updated.getAiModerationClaimedAt()).isNull();
     }
 
     @Test void adminPermanentDeleteRemovesBlogCommentsAndRatings() throws Exception {

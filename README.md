@@ -116,6 +116,12 @@ Authenticated in-app notifications are available through `GET /api/notifications
 
 OpenStreetMap endpoints can be overridden with `APP_OPENSTREETMAP_OVERPASS_URL` and `APP_OPENSTREETMAP_NOMINATIM_URL`. Respect provider rate limits; the backend caches place queries for one hour.
 
+### AI operations and blog moderation
+
+Admin AI telemetry is available from `/api/admin/ai/status` and `/api/admin/ai/audit-logs`. It records operation, model, status, duration, moderation outcome, and safe error categories (HTTP status or root-cause type) without storing prompts or submitted blog text. Blog moderation allows up to 75 seconds for the provider response; if the provider still fails, the post remains in the Admin queue for manual review. Existing databases are updated through Hibernate schema `update`.
+
+Member blog submissions enter the existing Admin review queue immediately while AI safety screening runs in the background. Workers claim each check atomically with a two-minute lease, preventing duplicate provider calls across backend instances while allowing abandoned claims to be retried. Member-requested edits to published posts and Admin edits to pending content clear stale AI results and queue a fresh check. A flagged or unavailable result is shown to the reviewer; the AI never publishes or deletes a post. Admin approval/rejection remains the final decision, and late results from an expired claim or older content version are ignored.
+
 ### Community ratings and comments
 
 Shared content-interaction endpoints accept `BLOG`, `RECIPE`, and `VIDEO` targets. Before deploying this change to an existing PostgreSQL database, apply `scripts/migrate-video-content-interactions.sql` so its target-type constraints allow video ratings and comments, then apply `scripts/migrate-content-review-metadata.sql` for review tags, photos, star scores, and public-name preferences. Review photos are stored in the persistent `vegeai_content_uploads` Docker volume (or the directory configured by `CONTENT_UPLOAD_DIR`).
@@ -182,7 +188,7 @@ docker compose up -d --build
 ## 🛡️ Responsible AI & Security Compliance
 
 1. **Deterministic Separation:** Mathematical nutrition metrics are never generated via LLM inference; they use audited formulas.
-2. **AI Audit Trail:** Every model invocation is permanently recorded with latency, token usage, and moderation flags.
+2. **AI Audit Trail:** AI operations record status and latency without persisting prompts, token counts, or personal content.
 3. **Data Privacy:** Sensitive biometric metrics (weight, health conditions, allergies) are isolated to user scope and never exposed across accounts.
 4. **Allergen Hard Constraint:** When the Meal Planner suggests recipes, hard allergen exclusions always override recommendation scoring.
 
