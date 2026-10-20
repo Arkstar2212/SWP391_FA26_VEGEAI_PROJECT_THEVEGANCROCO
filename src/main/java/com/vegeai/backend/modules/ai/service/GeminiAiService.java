@@ -139,7 +139,7 @@ public class GeminiAiService {
                 requireConfiguredKey();
                 SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
                 requestFactory.setConnectTimeout(Duration.ofSeconds(5));
-                requestFactory.setReadTimeout(Duration.ofSeconds(75));
+                requestFactory.setReadTimeout(Duration.ofSeconds(60));
                 String instruction = """
                         Bạn là bộ lọc an toàn cho cộng đồng blog về ăn chay. Đánh dấu flagged=true chỉ khi có nội dung
                         nguy hiểm rõ ràng như quấy rối/thù ghét, tình dục khai thác, spam/lừa đảo, hướng dẫn tự hại,

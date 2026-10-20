@@ -156,4 +156,5 @@ class OpenStreetMapPlaceProviderTest {
             server.stop(0);
         }
     }
+
 }
