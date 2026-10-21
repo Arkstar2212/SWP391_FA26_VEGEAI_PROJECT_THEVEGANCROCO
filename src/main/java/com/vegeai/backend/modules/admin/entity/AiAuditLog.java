@@ -50,4 +50,13 @@ public class AiAuditLog {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
+
+    /** Signed-in caller, if any; prompts and responses are never stored. Filled by AiCallContext. */
+    private UUID userId;
+
+    private Integer promptTokens;
+
+    private Integer responseTokens;
+
+    private Integer totalTokens;
 }

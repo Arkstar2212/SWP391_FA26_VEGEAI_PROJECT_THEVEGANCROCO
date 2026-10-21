@@ -609,7 +609,9 @@ public class GeminiAiService {
 
     private String extractText(String response) throws com.fasterxml.jackson.core.JsonProcessingException {
         if (response == null || response.isBlank()) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
-        JsonNode candidate = objectMapper.readTree(response).path("candidates").path(0);
+        JsonNode root = objectMapper.readTree(response);
+        com.vegeai.backend.modules.admin.service.AiCallContext.recordUsage(root.path("usageMetadata"));
+        JsonNode candidate = root.path("candidates").path(0);
         String finish = candidate.path("finishReason").asText();
         if (!finish.isBlank() && !finish.equals("STOP")) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
         StringBuilder text = new StringBuilder();
