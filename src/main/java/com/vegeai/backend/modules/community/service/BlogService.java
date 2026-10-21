@@ -5,6 +5,10 @@ import com.vegeai.backend.common.exception.*;
 import com.vegeai.backend.modules.community.dto.BlogDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
 import com.vegeai.backend.modules.community.repository.BlogPostRepository;
+import com.vegeai.backend.modules.interactions.entity.InteractionTarget;
+import com.vegeai.backend.modules.interactions.repository.ContentCommentRepository;
+import com.vegeai.backend.modules.interactions.repository.ContentRatingRepository;
+import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.entity.UserRole;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +24,13 @@ import java.util.UUID;
 public class BlogService {
     private final BlogPostRepository posts;
     private final CommunityAccess access;
+    private final NotificationService notificationService;
+    private final ContentCommentRepository comments;
+    private final ContentRatingRepository ratings;
 
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> published(String keyword, BlogCategory category, int page, int size) {
-        return list(null, BlogStatus.PUBLISHED, keyword, category, page, size, false);
+        return list(null, BlogStatus.PUBLISHED, keyword, category, page, size, false, null);
     }
 
     @Transactional(readOnly = true)
@@ -35,7 +42,7 @@ public class BlogService {
 
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> mine(String principal, BlogStatus status, int page, int size) {
-        return list(access.user(principal).getUserId(), status, null, null, page, size, true);
+        return list(access.user(principal).getUserId(), status, null, null, page, size, true, null);
     }
 
     @Transactional(readOnly = true)
@@ -59,7 +66,13 @@ public class BlogService {
         boolean directEdit = post.getStatus() == BlogStatus.PUBLISHED && access.user(principal).getRole() == UserRole.ADMIN;
         if (!directEdit) requireEditable(post);
         apply(post, input);
-        if (directEdit) requirePublicationContent(post);
+        if (directEdit) {
+            requirePublicationContent(post);
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+            post.setAiModerationAgreedWithAdmin(null);
+            post.clearAiModerationClaim();
+        }
         posts.flush();
         return response(post, true, true);
     }
@@ -69,6 +82,15 @@ public class BlogService {
         requireEditable(post);
         requirePublicationContent(post);
         boolean directPublish = access.user(principal).getRole() == UserRole.ADMIN;
+        // Persist the work state in the same transaction so the background worker can resume it after a restart.
+        if (directPublish) {
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+            post.setAiModerationAgreedWithAdmin(null);
+            post.clearAiModerationClaim();
+        } else {
+            post.queueAiModeration();
+        }
         post.setStatus(directPublish ? BlogStatus.PUBLISHED : BlogStatus.PENDING_REVIEW);
         post.setSubmittedAt(directPublish ? null : LocalDateTime.now());
         post.setReviewer(directPublish ? post.getAuthor() : null);
@@ -76,6 +98,11 @@ public class BlogService {
         post.setPublishedAt(directPublish ? LocalDateTime.now() : null);
         post.setModerationReason(null);
         posts.flush();
+        // Member submissions enter the moderator queue; direct admin publication does not need a queue notice.
+        if (!directPublish) {
+            notificationService.notifyAdministrators("BLOG_SUBMITTED", "Bài viết mới cần được duyệt",
+                    "Một thành viên vừa gửi bài viết mới lên blog.", "/admin/blog/" + post.getId());
+        }
         return response(post, true, true);
     }
 
@@ -84,21 +111,50 @@ public class BlogService {
         requireStatus(post, BlogStatus.PENDING_REVIEW);
         post.setStatus(BlogStatus.DRAFT);
         post.setSubmittedAt(null);
+        if (post.getAiModerationStatus() == AiModerationStatus.CHECKING) {
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+        }
+        post.clearAiModerationClaim();
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public PostResponse archive(String principal, UUID id, Long version) {
+        BlogPost post = ownedForUpdate(principal, id, version);
+        if (post.getStatus() == BlogStatus.ARCHIVED) throw new AppException(ErrorCode.BLOG_STATE_CONFLICT);
+        // Keep the prior state so restoring a published post does not turn it into an unpublished draft.
+        post.setArchivedFromStatus(post.getStatus());
+        post.setStatus(BlogStatus.ARCHIVED);
+        post.clearAiModerationClaim();
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public PostResponse restore(String principal, UUID id, Long version) {
+        BlogPost post = ownedForUpdate(principal, id, version);
+        requireStatus(post, BlogStatus.ARCHIVED);
+        BlogStatus previousStatus = post.getArchivedFromStatus();
+        post.setStatus(previousStatus == null || previousStatus == BlogStatus.ARCHIVED
+                ? BlogStatus.DRAFT : previousStatus);
+        post.setArchivedFromStatus(null);
+        if (post.getStatus() == BlogStatus.PENDING_REVIEW
+                && post.getAiModerationStatus() == AiModerationStatus.CHECKING) {
+            post.queueAiModeration();
+        }
         posts.flush();
         return response(post, true, true);
     }
 
     public void delete(String principal, UUID id, Long version) {
-        BlogPost post = ownedForUpdate(principal, id, version);
-        requireEditable(post);
-        posts.delete(post);
-        posts.flush();
+        archive(principal, id, version);
     }
 
     @PreAuthorize("hasRole('ADMIN')") @Transactional(readOnly = true)
-    public PageResponse<PostResponse> queue(String principal, BlogStatus status, String keyword, int page, int size) {
+    public PageResponse<PostResponse> queue(String principal, BlogStatus status, AiModerationStatus aiStatus,
+                                            String keyword, int page, int size) {
         access.admin(principal);
-        return list(null, status, keyword, null, page, size, true);
+        return list(null, status, keyword, null, page, size, true, aiStatus);
     }
 
     @PreAuthorize("hasRole('ADMIN')") @Transactional(readOnly = true)
@@ -119,20 +175,101 @@ public class BlogService {
         }
         boolean approve = input.decision() == Decision.APPROVE;
         post.setStatus(approve ? BlogStatus.PUBLISHED : BlogStatus.REJECTED);
+        // A human decision cancels any still-running AI result for this pending submission.
+        if (post.getAiModerationStatus() == AiModerationStatus.CHECKING) {
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+        }
+        post.clearAiModerationClaim();
         post.setReviewer(admin);
         post.setReviewedAt(LocalDateTime.now());
         post.setModerationReason(approve ? null : reason);
         post.setPublishedAt(approve ? LocalDateTime.now() : null);
+        if (post.getAiModerationStatus() == AiModerationStatus.SAFE
+                || post.getAiModerationStatus() == AiModerationStatus.FLAGGED) {
+            boolean aiRecommendedReview = post.getAiModerationStatus() == AiModerationStatus.FLAGGED;
+            post.setAiModerationAgreedWithAdmin(aiRecommendedReview == !approve);
+        }
+        posts.flush();
+        // Moderation results are delivered only to the author who owns this post.
+        notificationService.notifyUser(post.getAuthor(), "BLOG_REVIEWED",
+                approve ? "Bài viết đã được duyệt" : "Bài viết cần chỉnh sửa",
+                approve ? "Bài viết của bạn đã được duyệt và đăng trên blog."
+                        : "Bài viết của bạn chưa được duyệt. Mở trang bài viết để xem lý do.",
+                "/blog/my-posts/" + post.getId());
+        return response(post, true, true);
+    }
+
+    public PostResponse adminUpdate(String principal, UUID id, PostInput input) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), input.version());
+        apply(post, input);
+        if (post.getStatus() == BlogStatus.PENDING_REVIEW) {
+            post.queueAiModeration();
+        } else if (post.getStatus() == BlogStatus.PUBLISHED
+                || (post.getStatus() == BlogStatus.ARCHIVED
+                && post.getArchivedFromStatus() == BlogStatus.PUBLISHED)) {
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+            post.setAiModerationAgreedWithAdmin(null);
+            post.clearAiModerationClaim();
+        }
+        if (post.getStatus() == BlogStatus.PUBLISHED
+                || (post.getStatus() == BlogStatus.ARCHIVED && post.getArchivedFromStatus() == BlogStatus.PUBLISHED)) {
+            requirePublicationContent(post);
+        }
         posts.flush();
         return response(post, true, true);
     }
 
+    public PostResponse adminArchive(String principal, UUID id, Long version) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), version);
+        if (post.getStatus() == BlogStatus.ARCHIVED) throw new AppException(ErrorCode.BLOG_STATE_CONFLICT);
+        post.setArchivedFromStatus(post.getStatus());
+        post.setStatus(BlogStatus.ARCHIVED);
+        post.clearAiModerationClaim();
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public PostResponse adminRestore(String principal, UUID id, Long version) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), version);
+        requireStatus(post, BlogStatus.ARCHIVED);
+        BlogStatus previousStatus = post.getArchivedFromStatus();
+        post.setStatus(previousStatus == null || previousStatus == BlogStatus.ARCHIVED
+                ? BlogStatus.DRAFT : previousStatus);
+        post.setArchivedFromStatus(null);
+        if (post.getStatus() == BlogStatus.PENDING_REVIEW
+                && post.getAiModerationStatus() == AiModerationStatus.CHECKING) {
+            post.queueAiModeration();
+        }
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public void adminDelete(String principal, UUID id, Long version) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), version);
+        comments.deleteByTargetTypeAndTargetId(InteractionTarget.BLOG, id);
+        ratings.deleteByTargetTypeAndTargetId(InteractionTarget.BLOG, id);
+        posts.delete(post);
+        posts.flush();
+    }
+
     private PageResponse<PostResponse> list(UUID author, BlogStatus status, String keyword,
-                                            BlogCategory category, int page, int size, boolean privateView) {
+                                            BlogCategory category, int page, int size, boolean privateView,
+                                            AiModerationStatus aiStatus) {
         String pattern = access.keyword(keyword);
         Specification<BlogPost> spec = (root, query, cb) -> cb.conjunction();
         if (author != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("author").get("userId"), author));
         if (status != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        if (aiStatus != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("aiModerationStatus"), aiStatus));
         if (category != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), category));
         if (pattern != null) spec = spec.and((root, query, cb) -> cb.or(
                 cb.like(cb.lower(root.get("title")), pattern, '\\'), cb.like(cb.lower(root.get("excerpt")), pattern, '\\')));
@@ -193,6 +330,9 @@ public class BlogService {
                 content ? p.getContent() : null, p.getCoverImage(), p.getCategory(), p.getStatus(), p.getVersion(),
                 Math.max(1, (int) Math.ceil(words / 200.0)), p.getCreatedAt(), p.getUpdatedAt(),
                 privateView ? p.getSubmittedAt() : null, privateView ? p.getReviewedAt() : null, p.getPublishedAt(),
+                privateView ? (p.getAiModerationStatus() == null ? AiModerationStatus.NOT_CHECKED : p.getAiModerationStatus()) : null,
+                privateView ? p.getAiModerationReason() : null,
+                privateView ? p.getAiModerationAgreedWithAdmin() : null,
                 privateView && p.getReviewer() != null ? access.name(p.getReviewer()) : null,
                 privateView ? p.getModerationReason() : null);
     }

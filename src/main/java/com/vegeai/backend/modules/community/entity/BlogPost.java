@@ -13,6 +13,8 @@ import java.util.UUID;
 @Table(name = "blog_posts", indexes = {
         @Index(name = "idx_blog_status_created", columnList = "status,created_at"),
         @Index(name = "idx_blog_author_created", columnList = "author_id,created_at"),
+        @Index(name = "idx_blog_moderation_queue", columnList = "status,ai_moderation_status,submitted_at"),
+        @Index(name = "idx_blog_moderation_claim", columnList = "status,ai_moderation_status,ai_moderation_claimed_at,submitted_at"),
         @Index(name = "idx_blog_category", columnList = "category")})
 @Getter @Setter
 public class BlogPost {
@@ -25,7 +27,19 @@ public class BlogPost {
     @Column(length = 1000) private String coverImage;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30) private BlogCategory category;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30) private BlogStatus status;
+    @Enumerated(EnumType.STRING) @Column(name = "archived_from_status", length = 30)
+    private BlogStatus archivedFromStatus;
     @Column(length = 2000) private String moderationReason;
+    @Enumerated(EnumType.STRING) @Column(name = "ai_moderation_status", length = 20)
+    private AiModerationStatus aiModerationStatus = AiModerationStatus.NOT_CHECKED;
+    @Column(name = "ai_moderation_reason", length = 1000)
+    private String aiModerationReason;
+    @Column(name = "ai_moderation_agreed_with_admin")
+    private Boolean aiModerationAgreedWithAdmin;
+    @Column(name = "ai_moderation_claim_token")
+    private UUID aiModerationClaimToken;
+    @Column(name = "ai_moderation_claimed_at")
+    private LocalDateTime aiModerationClaimedAt;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "reviewer_id") private User reviewer;
     @CreationTimestamp @Column(name = "created_at", updatable = false) private LocalDateTime createdAt;
     @UpdateTimestamp private LocalDateTime updatedAt;
@@ -33,4 +47,16 @@ public class BlogPost {
     private LocalDateTime reviewedAt;
     private LocalDateTime publishedAt;
     @Version private long version;
+
+    public void queueAiModeration() {
+        aiModerationStatus = AiModerationStatus.CHECKING;
+        aiModerationReason = "AI đang kiểm tra bài viết; Admin vẫn là người quyết định cuối cùng.";
+        aiModerationAgreedWithAdmin = null;
+        clearAiModerationClaim();
+    }
+
+    public void clearAiModerationClaim() {
+        aiModerationClaimToken = null;
+        aiModerationClaimedAt = null;
+    }
 }

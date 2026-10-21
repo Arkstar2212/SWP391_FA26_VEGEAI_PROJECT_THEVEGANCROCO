@@ -34,5 +34,8 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
     long countByRole(UserRole role);
 
+    // Used to deliver moderation-queue activity notices without exposing admin addresses.
+    java.util.List<User> findAllByRoleAndStatus(UserRole role, AccountStatus status);
+
     long countByCreatedAtAfter(LocalDateTime dateTime);
 }

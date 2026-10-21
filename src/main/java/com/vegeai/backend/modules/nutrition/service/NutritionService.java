@@ -9,6 +9,7 @@ import com.vegeai.backend.modules.nutrition.dto.NutritionTargetsResponse;
 import com.vegeai.backend.modules.nutrition.entity.Gender;
 import com.vegeai.backend.modules.nutrition.entity.NutritionProfile;
 import com.vegeai.backend.modules.nutrition.repository.NutritionProfileRepository;
+import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class NutritionService {
     private final NutritionProfileRepository profileRepository;
     private final UserRepository userRepository;
     private final NutritionCalculator calculator;
+    private final NotificationService notificationService;
 
     // ── Queries ──────────────────────────────────────────────────────────────
 
@@ -93,6 +95,9 @@ public class NutritionService {
 
         log.info("[NUTRITION] Profile {} for userId={} — target={} kcal",
                 isNew ? "created" : "updated", user.getUserId(), calc.dailyCaloriesTarget());
+        // Confirm completed nutrition-profile changes without exposing any health values in the notice.
+        notificationService.notifyUser(user, "NUTRITION_PROFILE_SAVED", "Hồ sơ dinh dưỡng đã được lưu",
+                "Mục tiêu và thông tin dinh dưỡng cá nhân của bạn đã được cập nhật.", "/nutrition");
         return NutritionProfileResponse.from(saved, age, NutritionTargetsResponse.from(calc));
     }
 
@@ -103,6 +108,9 @@ public class NutritionService {
                 .orElseThrow(() -> new AppException(ErrorCode.NUTRITION_PROFILE_NOT_FOUND));
         profileRepository.delete(profile);
         log.info("[NUTRITION] Profile deleted for userId={}", userId);
+        // Keep the user informed when their saved nutrition profile is removed.
+        notificationService.notifyUser(profile.getUser(), "NUTRITION_PROFILE_DELETED", "Hồ sơ dinh dưỡng đã được xóa",
+                "Hồ sơ dinh dưỡng cá nhân đã được xóa khỏi tài khoản của bạn.", "/nutrition");
     }
 
     /**

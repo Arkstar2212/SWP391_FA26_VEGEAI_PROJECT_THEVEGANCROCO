@@ -106,6 +106,26 @@ SWP391_FA26_VEGEAI_PROJECT/
 └── README.md
 ```
 
+## 🗺️ OpenStreetMap Places & In-App Notifications
+
+Place search uses OpenStreetMap community-contributed data through Overpass, and Nominatim geocodes search terms when coordinates are omitted. Results are limited to places carrying vegetarian/vegan-related OSM tags; coverage varies by area. OSM does not supply Google-style ratings or live opening status, so `rating`, `userRatingsTotal`, and `isOpenNow` may be `null`. `isVerified` means that OSM tags explicitly describe vegetarian/vegan-only cuisine; it is not an independent VEGEAI inspection. The frontend must show the returned `attribution` (© OpenStreetMap contributors).
+
+Place API routes remain under `/api/places`: `/nearby`, `/search`, `/categories`, `/verified/nearby`, and `/verified/search`. Search accepts optional `category=ALL|RESTAURANT|SUPERMARKET|GROCERY_STORE`.
+
+Authenticated in-app notifications are available through `GET /api/notifications?page=0&size=20`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/{id}/read`, and `PATCH /api/notifications/read-all`. Reads and updates are scoped to the authenticated recipient. Notifications are created for profile/nutrition and fridge/meal-plan activity, blog and question moderation, question answers, and video comments/favorites. Hibernate creates the `user_notifications` table from the entity mapping.
+
+OpenStreetMap endpoints can be overridden with `APP_OPENSTREETMAP_OVERPASS_URL` and `APP_OPENSTREETMAP_NOMINATIM_URL`. Respect provider rate limits; the backend caches place queries for one hour.
+
+### AI operations and blog moderation
+
+Admin AI telemetry is available from `/api/admin/ai/status` and `/api/admin/ai/audit-logs`. It records operation, model, status, duration, moderation outcome, and safe error categories (HTTP status or root-cause type) without storing prompts or submitted blog text. Blog moderation allows up to 75 seconds for the provider response; if the provider still fails, the post remains in the Admin queue for manual review. Existing databases are updated through Hibernate schema `update`.
+
+Member blog submissions enter the existing Admin review queue immediately while AI safety screening runs in the background. Workers claim each check atomically with a two-minute lease, preventing duplicate provider calls across backend instances while allowing abandoned claims to be retried. Member-requested edits to published posts and Admin edits to pending content clear stale AI results and queue a fresh check. A flagged or unavailable result is shown to the reviewer; the AI never publishes or deletes a post. Admin approval/rejection remains the final decision, and late results from an expired claim or older content version are ignored.
+
+### Community ratings and comments
+
+Shared content-interaction endpoints accept `BLOG`, `RECIPE`, and `VIDEO` targets. Before deploying this change to an existing PostgreSQL database, apply `scripts/migrate-video-content-interactions.sql` so its target-type constraints allow video ratings and comments, then apply `scripts/migrate-content-review-metadata.sql` for review tags, photos, star scores, and public-name preferences. Review photos are stored in the persistent `vegeai_content_uploads` Docker volume (or the directory configured by `CONTENT_UPLOAD_DIR`).
+
 ---
 
 ## 🗄️ Database Architecture & Crow's Foot ERD
@@ -168,7 +188,7 @@ docker compose up -d --build
 ## 🛡️ Responsible AI & Security Compliance
 
 1. **Deterministic Separation:** Mathematical nutrition metrics are never generated via LLM inference; they use audited formulas.
-2. **AI Audit Trail:** Every model invocation is permanently recorded with latency, token usage, and moderation flags.
+2. **AI Audit Trail:** AI operations record status and latency without persisting prompts, token counts, or personal content.
 3. **Data Privacy:** Sensitive biometric metrics (weight, health conditions, allergies) are isolated to user scope and never exposed across accounts.
 4. **Allergen Hard Constraint:** When the Meal Planner suggests recipes, hard allergen exclusions always override recommendation scoring.
 

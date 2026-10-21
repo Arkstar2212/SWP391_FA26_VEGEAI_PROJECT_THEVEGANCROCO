@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
 import com.vegeai.backend.modules.auth.service.JwtService;
+import com.vegeai.backend.modules.user.dto.ChangePasswordHashedRequest;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
 import com.vegeai.backend.modules.user.dto.QuickProfileRequest;
 import com.vegeai.backend.modules.user.dto.UpdateUserProfileRequest;
@@ -59,21 +60,15 @@ class UserControllerTest {
     private User testUser;
     private String userToken;
 
-    /** Mirrors the frontend, which sends SHA-256 hex instead of the raw password. */
-    private static String sha256(String raw) throws Exception {
-        byte[] digest = MessageDigest.getInstance("SHA-256").digest(raw.getBytes(StandardCharsets.UTF_8));
-        return HexFormat.of().formatHex(digest);
-    }
-
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 
         testUser = User.builder()
                 .username("test_vege")
                 .email("user@vegeai.com")
-                .passwordHash(passwordEncoder.encode(sha256("CurrentPass@123")))
+                .passwordHash(passwordEncoder.encode("CurrentPass@123"))
                 .fullName("Test Vegetarian")
                 .role(UserRole.MEMBER)
                 .status(AccountStatus.ACTIVE)
@@ -162,8 +157,8 @@ class UserControllerTest {
     @DisplayName("PUT /api/users/me/password - Fails with 400 when currentPassword is missing")
     void changePassword_missingCurrentPassword_fails() throws Exception {
         ChangePasswordRequest req = ChangePasswordRequest.builder()
-                .newPassword(sha256("BrandNewPass@456"))
-                .confirmNewPassword(sha256("BrandNewPass@456"))
+                .newPassword("BrandNewPass@456")
+                .confirmNewPassword("BrandNewPass@456")
                 .build();
 
         mockMvc.perform(put("/api/users/me/password")
@@ -178,12 +173,61 @@ class UserControllerTest {
     @DisplayName("PUT /api/users/me/password - Successfully updates password")
     void changePassword_success() throws Exception {
         ChangePasswordRequest req = ChangePasswordRequest.builder()
+                .currentPassword("CurrentPass@123")
+                .newPassword("BrandNewPass@456")
+                .confirmNewPassword("BrandNewPass@456")
+                .build();
+
+        mockMvc.perform(put("/api/users/me/password")
+                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        User updatedUser = userRepository.findById(testUser.getUserId()).orElseThrow();
+        assertTrue(passwordEncoder.matches("BrandNewPass@456", updatedUser.getPasswordHash()));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/me/password - Fails when current password is wrong")
+    void changePassword_wrongCurrentPassword() throws Exception {
+        ChangePasswordRequest req = ChangePasswordRequest.builder()
+                .currentPassword("WrongPassword@123")
+                .newPassword("BrandNewPass@456")
+                .confirmNewPassword("BrandNewPass@456")
+                .build();
+
+        mockMvc.perform(put("/api/users/me/password")
+                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.OLD_PASSWORD_INCORRECT.getCode()));
+    }
+
+    /** Mirrors the frontend, which sends SHA-256 hex instead of the raw password. */
+    private static String sha256(String raw) throws Exception {
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(raw.getBytes(StandardCharsets.UTF_8));
+        return HexFormat.of().formatHex(digest);
+    }
+
+    private void useHashedCurrentPassword() throws Exception {
+        testUser.setPasswordHash(passwordEncoder.encode(sha256("CurrentPass@123")));
+        userRepository.save(testUser);
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/me/password-hashed - Successfully updates password")
+    void changePasswordHashed_success() throws Exception {
+        useHashedCurrentPassword();
+        ChangePasswordHashedRequest req = ChangePasswordHashedRequest.builder()
                 .currentPassword(sha256("CurrentPass@123"))
                 .newPassword(sha256("BrandNewPass@456"))
                 .confirmNewPassword(sha256("BrandNewPass@456"))
                 .build();
 
-        mockMvc.perform(put("/api/users/me/password")
+        mockMvc.perform(put("/api/users/me/password-hashed")
                         .header(HttpHeaders.AUTHORIZATION, userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -195,15 +239,33 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/users/me/password - Fails when current password is wrong")
-    void changePassword_wrongCurrentPassword() throws Exception {
-        ChangePasswordRequest req = ChangePasswordRequest.builder()
+    @DisplayName("PUT /api/users/me/password-hashed - Fails with 400 when passwords are not SHA-256 hex")
+    void changePasswordHashed_plainText_fails() throws Exception {
+        ChangePasswordHashedRequest req = ChangePasswordHashedRequest.builder()
+                .currentPassword("CurrentPass@123")
+                .newPassword("BrandNewPass@456")
+                .confirmNewPassword("BrandNewPass@456")
+                .build();
+
+        mockMvc.perform(put("/api/users/me/password-hashed")
+                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_ERROR.getCode()));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/me/password-hashed - Fails when current password is wrong")
+    void changePasswordHashed_wrongCurrentPassword() throws Exception {
+        useHashedCurrentPassword();
+        ChangePasswordHashedRequest req = ChangePasswordHashedRequest.builder()
                 .currentPassword(sha256("WrongPassword@123"))
                 .newPassword(sha256("BrandNewPass@456"))
                 .confirmNewPassword(sha256("BrandNewPass@456"))
                 .build();
 
-        mockMvc.perform(put("/api/users/me/password")
+        mockMvc.perform(put("/api/users/me/password-hashed")
                         .header(HttpHeaders.AUTHORIZATION, userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))

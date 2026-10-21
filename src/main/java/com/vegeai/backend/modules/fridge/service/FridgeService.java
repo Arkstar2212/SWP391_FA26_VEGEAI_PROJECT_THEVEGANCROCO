@@ -7,6 +7,7 @@ import com.vegeai.backend.modules.fridge.entity.FreshnessStatus;
 import com.vegeai.backend.modules.fridge.entity.FridgeItem;
 import com.vegeai.backend.modules.fridge.entity.FridgeItemStatus;
 import com.vegeai.backend.modules.fridge.repository.FridgeItemRepository;
+import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class FridgeService {
 
     private final FridgeItemRepository fridgeItemRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     /**
      * Xác nhận danh sách nguyên liệu sau khi quét AI (User-in-the-Loop).
@@ -137,6 +139,11 @@ public class FridgeService {
                 .map(this::mapToResponse)
                 .toList();
 
+        // One summary notice per confirmed scan avoids flooding users with one notice per ingredient.
+        if (!processedItems.isEmpty()) {
+            notificationService.notifyUser(user, "FRIDGE_SCAN_CONFIRMED", "Đã cập nhật kho lạnh",
+                    "Đã xác nhận " + processedItems.size() + " nguyên liệu từ lần quét tủ lạnh.", "/fridge");
+        }
         return ConfirmFridgeScanResponse.builder()
                 .totalProcessed(processedItems.size())
                 .newlyAddedCount(newlyAdded)
@@ -185,6 +192,9 @@ public class FridgeService {
                 .build();
 
         FridgeItem saved = fridgeItemRepository.save(item);
+        // Manual additions are surfaced as a single, concise personal activity notice.
+        notificationService.notifyUser(user, "FRIDGE_ITEM_ADDED", "Đã thêm nguyên liệu vào kho lạnh",
+                "Nguyên liệu \"" + saved.getName() + "\" đã được thêm vào kho lạnh.", "/fridge");
         return mapToResponse(saved);
     }
 
@@ -255,6 +265,9 @@ public class FridgeService {
         }
 
         FridgeItem saved = fridgeItemRepository.save(item);
+        // Confirm successful inventory edits without including private notes or quantities.
+        notificationService.notifyUser(user, "FRIDGE_ITEM_UPDATED", "Nguyên liệu kho lạnh đã được cập nhật",
+                "Thông tin một nguyên liệu trong kho lạnh của bạn đã được cập nhật.", "/fridge");
         return mapToResponse(saved);
     }
 
@@ -269,6 +282,9 @@ public class FridgeService {
 
         item.setStatus(newStatus);
         FridgeItem saved = fridgeItemRepository.save(item);
+        // Status changes (for example consumed/discarded) are tracked as personal inventory activity.
+        notificationService.notifyUser(user, "FRIDGE_ITEM_STATUS_CHANGED", "Trạng thái nguyên liệu đã thay đổi",
+                "Trạng thái của \"" + saved.getName() + "\" đã được cập nhật.", "/fridge");
         return mapToResponse(saved);
     }
 
@@ -282,6 +298,9 @@ public class FridgeService {
                 .orElseThrow(() -> new AppException(ErrorCode.FRIDGE_ITEM_NOT_FOUND));
 
         fridgeItemRepository.delete(item);
+        // The name is captured before deletion so the completed action can be described accurately.
+        notificationService.notifyUser(user, "FRIDGE_ITEM_DELETED", "Đã xóa nguyên liệu khỏi kho lạnh",
+                "Nguyên liệu \"" + item.getName() + "\" đã được xóa khỏi kho lạnh.", "/fridge");
     }
 
     /**
