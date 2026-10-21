@@ -23,6 +23,7 @@ public class AiAuditLogWriter {
         entry.setOutcome(outcome);
         entry.setLatencyMs(latencyMs);
         entry.setErrorType(errorType);
+        AiCallContext.applyTo(entry);
         logs.save(entry);
     }
 }

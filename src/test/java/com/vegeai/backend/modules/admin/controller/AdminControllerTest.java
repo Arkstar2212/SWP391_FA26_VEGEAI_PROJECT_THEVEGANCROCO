@@ -281,10 +281,7 @@ class AdminControllerTest {
                 .andExpect(jsonPath("$.data.failedAiRequests").value(1))
                 .andExpect(jsonPath("$.data.successRatePercentage").value(50.0))
                 .andExpect(jsonPath("$.data.averageLatencyMs").value(200.0))
-                .andExpect(jsonPath("$.data.models[0].status").value("FAILED"))
-                .andExpect(jsonPath("$.data.operations", hasSize(2)))
-                .andExpect(jsonPath("$.data.operations[*].operation", hasItems("CHAT", "FRIDGE_SCAN")))
-                .andExpect(jsonPath("$.data.operations[?(@.operation == 'FRIDGE_SCAN')].failedRequests", contains(1)));
+                .andExpect(jsonPath("$.data.models[0].status").value("FAILED"));
         mockMvc.perform(get("/api/admin/ai/audit-logs").header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(2)))

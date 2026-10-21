@@ -225,14 +225,6 @@ public class AdminService {
                         .status(latest == null ? "NO_DATA" : latest.getStatus())
                         .latencyMs(latest == null ? null : latest.getLatencyMs())
                         .build()))
-                .operations(aiCallLogRepository.summarizeOperationsSince(since).stream()
-                        .map(summary -> AiOperationStats.builder()
-                                .operation(summary.getOperation())
-                                .totalRequests(summary.getTotalRequests())
-                                .failedRequests(summary.getFailedRequests())
-                                .averageLatencyMs(summary.getAverageLatencyMs())
-                                .build())
-                        .toList())
                 .build();
     }
 

@@ -22,5 +22,4 @@ public class AiOpsStatusResponse {
     private final Double moderationAgreementRate;
     private final Instant generatedAt;
     private final List<AiModelStatus> models;
-    private final List<AiOperationStats> operations;
 }

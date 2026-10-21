@@ -16,20 +16,4 @@ public interface AiCallLogRepository extends JpaRepository<AiCallLog, UUID> {
 
     @Query("select avg(log.latencyMs) from AiCallLog log where log.createdAt > :since")
     Double averageLatencySince(@Param("since") Instant since);
-
-    @Query("""
-            select log.operation as operation, count(log) as totalRequests,
-                   sum(case when log.status = 'SUCCESS' then 0 else 1 end) as failedRequests,
-                   avg(log.latencyMs) as averageLatencyMs
-            from AiCallLog log where log.createdAt > :since
-            group by log.operation order by count(log) desc
-            """)
-    List<OperationSummary> summarizeOperationsSince(@Param("since") Instant since);
-
-    interface OperationSummary {
-        String getOperation();
-        long getTotalRequests();
-        long getFailedRequests();
-        Double getAverageLatencyMs();
-    }
 }
