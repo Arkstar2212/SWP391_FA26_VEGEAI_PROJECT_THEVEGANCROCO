@@ -62,18 +62,17 @@ services:
       JWT_SECRET: ${JWT_SECRET:-vegeai-super-secret-key-change-this-in-production-minimum-256-bits}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
-      MAIL_USERNAME: ${MAIL_USERNAME:-giflvl123@gmail.com}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-pnpsiwgmapmdhqkr}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}
-<<<<<<< HEAD
       OSM_OVERPASS_URLS: ${OSM_OVERPASS_URLS:-https://overpass.private.coffee/api/interpreter,https://overpass-api.de/api/interpreter}
       OSM_PHOTON_URL: ${OSM_PHOTON_URL:-https://photon.komoot.io/api/}
       OSM_USER_AGENT: ${OSM_USER_AGENT:-VEGEAI/1.0 (+https://github.com/cudatbusua/SWP391_VEGEAI_FRONTEND)}
-=======
+      APP_OPENSTREETMAP_OVERPASS_URL: ${APP_OPENSTREETMAP_OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+      APP_OPENSTREETMAP_NOMINATIM_URL: ${APP_OPENSTREETMAP_NOMINATIM_URL:-https://nominatim.openstreetmap.org}
       CONTENT_UPLOAD_DIR: /app/uploads/content-interactions
->>>>>>> 6a63815723b213a298a5c7dd70a9dbc7665793ab
     ports:
       - "8081:8081"
     volumes:

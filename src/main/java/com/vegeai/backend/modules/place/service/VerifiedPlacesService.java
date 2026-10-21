@@ -153,7 +153,6 @@ public class VerifiedPlacesService {
                     .distanceText(GeoUtils.formatDistanceText(distance)).types(types).isVerified(true)
                     .phoneNumber(tags.path("contact:phone").asText(tags.path("phone").asText(null)))
                     .openStreetMapUrl("https://www.openstreetmap.org/"+type+"/"+element.path("id").asLong())
-                    .googleMapsUrl(GeoUtils.buildGoogleMapsDirectionsUrl(pLat,pLng,null))
                     .attribution("© OpenStreetMap contributors (ODbL); dietary classification from community tags")
                     .build());
         }

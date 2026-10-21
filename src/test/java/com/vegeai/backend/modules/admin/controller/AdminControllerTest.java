@@ -4,13 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.admin.dto.UpdateUserRoleRequest;
 import com.vegeai.backend.modules.admin.dto.UpdateUserStatusRequest;
-<<<<<<< HEAD
 import com.vegeai.backend.modules.ai.repository.AiCallLogRepository;
 import com.vegeai.backend.modules.ai.service.AiCallTelemetry;
-=======
 import com.vegeai.backend.modules.admin.entity.AiAuditLog;
 import com.vegeai.backend.modules.admin.repository.AiAuditLogRepository;
->>>>>>> 6a63815723b213a298a5c7dd70a9dbc7665793ab
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
 import com.vegeai.backend.modules.auth.service.JwtService;
 import com.vegeai.backend.modules.user.entity.AccountStatus;
@@ -252,18 +249,12 @@ class AdminControllerTest {
         mockMvc.perform(get("/api/admin/ai/status")
                         .header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(status().isOk())
-<<<<<<< HEAD
                 .andExpect(jsonPath("$.data.systemHealth").value("NO_DATA"))
                 .andExpect(jsonPath("$.data.totalAiRequests").value(0))
                 .andExpect(jsonPath("$.data.models", hasSize(1)))
-                .andExpect(jsonPath("$.data.models[0].status").value("NO_DATA"));
-=======
-                .andExpect(jsonPath("$.data.systemHealth").value("HEALTHY"))
-                .andExpect(jsonPath("$.data.totalAiRequests").value(1))
-                .andExpect(jsonPath("$.data.successRatePercentage").value(100))
+                .andExpect(jsonPath("$.data.models[0].status").value("NO_DATA"))
                 .andExpect(jsonPath("$.data.guestAiRequestsToday").value(1))
-                .andExpect(jsonPath("$.data.averageLatencyMs").value(123));
->>>>>>> 6a63815723b213a298a5c7dd70a9dbc7665793ab
+                .andExpect(jsonPath("$.data.averageLatencyMs").doesNotExist());
     }
 
     @Test
@@ -273,7 +264,6 @@ class AdminControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(0)));
-<<<<<<< HEAD
     }
 
     @Test
@@ -302,7 +292,5 @@ class AdminControllerTest {
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/admin/ai/status"))
                 .andExpect(status().isUnauthorized());
-=======
->>>>>>> 6a63815723b213a298a5c7dd70a9dbc7665793ab
     }
 }
