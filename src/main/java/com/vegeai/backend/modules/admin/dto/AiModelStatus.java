@@ -13,6 +13,5 @@ public class AiModelStatus {
     private final String provider;
     private final String version;
     private final String status;      // e.g. "OPERATIONAL", "DEGRADED", "OFFLINE"
-    private final int latencyMs;
-    private final String rateLimitQuota;
+    private final Long latencyMs;
 }

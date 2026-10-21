@@ -94,7 +94,9 @@ public enum ErrorCode {
     AI_AUTH_FAILED(1707, "Gemini từ chối API key hoặc quyền truy cập. Vui lòng liên hệ quản trị viên.", HttpStatus.SERVICE_UNAVAILABLE),
     AI_QUOTA_EXCEEDED(1708, "Gemini đã hết hạn mức hoặc đang giới hạn tốc độ. Vui lòng thử lại sau.", HttpStatus.SERVICE_UNAVAILABLE),
     AI_UNAVAILABLE(1709, "Không thể kết nối Gemini hoặc model không khả dụng. Vui lòng thử lại sau.", HttpStatus.SERVICE_UNAVAILABLE),
-    AI_RESPONSE_INVALID(1710, "Gemini chưa trả về kết quả hợp lệ. Vui lòng thử lại.", HttpStatus.BAD_GATEWAY);
+    AI_RESPONSE_INVALID(1710, "Gemini chưa trả về kết quả hợp lệ. Vui lòng thử lại.", HttpStatus.BAD_GATEWAY),
+    PLACES_UNAVAILABLE(2601, "Dịch vụ bản đồ đang bận hoặc không kết nối được. Vui lòng thử lại sau.", HttpStatus.SERVICE_UNAVAILABLE),
+    PLACES_INVALID_RESPONSE(2602, "Dịch vụ bản đồ trả dữ liệu không hợp lệ. Vui lòng thử lại.", HttpStatus.BAD_GATEWAY);
 
     private final int code;
     private final String defaultMessage;

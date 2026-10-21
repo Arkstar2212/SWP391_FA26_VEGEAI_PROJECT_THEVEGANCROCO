@@ -72,8 +72,8 @@ class AiVisionControllerTest extends GeminiIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("FR-VIS-01/02: Guest quét ảnh tủ lạnh thành công -> trả về danh sách nguyên liệu & độ tươi")
-    void scanFridge_Success_Guest() throws Exception {
+    @DisplayName("Guest fridge scan requires authentication")
+    void scanFridge_Unauthorized_Guest() throws Exception {
         byte[] dummyImageBytes = "mock-jpeg-binary-image-data-for-fridge-scanning".getBytes();
         MockMultipartFile imageFile = new MockMultipartFile(
                 "image",
@@ -84,13 +84,8 @@ class AiVisionControllerTest extends GeminiIntegrationTestSupport {
 
         mockMvc.perform(multipart("/api/ai/fridge-scan")
                         .file(imageFile))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success", is(true)))
-                .andExpect(jsonPath("$.data.ingredients", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.data.ingredients[0].name", notNullValue()))
-                .andExpect(jsonPath("$.data.ingredients[0].freshness", notNullValue()))
-                .andExpect(jsonPath("$.data.ingredients[0].isVegetarian", is(true)))
-                .andExpect(jsonPath("$.data.suggestedRecipes", hasSize(greaterThan(0))));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success", is(false)));
     }
 
     @Test
@@ -124,7 +119,7 @@ class AiVisionControllerTest extends GeminiIntegrationTestSupport {
         );
 
         mockMvc.perform(multipart("/api/ai/fridge-scan")
-                        .file(emptyFile))
+                        .file(emptyFile).header(HttpHeaders.AUTHORIZATION, "Bearer " + memberToken))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.code", is(1701)));
@@ -141,7 +136,7 @@ class AiVisionControllerTest extends GeminiIntegrationTestSupport {
         );
 
         mockMvc.perform(multipart("/api/ai/fridge-scan")
-                        .file(textFile))
+                        .file(textFile).header(HttpHeaders.AUTHORIZATION, "Bearer " + memberToken))
                 .andExpect(status().isUnsupportedMediaType())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.code", is(1703)));

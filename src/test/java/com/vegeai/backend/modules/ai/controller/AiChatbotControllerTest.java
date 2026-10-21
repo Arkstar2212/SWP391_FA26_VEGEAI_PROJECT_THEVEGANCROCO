@@ -95,8 +95,8 @@ class AiChatbotControllerTest extends GeminiIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("Guest chat: should return AI advisory response with trial flag")
-    void chatAsGuest_success() throws Exception {
+    @DisplayName("Guest chat requires customer authentication")
+    void chatAsGuest_unauthorized() throws Exception {
         AiChatRequest request = AiChatRequest.builder()
                 .message("Tư vấn cho tôi các món chay giàu protein")
                 .build();
@@ -105,12 +105,8 @@ class AiChatbotControllerTest extends GeminiIntegrationTestSupport {
                         .header("X-Forwarded-For", "10.150.1." + (System.currentTimeMillis() % 250))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.reply").isNotEmpty())
-                .andExpect(jsonPath("$.data.recommendedRecipes").isArray())
-                .andExpect(jsonPath("$.data.recommendedRecipes", hasSize(greaterThanOrEqualTo(1))))
-                .andExpect(jsonPath("$.data.isGuestTrial").value(true));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false));
     }
 
     @Test
@@ -139,7 +135,7 @@ class AiChatbotControllerTest extends GeminiIntegrationTestSupport {
                 .build();
 
         mockMvc.perform(post("/api/ai/chat")
-                        .header("X-Forwarded-For", "10.150.2." + (System.currentTimeMillis() % 250))
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

@@ -13,10 +13,10 @@ import java.util.List;
 public class AiOpsStatusResponse {
 
     private final String systemHealth;
-    private final double uptimePercentage;
-    private final double averageLatencyMs;
+    private final Double successRatePercentage;
+    private final Double averageLatencyMs;
     private final long totalAiRequests;
-    private final long guestAiRequestsToday;
-    private final Instant lastHealthCheckAt;
+    private final long failedAiRequests;
+    private final Instant generatedAt;
     private final List<AiModelStatus> models;
 }

@@ -87,7 +87,7 @@ class CommunityApiTest {
 
     @Test void guestCanBrowseButCannotWriteReadPrivateListsOrAdmin() throws Exception {
         call("GET", "/api/questions", null, null, 200);
-        call("GET", "/api/videos", null, null, 200);
+        call("GET", "/api/videos", null, null, 401);
         for (String path : List.of("/api/questions/mine", "/api/videos/favorites", "/api/admin/questions", "/api/admin/videos")) {
             call("GET", path, null, null, 401);
         }
@@ -183,13 +183,13 @@ class CommunityApiTest {
         assertThat(paged.path("last").asBoolean()).isTrue();
     }
 
-    @Test void onlyPublishedVideosAndCommentsArePublic() throws Exception {
+    @Test void customersCanReadOnlyPublishedVideosAndComments() throws Exception {
         JsonNode published = video("Public vegetable video", "PUBLISHED");
         JsonNode draft = video("Private cooking draft", "DRAFT");
-        assertThat(call("GET", "/api/videos", null, null, 200).path("data").path("totalElements").asInt()).isEqualTo(1);
-        call("GET", "/api/videos/" + id(published), null, null, 200);
-        call("GET", "/api/videos/" + id(draft), null, null, 404);
-        call("GET", "/api/videos/" + id(draft) + "/comments", null, null, 404);
+        assertThat(call("GET", "/api/videos", memberToken, null, 200).path("data").path("totalElements").asInt()).isEqualTo(1);
+        call("GET", "/api/videos/" + id(published), memberToken, null, 200);
+        call("GET", "/api/videos/" + id(draft), memberToken, null, 404);
+        call("GET", "/api/videos/" + id(draft) + "/comments", memberToken, null, 404);
         call("POST", "/api/videos/" + id(draft) + "/comments", memberToken, Map.of("content", "hidden"), 404);
         call("PUT", "/api/videos/" + id(draft) + "/favorite", memberToken, null, 404);
         assertThat(call("GET", "/api/admin/videos?status=DRAFT", adminToken, null, 200).path("data").path("totalElements").asInt()).isEqualTo(1);
@@ -199,10 +199,10 @@ class CommunityApiTest {
         video("100% plant cooking", "PUBLISHED");
         video("100 plant cooking", "PUBLISHED");
         video("Private 100% video", "DRAFT");
-        JsonNode data = call("GET", "/api/videos?keyword=100%25&category=mon_chay", null, null, 200).path("data");
+        JsonNode data = call("GET", "/api/videos?keyword=100%25&category=mon_chay", memberToken, null, 200).path("data");
         assertThat(data.path("totalElements").asInt()).isEqualTo(1);
-        assertThat(call("GET", "/api/videos?keyword=rau&page=1&size=1", null, null, 200).path("data").path("items").size()).isEqualTo(1);
-        assertThat(call("GET", "/api/videos?category=DRINKS", null, null, 200).path("data").path("totalElements").asInt()).isZero();
+        assertThat(call("GET", "/api/videos?keyword=rau&page=1&size=1", memberToken, null, 200).path("data").path("items").size()).isEqualTo(1);
+        assertThat(call("GET", "/api/videos?category=DRINKS", memberToken, null, 200).path("data").path("totalElements").asInt()).isZero();
     }
 
     @Test void onlyAdminCanCreateUpdateOrDeleteVideos() throws Exception {
@@ -234,7 +234,7 @@ class CommunityApiTest {
         call("POST", path, null, Map.of("content", "guest"), 401);
         call("POST", path, memberToken, Map.of("content", "First comment", "authorId", other.getUserId()), 201);
         call("POST", path, otherToken, Map.of("content", "Second comment"), 201);
-        JsonNode page = call("GET", path + "?size=1", null, null, 200).path("data");
+        JsonNode page = call("GET", path + "?size=1", memberToken, null, 200).path("data");
         assertThat(page.path("totalElements").asInt()).isEqualTo(2);
         assertThat(page.path("items").get(0).path("authorId").asText()).isEqualTo(member.getUserId().toString());
     }
@@ -251,7 +251,7 @@ class CommunityApiTest {
         call("PUT", item, memberToken, Map.of("content", "Stale", "version", 0), 409);
         call("DELETE", item + "?version=0", adminToken, null, 409);
         call("DELETE", item + "?version=1", adminToken, null, 200);
-        assertThat(call("GET", path, null, null, 200).path("data").path("totalElements").asInt()).isZero();
+        assertThat(call("GET", path, memberToken, null, 200).path("data").path("totalElements").asInt()).isZero();
     }
 
     @Test void commentIdCannotBeUsedWithAnotherVideo() throws Exception {
@@ -284,8 +284,8 @@ class CommunityApiTest {
         call("POST", path + "/comments", memberToken, Map.of("content", "Will be hidden"), 201);
         var update = videoBody("Soon private", "DRAFT"); update.put("version", version(video));
         call("PUT", "/api/admin/videos/" + id(video), adminToken, update, 200);
-        call("GET", path, null, null, 404);
-        call("GET", path + "/comments", null, null, 404);
+        call("GET", path, memberToken, null, 404);
+        call("GET", path + "/comments", memberToken, null, 404);
         assertThat(call("GET", "/api/videos/favorites", memberToken, null, 200).path("data").path("totalElements").asInt()).isZero();
         call("DELETE", path + "/favorite", memberToken, null, 200);
         assertThat(favorites.count()).isZero();
@@ -303,7 +303,7 @@ class CommunityApiTest {
         assertThat(videos.existsById(UUID.fromString(id(keep)))).isTrue();
         assertThat(comments.count()).isEqualTo(1);
         assertThat(favorites.count()).isEqualTo(1);
-        call("GET", "/api/videos/" + id(target), null, null, 404);
+        call("GET", "/api/videos/" + id(target), memberToken, null, 404);
     }
 
     @Test void demotedAdminCannotUseOldTokenForCommunityAdministration() throws Exception {

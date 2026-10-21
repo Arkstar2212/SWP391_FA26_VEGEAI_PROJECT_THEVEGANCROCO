@@ -23,6 +23,10 @@ public final class GeoUtils {
      * @return Khoảng cách tính bằng km (làm tròn 2 chữ số thập phân)
      */
     public static double calculateHaversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
+        return Math.round(calculateExactHaversineDistanceKm(lat1,lon1,lat2,lon2)*100.0)/100.0;
+    }
+
+    public static double calculateExactHaversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
         double rLat1 = Math.toRadians(lat1);
@@ -30,9 +34,9 @@ public final class GeoUtils {
 
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
                 + Math.cos(rLat1) * Math.cos(rLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double c = 2 * Math.atan2(Math.sqrt(Math.min(1,a)), Math.sqrt(Math.max(0,1-a)));
         double distance = EARTH_RADIUS_KM * c;
-        return Math.round(distance * 100.0) / 100.0;
+        return distance;
     }
 
     /**

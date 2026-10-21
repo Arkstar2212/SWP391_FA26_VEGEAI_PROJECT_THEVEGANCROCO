@@ -1,4 +1,4 @@
-param([switch]$Live, [string]$BaseUrl='http://localhost:8081')
+param([switch]$Live, [string]$BaseUrl='http://localhost:8081', [string]$AccessToken)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Expand-VideoRecipeCatalog.ps1')
 $catalog=@(Get-ExpandedVideoRecipes)
@@ -20,15 +20,19 @@ if ($list.totalElements -ne 14) { throw 'Expected existing 14 recipes.' }
 foreach ($r in $catalog) {
     $item=@($list.items | Where-Object slug -eq $r.slug)
     if ($item.Count -ne 1) { throw "Missing/duplicate recipe: $($r.slug)" }
-    $actual=(Invoke-RestMethod "$BaseUrl/api/recipes/$($item[0].recipeId)").data
+    $headers=@{}
+    if ($AccessToken) { $headers.Authorization="Bearer $AccessToken" }
+    $actual=(Invoke-RestMethod "$BaseUrl/api/recipes/$($item[0].recipeId)" -Headers $headers).data
     foreach ($key in @('calories','proteinGrams','carbsGrams','fatGrams','fiberGrams')) {
         if ($actual.$key -ne $r.nutrition[$key]) { throw "Nutrition mismatch $key $($r.slug)" }
     }
     if ($actual.servings -ne $r.servings -or $actual.instructions.Count -ne $r.instructions.Count -or
-        $actual.ingredients.Count -ne $r.ingredients.Count -or $actual.isVerified -or
-        $actual.videos.Count -ne 1 -or $actual.videos[0].videoUrl -ne "https://www.youtube.com/watch?v=$($r.youtubeId)") {
+        $actual.ingredients.Count -ne $r.ingredients.Count -or $actual.isVerified) {
         throw "Detail mismatch: $($r.slug)"
     }
+    if ($AccessToken) {
+        if ($actual.videos.Count -ne 1 -or $actual.videos[0].videoUrl -ne "https://www.youtube.com/watch?v=$($r.youtubeId)") { throw "Video mismatch: $($r.slug)" }
+    } elseif ($actual.videos.Count -ne 0) { throw "Guest must not receive video links: $($r.slug)" }
     foreach ($i in $r.ingredients) {
         $actualIngredient=@($actual.ingredients | Where-Object name -eq $i.name)
         if ($actualIngredient.Count -ne 1 -or $actualIngredient[0].amount -ne $i.amount -or $actualIngredient[0].unit -ne $i.unit) { throw "Ingredient mismatch: $($i.name)" }
@@ -40,4 +44,4 @@ foreach ($slug in $old.Keys) {
     $r=$list.items | Where-Object slug -eq $slug
     if ($r.calories -ne $old[$slug] -or -not $r.isVerified) { throw "Existing recipe changed: $slug" }
 }
-Write-Output 'PASS: all 11 live APIs match generated details; original 3 recipes and all linked videos preserved.'
+Write-Output 'PASS: all 11 live APIs match generated details; original 3 recipes preserved; video access follows login state.'

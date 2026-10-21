@@ -37,8 +37,7 @@ import java.util.List;
  * Endpoint security matrix:
  *  PUBLIC (permitAll):
  *    /api/auth/**        — all auth endpoints
- *    /api/public/**      — public content (blogs, videos)
- *    POST /api/nutrition/calculate, GET /api/nutrition/options — guest nutrition calculator
+ *    Published recipe, blog and question browsing; nearby places.
  *    /api-docs/**        — OpenAPI spec
  *    /swagger-ui/**      — Swagger UI
  *
@@ -57,7 +56,6 @@ public class SecurityConfig {
     private final RoleBoundaryFilter roleBoundaryFilter;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final GuestAiChatRateLimitFilter guestAiChatRateLimitFilter;
     private final ObjectMapper objectMapper;
 
     // ── Password encoder ─────────────────────────────────────────────────────
@@ -90,19 +88,15 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password"
                         ).permitAll()
-                        // AI endpoints (Chatbot, Multimodal Fridge Scanner Vision & Custom Recipe Generator)
-                        .requestMatchers("/api/ai/chat", "/api/ai/fridge-scan", "/api/ai/generate-recipe").permitAll()
+                        // AI, nutrition and video features require a signed-in account.
+                        .requestMatchers("/api/ai/**", "/api/nutrition/**", "/api/videos", "/api/videos/**").authenticated()
                         // Swagger / OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                          "/api-docs/**", "/v3/api-docs/**").permitAll()
-                        // Public content
+                        // Guest business features: recipes, Blog, Q&A and nearby places.
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/blog/posts", "/api/blog/posts/*").permitAll()
-                        // Public nutrition calculator & dropdown options (stateless, nothing saved)
-                        .requestMatchers(HttpMethod.POST, "/api/nutrition/calculate").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/nutrition/options").permitAll()
-                        // Public user profile (PII-protected)
-                        .requestMatchers("/api/users/*/public").permitAll()
+                        .requestMatchers("/api/users/*/public").authenticated()
                         // Recipes & Smart Filter (Public browsing, authenticated fridge matching, personal cookbook)
                         .requestMatchers("/api/recipes/fridge-match").authenticated()
                         .requestMatchers("/api/recipes/cookbook/**", "/api/recipes/cookbook").authenticated()
@@ -111,7 +105,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/places/**").permitAll()
                         // Admin only
                         .requestMatchers("/api/questions/mine", "/api/questions/mine/**", "/api/videos/favorites", "/api/videos/*/favorite").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/questions", "/api/questions/*", "/api/videos", "/api/videos/*", "/api/videos/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/questions", "/api/questions/*").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Everything else requires authentication
                         .anyRequest().authenticated()
@@ -122,7 +116,6 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(roleBoundaryFilter, JwtAuthenticationFilter.class)
-                .addFilterAfter(guestAiChatRateLimitFilter, RoleBoundaryFilter.class)
                 .build();
     }
 

@@ -60,6 +60,12 @@ public class PlaceResponse implements Serializable {
     @Schema(description = "URL chỉ đường trực tiếp trên Google Maps (Click để mở App Maps)", example = "https://www.google.com/maps/dir/?api=1&destination=10.8456,106.7924")
     private String googleMapsUrl;
 
+    @Schema(description = "Original OpenStreetMap object URL")
+    private String openStreetMapUrl;
+
+    @Schema(description = "Data source attribution")
+    private String attribution;
+
     @Schema(description = "Số điện thoại liên hệ", example = "028 3730 1234")
     private String phoneNumber;
 
@@ -68,4 +74,8 @@ public class PlaceResponse implements Serializable {
 
     @Schema(description = "Đã được xác minh thuần chay 100% bởi VEGEAI", example = "true")
     private boolean isVerified;
+
+    // Preserve legacy "verified" while exposing the field consumed by the current FE.
+    @com.fasterxml.jackson.annotation.JsonProperty("isVerified")
+    public boolean getIsVerified() { return isVerified; }
 }

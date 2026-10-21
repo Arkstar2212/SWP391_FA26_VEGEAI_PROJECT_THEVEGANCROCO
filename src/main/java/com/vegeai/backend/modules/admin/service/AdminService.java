@@ -4,6 +4,8 @@ import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.common.exception.AppException;
 import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.admin.dto.*;
+import com.vegeai.backend.modules.ai.entity.AiCallLog;
+import com.vegeai.backend.modules.ai.repository.AiCallLogRepository;
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
 import com.vegeai.backend.modules.user.dto.UserProfileResponse;
 import com.vegeai.backend.modules.user.entity.AccountStatus;
@@ -13,6 +15,7 @@ import com.vegeai.backend.modules.user.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -33,6 +36,10 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AiCallLogRepository aiCallLogRepository;
+
+    @Value("${app.gemini.model:gemini-3.8-flash}")
+    private String geminiModel;
 
     /**
      * Search and list users with dynamic multi-criteria filtering and pagination.
@@ -169,81 +176,45 @@ public class AdminService {
                 .build();
     }
 
-    /**
-     * Telemetry and health check for AI providers and pipelines (FR-ADMIN-03).
-     */
+    @Transactional(readOnly = true)
     public AiOpsStatusResponse getAiOpsStatus() {
-        List<AiModelStatus> models = List.of(
-                AiModelStatus.builder()
-                        .modelName("Gemini 1.5 Flash")
-                        .provider("Google DeepMind / Google AI Studio")
-                        .version("1.5-flash-latest")
-                        .status("OPERATIONAL")
-                        .latencyMs(215)
-                        .rateLimitQuota("15 RPM / Free Tier Tier-1")
-                        .build(),
-                AiModelStatus.builder()
-                        .modelName("Whisper STT (Video Transcription)")
-                        .provider("OpenAI / Local Pipeline")
-                        .version("whisper-large-v3")
-                        .status("OPERATIONAL")
-                        .latencyMs(320)
-                        .rateLimitQuota("50 RPM")
-                        .build(),
-                AiModelStatus.builder()
-                        .modelName("Vegetarian Safety Guardrail Moderation")
-                        .provider("VEGEAI In-process Classifier")
-                        .version("vege-guard-v1")
-                        .status("OPERATIONAL")
-                        .latencyMs(12)
-                        .rateLimitQuota("Unlimited (Local)")
-                        .build()
-        );
-
+        Instant now = Instant.now();
+        Instant since = now.minusSeconds(24 * 60 * 60);
+        long total = aiCallLogRepository.countByCreatedAtAfter(since);
+        long successful = aiCallLogRepository.countByCreatedAtAfterAndStatus(since, "SUCCESS");
+        List<AiCallLog> recent = aiCallLogRepository.findTop50ByOrderByCreatedAtDesc();
+        AiCallLog latest = recent.isEmpty() || !recent.get(0).getCreatedAt().isAfter(since) ? null : recent.get(0);
+        String health = latest == null ? "NO_DATA" : "SUCCESS".equals(latest.getStatus()) ? "HEALTHY" : "DEGRADED";
         return AiOpsStatusResponse.builder()
-                .systemHealth("HEALTHY")
-                .uptimePercentage(99.95)
-                .averageLatencyMs(182.3)
-                .totalAiRequests(1248)
-                .guestAiRequestsToday(86)
-                .lastHealthCheckAt(Instant.now())
-                .models(models)
+                .systemHealth(health)
+                .successRatePercentage(total == 0 ? null : Math.round(successful * 1000.0 / total) / 10.0)
+                .averageLatencyMs(total == 0 ? null : aiCallLogRepository.averageLatencySince(since))
+                .totalAiRequests(total)
+                .failedAiRequests(total - successful)
+                .generatedAt(now)
+                .models(List.of(AiModelStatus.builder()
+                        .modelName(geminiModel)
+                        .provider("Google Gemini")
+                        .version(geminiModel)
+                        .status(latest == null ? "NO_DATA" : latest.getStatus())
+                        .latencyMs(latest == null ? null : latest.getLatencyMs())
+                        .build()))
                 .build();
     }
 
-    /**
-     * Recent AI audit trail logs for administrative review.
-     */
+    @Transactional(readOnly = true)
     public List<AiAuditLogEntry> getAiAuditLogs() {
-        return List.of(
-                AiAuditLogEntry.builder()
-                        .logId("AI-LOG-1092")
-                        .timestamp(Instant.now().minusSeconds(120))
-                        .model("Gemini 1.5 Flash")
-                        .operation("NUTRITION_CHAT")
-                        .latencyMs(245)
-                        .userType("MEMBER")
-                        .status("SUCCESS")
-                        .build(),
-                AiAuditLogEntry.builder()
-                        .logId("AI-LOG-1091")
-                        .timestamp(Instant.now().minusSeconds(380))
-                        .model("Gemini 1.5 Flash")
-                        .operation("NUTRITION_CHAT")
-                        .latencyMs(198)
-                        .userType("GUEST")
-                        .status("SUCCESS")
-                        .build(),
-                AiAuditLogEntry.builder()
-                        .logId("AI-LOG-1090")
-                        .timestamp(Instant.now().minusSeconds(950))
-                        .model("Vegetarian Safety Guardrail")
-                        .operation("CONTENT_MODERATION")
-                        .latencyMs(15)
-                        .userType("MEMBER")
-                        .status("FLAGGED")
-                        .build()
-        );
+        return aiCallLogRepository.findTop50ByOrderByCreatedAtDesc().stream()
+                .map(log -> AiAuditLogEntry.builder()
+                        .logId(log.getId().toString())
+                        .timestamp(log.getCreatedAt())
+                        .model(log.getModel())
+                        .operation(log.getOperation())
+                        .latencyMs(log.getLatencyMs())
+                        .status(log.getStatus())
+                        .errorType(log.getErrorType())
+                        .build())
+                .toList();
     }
 
     private UUID parseUuid(String id) {

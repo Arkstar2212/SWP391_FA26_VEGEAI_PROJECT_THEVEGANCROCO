@@ -203,12 +203,13 @@ class NutritionControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/nutrition/calculate - public, nothing saved")
-    void calculate_public() throws Exception {
+    @DisplayName("POST /api/nutrition/calculate - authenticated preview, nothing saved")
+    void calculate_customer() throws Exception {
         NutritionCalculateRequest req = NutritionCalculateRequest.builder()
                 .gender(Gender.FEMALE).age(25).heightCm(155.0).weightKg(45.0)
                 .activityLevel(ActivityLevel.SEDENTARY).goal(NutritionGoal.LOSE_WEIGHT).build();
         mockMvc.perform(post("/api/nutrition/calculate")
+                        .header(HttpHeaders.AUTHORIZATION, token)
                         .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.dailyCaloriesTarget").value(1200))
@@ -217,9 +218,9 @@ class NutritionControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/nutrition/options - public enum list")
-    void options_public() throws Exception {
-        mockMvc.perform(get("/api/nutrition/options"))
+    @DisplayName("GET /api/nutrition/options - customer enum list")
+    void options_customer() throws Exception {
+        mockMvc.perform(get("/api/nutrition/options").header(HttpHeaders.AUTHORIZATION, token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.activityLevels.length()").value(5))
                 .andExpect(jsonPath("$.data.goals.length()").value(3));

@@ -5,6 +5,7 @@ import com.vegeai.backend.modules.place.dto.CategoryMetadataDto;
 import com.vegeai.backend.modules.place.dto.PlaceCategory;
 import com.vegeai.backend.modules.place.dto.PlaceResponse;
 import com.vegeai.backend.modules.place.service.GooglePlacesService;
+import com.vegeai.backend.modules.place.service.VerifiedPlacesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +24,22 @@ import java.util.List;
 public class PlaceController {
 
     private final GooglePlacesService googlePlacesService;
+    private final VerifiedPlacesService verifiedPlacesService;
+
+    @GetMapping("/verified/nearby")
+    @Operation(summary = "Find nearby restaurants with explicit vegetarian-only or vegan-only OSM tags")
+    public ApiResponse<List<PlaceResponse>> verifiedNearby(@RequestParam double lat, @RequestParam double lng,
+            @RequestParam(defaultValue = "5000") int radius) {
+        return ApiResponse.success(verifiedPlacesService.nearby(lat, lng, radius));
+    }
+
+    @GetMapping("/verified/search")
+    @Operation(summary = "Search vegetarian restaurants by area or by name near supplied coordinates")
+    public ApiResponse<List<PlaceResponse>> verifiedSearch(@RequestParam String query,
+            @RequestParam(required = false) Double lat, @RequestParam(required = false) Double lng,
+            @RequestParam(defaultValue = "5000") int radius) {
+        return ApiResponse.success(verifiedPlacesService.search(query, lat, lng, radius));
+    }
 
     @GetMapping("/nearby")
     @Operation(
