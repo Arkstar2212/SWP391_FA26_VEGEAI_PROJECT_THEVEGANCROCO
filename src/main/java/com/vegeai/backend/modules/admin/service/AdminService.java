@@ -4,7 +4,8 @@ import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.common.exception.AppException;
 import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.admin.dto.*;
-import com.vegeai.backend.modules.admin.entity.AiAuditLog;
+import com.vegeai.backend.modules.ai.entity.AiCallLog;
+import com.vegeai.backend.modules.ai.repository.AiCallLogRepository;
 import com.vegeai.backend.modules.admin.repository.AiAuditLogRepository;
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
 import com.vegeai.backend.modules.community.entity.AiModerationStatus;
@@ -26,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.Duration;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,15 +38,18 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AiCallLogRepository aiCallLogRepository;
     private final AiAuditLogRepository aiAuditLogs;
     private final BlogPostRepository blogPosts;
 
     private String geminiModel = "gemini-3.8-flash";
 
     public AdminService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
-                        AiAuditLogRepository aiAuditLogs, BlogPostRepository blogPosts) {
+                        AiCallLogRepository aiCallLogRepository, AiAuditLogRepository aiAuditLogs,
+                        BlogPostRepository blogPosts) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.aiCallLogRepository = aiCallLogRepository;
         this.aiAuditLogs = aiAuditLogs;
         this.blogPosts = blogPosts;
     }
@@ -191,76 +194,61 @@ public class AdminService {
                 .build();
     }
 
-    /**
-     * Summarizes recorded AI request telemetry; this does not actively probe providers.
-     */
     @Transactional(readOnly = true)
     public AiOpsStatusResponse getAiOpsStatus() {
-        Instant from = Instant.now().minus(Duration.ofHours(24));
-        long requests = aiAuditLogs.countByCreatedAtAfter(from);
-        long successes = aiAuditLogs.countByCreatedAtAfterAndStatus(from, "SUCCESS");
+        Instant now = Instant.now();
+        Instant since = now.minusSeconds(24 * 60 * 60);
+        long total = aiCallLogRepository.countByCreatedAtAfter(since);
+        long successful = aiCallLogRepository.countByCreatedAtAfterAndStatus(since, "SUCCESS");
+        List<AiCallLog> recent = aiCallLogRepository.findTop50ByOrderByCreatedAtDesc();
+        AiCallLog latest = recent.isEmpty() || !recent.get(0).getCreatedAt().isAfter(since) ? null : recent.get(0);
+        String health = latest == null ? "NO_DATA" : "SUCCESS".equals(latest.getStatus()) ? "HEALTHY" : "DEGRADED";
         Instant today = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
         long guestRequests = aiAuditLogs.countByCreatedAtAfterAndUserType(today, "GUEST");
         List<AiModerationStatus> reviewedStatuses = List.of(AiModerationStatus.SAFE, AiModerationStatus.FLAGGED);
         long reviewed = blogPosts.countAiModerationReviewed(reviewedStatuses);
         long agreements = blogPosts.countAiModerationAgreements(reviewedStatuses);
-        AiAuditLog latest = aiAuditLogs.findFirstByModelAndCreatedAtAfterOrderByCreatedAtDesc(geminiModel, from);
-        double successRate = requests == 0 ? 0 : successes * 100.0 / requests;
-        String health = requests == 0 ? "NO_DATA" : successRate < 95 ? "DEGRADED" : "HEALTHY";
-        // Model row reflects the most recent recorded call: SUCCESS, FAILED or NO_DATA.
-        List<AiModelStatus> models = List.of(AiModelStatus.builder()
-                .modelName("Gemini")
-                .provider("Google AI Studio")
-                .version(geminiModel)
-                .status(latest == null ? "NO_DATA" : latest.getStatus())
-                .latencyMs(latest == null ? null : latest.getLatencyMs())
-                .build());
-        List<AiOperationStats> operations = aiAuditLogs.summarizeOperationsSince(from).stream()
-                .map(summary -> AiOperationStats.builder()
-                        .operation(summary.getOperation())
-                        .totalRequests(summary.getTotalRequests())
-                        .failedRequests(summary.getFailedRequests())
-                        .averageLatencyMs(summary.getAverageLatencyMs())
-                        .build())
-                .toList();
-
         return AiOpsStatusResponse.builder()
                 .systemHealth(health)
-                .successRatePercentage(requests == 0 ? null : Math.round(successRate * 100.0) / 100.0)
-                .averageLatencyMs(requests == 0 ? null : aiAuditLogs.averageLatencySince(from))
-                .totalAiRequests(requests)
-                .failedAiRequests(requests - successes)
+                .successRatePercentage(total == 0 ? null : Math.round(successful * 1000.0 / total) / 10.0)
+                .averageLatencyMs(total == 0 ? null : aiCallLogRepository.averageLatencySince(since))
+                .totalAiRequests(total)
+                .failedAiRequests(total - successful)
                 .guestAiRequestsToday(guestRequests)
                 .moderationReviewedCount(reviewed)
                 .moderationAgreementRate(reviewed == 0 ? null : Math.round(agreements * 10000.0 / reviewed) / 100.0)
-                .generatedAt(Instant.now())
-                .models(models)
-                .operations(operations)
+                .generatedAt(now)
+                .models(List.of(AiModelStatus.builder()
+                        .modelName(geminiModel)
+                        .provider("Google Gemini")
+                        .version(geminiModel)
+                        .status(latest == null ? "NO_DATA" : latest.getStatus())
+                        .latencyMs(latest == null ? null : latest.getLatencyMs())
+                        .build()))
+                .operations(aiCallLogRepository.summarizeOperationsSince(since).stream()
+                        .map(summary -> AiOperationStats.builder()
+                                .operation(summary.getOperation())
+                                .totalRequests(summary.getTotalRequests())
+                                .failedRequests(summary.getFailedRequests())
+                                .averageLatencyMs(summary.getAverageLatencyMs())
+                                .build())
+                        .toList())
                 .build();
     }
 
-    /**
-     * Recent AI audit trail logs for administrative review.
-     */
     @Transactional(readOnly = true)
     public List<AiAuditLogEntry> getAiAuditLogs() {
-        return aiAuditLogs.findTop50ByOrderByCreatedAtDesc().stream()
-                .map(this::toAuditEntry)
+        return aiCallLogRepository.findTop50ByOrderByCreatedAtDesc().stream()
+                .map(log -> AiAuditLogEntry.builder()
+                        .logId(log.getId().toString())
+                        .timestamp(log.getCreatedAt())
+                        .model(log.getModel())
+                        .operation(log.getOperation())
+                        .latencyMs(log.getLatencyMs())
+                        .status(log.getStatus())
+                        .errorType(log.getErrorType())
+                        .build())
                 .toList();
-    }
-
-    private AiAuditLogEntry toAuditEntry(AiAuditLog logEntry) {
-        return AiAuditLogEntry.builder()
-                .logId(logEntry.getId().toString())
-                .timestamp(logEntry.getCreatedAt())
-                .model(logEntry.getModel())
-                .operation(logEntry.getOperation())
-                .latencyMs(logEntry.getLatencyMs())
-                .userType(logEntry.getUserType())
-                .status(logEntry.getStatus())
-                .outcome(logEntry.getOutcome())
-                .errorType(logEntry.getErrorType())
-                .build();
     }
 
     private UUID parseUuid(String id) {

@@ -3,6 +3,7 @@ package com.vegeai.backend.modules.place.controller;
 import com.vegeai.backend.modules.place.dto.PlaceCategory;
 import com.vegeai.backend.modules.place.dto.PlaceResponse;
 import com.vegeai.backend.modules.place.service.PlaceProvider;
+import com.vegeai.backend.modules.place.service.VerifiedPlacesService;
 import com.vegeai.backend.modules.place.util.GeoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +42,9 @@ class PlaceControllerTest {
     @MockBean
     private PlaceProvider placeProvider;
 
+    @MockBean
+    private VerifiedPlacesService verifiedPlacesService;
+
     private final List<PlaceResponse> places = List.of(
             place("node/1", "Cơm Chay Mandala", PlaceCategory.RESTAURANT, true),
             place("way/2", "Siêu Thị Chay", PlaceCategory.SUPERMARKET, false),
@@ -48,6 +52,8 @@ class PlaceControllerTest {
 
     @BeforeEach
     void setUpProviderResponses() {
+        when(verifiedPlacesService.nearby(anyDouble(), anyDouble(), anyInt()))
+                .thenReturn(List.of(places.get(0)));
         when(placeProvider.findNearbyVegetarianPlaces(anyDouble(), anyDouble(), anyInt(),
                 any(PlaceCategory.class), nullable(String.class)))
                 .thenAnswer(invocation -> filter(invocation.getArgument(3), invocation.getArgument(4)));
@@ -99,6 +105,17 @@ class PlaceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(1)))
                 .andExpect(jsonPath("$.data[0].category", is("RESTAURANT")));
+    }
+
+    @Test
+    @DisplayName("Verified feed only includes explicit exclusive OSM vegetarian tags")
+    void verifiedNearby_onlyReturnsExclusiveCandidates() throws Exception {
+        mockMvc.perform(get("/api/places/verified/nearby")
+                        .param("lat", "10.7769")
+                        .param("lng", "106.7009"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].isVerified").value(true));
     }
 
     @Test

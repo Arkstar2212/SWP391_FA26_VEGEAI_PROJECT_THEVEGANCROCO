@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.admin.dto.UpdateUserRoleRequest;
 import com.vegeai.backend.modules.admin.dto.UpdateUserStatusRequest;
+import com.vegeai.backend.modules.ai.repository.AiCallLogRepository;
+import com.vegeai.backend.modules.ai.service.AiCallTelemetry;
 import com.vegeai.backend.modules.admin.entity.AiAuditLog;
 import com.vegeai.backend.modules.admin.repository.AiAuditLogRepository;
 import com.vegeai.backend.modules.auth.repository.RefreshTokenRepository;
@@ -55,6 +57,12 @@ class AdminControllerTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private AiCallLogRepository aiCallLogRepository;
+
+    @Autowired
+    private AiCallTelemetry aiCallTelemetry;
+
     private User adminUser;
     private User secondAdmin;
     private User memberUser;
@@ -64,6 +72,7 @@ class AdminControllerTest {
 
     @BeforeEach
     void setUp() {
+        aiCallLogRepository.deleteAll();
         refreshTokenRepository.deleteAll();
         aiAuditLogRepository.deleteAll();
         userRepository.deleteAll();
@@ -240,11 +249,12 @@ class AdminControllerTest {
         mockMvc.perform(get("/api/admin/ai/status")
                         .header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.systemHealth").value("HEALTHY"))
-                .andExpect(jsonPath("$.data.totalAiRequests").value(1))
-                .andExpect(jsonPath("$.data.successRatePercentage").value(100))
+                .andExpect(jsonPath("$.data.systemHealth").value("NO_DATA"))
+                .andExpect(jsonPath("$.data.totalAiRequests").value(0))
+                .andExpect(jsonPath("$.data.models", hasSize(1)))
+                .andExpect(jsonPath("$.data.models[0].status").value("NO_DATA"))
                 .andExpect(jsonPath("$.data.guestAiRequestsToday").value(1))
-                .andExpect(jsonPath("$.data.averageLatencyMs").value(123));
+                .andExpect(jsonPath("$.data.averageLatencyMs").doesNotExist());
     }
 
     @Test
@@ -257,10 +267,12 @@ class AdminControllerTest {
     }
 
     @Test
-    @DisplayName("AI monitoring reports failed provider calls and never exposes prompt content")
-    void aiMonitoringReportsFailuresAndRedactsUserContent() throws Exception {
-        saveAuditLog("SUCCESS", 120, null);
-        saveAuditLog("FAILED", 280, "HTTP_429");
+    void aiMonitoringUsesRecordedProviderCallsAndRedactsUserContent() throws Exception {
+        aiCallTelemetry.record("gemini-test", "CHAT", 120, null);
+        aiCallTelemetry.record("gemini-test", "FRIDGE_SCAN", 280,
+                org.springframework.web.client.HttpClientErrorException.create(
+                        org.springframework.http.HttpStatus.TOO_MANY_REQUESTS, "limited",
+                        org.springframework.http.HttpHeaders.EMPTY, new byte[0], java.nio.charset.StandardCharsets.UTF_8));
 
         mockMvc.perform(get("/api/admin/ai/status").header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(status().isOk())
@@ -269,30 +281,19 @@ class AdminControllerTest {
                 .andExpect(jsonPath("$.data.failedAiRequests").value(1))
                 .andExpect(jsonPath("$.data.successRatePercentage").value(50.0))
                 .andExpect(jsonPath("$.data.averageLatencyMs").value(200.0))
-                .andExpect(jsonPath("$.data.operations", hasSize(1)))
-                .andExpect(jsonPath("$.data.operations[0].operation").value("NUTRITION_CHAT"))
-                .andExpect(jsonPath("$.data.operations[0].totalRequests").value(2))
-                .andExpect(jsonPath("$.data.operations[0].failedRequests").value(1))
-                .andExpect(jsonPath("$.data.operations[0].averageLatencyMs").value(200.0));
+                .andExpect(jsonPath("$.data.models[0].status").value("FAILED"))
+                .andExpect(jsonPath("$.data.operations", hasSize(2)))
+                .andExpect(jsonPath("$.data.operations[*].operation", hasItems("CHAT", "FRIDGE_SCAN")))
+                .andExpect(jsonPath("$.data.operations[?(@.operation == 'FRIDGE_SCAN')].failedRequests", contains(1)));
         mockMvc.perform(get("/api/admin/ai/audit-logs").header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(2)))
-                .andExpect(jsonPath("$.data[*].errorType", hasItem("HTTP_429")))
-                .andExpect(jsonPath("$.data[0].promptSummary").doesNotExist());
+                .andExpect(jsonPath("$.data[0].errorType").value("HTTP_429"))
+                .andExpect(jsonPath("$.data[0].promptSummary").doesNotExist())
+                .andExpect(jsonPath("$.data[0].userType").doesNotExist());
         mockMvc.perform(get("/api/admin/ai/audit-logs").header(HttpHeaders.AUTHORIZATION, memberToken))
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/admin/ai/status"))
                 .andExpect(status().isUnauthorized());
-    }
-
-    private void saveAuditLog(String status, long latencyMs, String errorType) {
-        AiAuditLog entry = new AiAuditLog();
-        entry.setModel("gemini-test");
-        entry.setOperation("NUTRITION_CHAT");
-        entry.setStatus(status);
-        entry.setUserType("MEMBER");
-        entry.setLatencyMs(latencyMs);
-        entry.setErrorType(errorType);
-        aiAuditLogRepository.saveAndFlush(entry);
     }
 }

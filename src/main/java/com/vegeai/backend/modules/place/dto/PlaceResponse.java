@@ -61,6 +61,9 @@ public class PlaceResponse implements Serializable {
     @Schema(description = "URL mở địa điểm trên OpenStreetMap", example = "https://www.openstreetmap.org/node/123456")
     private String openStreetMapUrl;
 
+    @Schema(description = "Data source attribution")
+    private String attribution;
+
     @Schema(description = "Số điện thoại liên hệ", example = "028 3730 1234")
     private String phoneNumber;
 
@@ -77,6 +80,8 @@ public class PlaceResponse implements Serializable {
     @Schema(description = "Nguồn dữ liệu địa điểm", example = "OPENSTREETMAP")
     private String dataSource;
 
-    @Schema(description = "Yêu cầu hiển thị credit OpenStreetMap", example = "© OpenStreetMap contributors")
-    private String attribution;
+    @JsonProperty("isVerified")
+    public boolean getIsVerified() { return isVerified; }
+
+    public boolean isVerified() { return isVerified; }
 }
