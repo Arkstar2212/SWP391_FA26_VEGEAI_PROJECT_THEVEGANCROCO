@@ -43,7 +43,7 @@ public class AiMonitoringService {
 
     /** Every operation wrapped by AiAuditService, shown even before its first call. */
     public static final List<String> OPERATIONS = List.of(
-            "NUTRITION_CHAT", "FRIDGE_SCAN", "RECIPE_GENERATION", "MEAL_PLAN_RANKING", "CONTENT_MODERATION");
+            "NUTRITION_CHAT", "FRIDGE_SCAN", "MEAL_PLAN_RANKING", "CONTENT_MODERATION");
     static final int MAX_PAGE_SIZE = 100;
     static final int MAX_EXPORT_ROWS = 5000;
     private static final int MAX_AUDIT_WINDOW = 2000;
