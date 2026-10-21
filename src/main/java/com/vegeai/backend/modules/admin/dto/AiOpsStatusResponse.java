@@ -16,13 +16,11 @@ public class AiOpsStatusResponse {
     private final Double successRatePercentage;
     private final Double averageLatencyMs;
     private final long totalAiRequests;
-<<<<<<< HEAD
     private final long failedAiRequests;
-=======
     private final long guestAiRequestsToday;
     private final long moderationReviewedCount;
     private final Double moderationAgreementRate;
->>>>>>> 6a63815723b213a298a5c7dd70a9dbc7665793ab
     private final Instant generatedAt;
     private final List<AiModelStatus> models;
+    private final List<AiOperationStats> operations;
 }

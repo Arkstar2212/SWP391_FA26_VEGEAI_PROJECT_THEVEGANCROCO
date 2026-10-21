@@ -61,12 +61,6 @@ public class PlaceResponse implements Serializable {
     @Schema(description = "URL mở địa điểm trên OpenStreetMap", example = "https://www.openstreetmap.org/node/123456")
     private String openStreetMapUrl;
 
-    @Schema(description = "Original OpenStreetMap object URL")
-    private String openStreetMapUrl;
-
-    @Schema(description = "Data source attribution")
-    private String attribution;
-
     @Schema(description = "Số điện thoại liên hệ", example = "028 3730 1234")
     private String phoneNumber;
 
@@ -77,11 +71,6 @@ public class PlaceResponse implements Serializable {
     @JsonProperty("isVerified")
     private boolean isVerified;
 
-<<<<<<< HEAD
-    // Preserve legacy "verified" while exposing the field consumed by the current FE.
-    @com.fasterxml.jackson.annotation.JsonProperty("isVerified")
-    public boolean getIsVerified() { return isVerified; }
-=======
     @Schema(description = "Nguồn của tín hiệu vegetarian-only, nếu có", example = "OPENSTREETMAP_TAGS")
     private String verificationSource;
 
@@ -90,5 +79,4 @@ public class PlaceResponse implements Serializable {
 
     @Schema(description = "Yêu cầu hiển thị credit OpenStreetMap", example = "© OpenStreetMap contributors")
     private String attribution;
->>>>>>> 6a63815723b213a298a5c7dd70a9dbc7665793ab
 }

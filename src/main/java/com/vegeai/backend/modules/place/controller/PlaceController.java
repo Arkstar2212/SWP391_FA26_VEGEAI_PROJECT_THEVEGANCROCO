@@ -4,12 +4,8 @@ import com.vegeai.backend.common.dto.ApiResponse;
 import com.vegeai.backend.modules.place.dto.CategoryMetadataDto;
 import com.vegeai.backend.modules.place.dto.PlaceCategory;
 import com.vegeai.backend.modules.place.dto.PlaceResponse;
-<<<<<<< HEAD
-import com.vegeai.backend.modules.place.service.GooglePlacesService;
-import com.vegeai.backend.modules.place.service.VerifiedPlacesService;
-=======
 import com.vegeai.backend.modules.place.service.PlaceProvider;
->>>>>>> 6a63815723b213a298a5c7dd70a9dbc7665793ab
+import com.vegeai.backend.modules.place.service.VerifiedPlacesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,8 +23,7 @@ import java.util.List;
 @Tag(name = "10. OpenStreetMap Places", description = "Tìm địa điểm có thẻ chay do cộng đồng OpenStreetMap đóng góp.")
 public class PlaceController {
 
-<<<<<<< HEAD
-    private final GooglePlacesService googlePlacesService;
+    private final PlaceProvider placeProvider;
     private final VerifiedPlacesService verifiedPlacesService;
 
     @GetMapping("/verified/nearby")
@@ -44,41 +39,6 @@ public class PlaceController {
             @RequestParam(required = false) Double lat, @RequestParam(required = false) Double lng,
             @RequestParam(defaultValue = "5000") int radius) {
         return ApiResponse.success(verifiedPlacesService.search(query, lat, lng, radius));
-=======
-    private final PlaceProvider placeProvider;
-
-    @GetMapping("/verified/nearby")
-    @Operation(
-            summary = "Find restaurants with exclusive vegetarian OpenStreetMap tags",
-            description = "Returns restaurant candidates tagged as vegetarian-only or vegetarian/vegan cuisine in OpenStreetMap. This is community-provided map data, not independent VEGEAI verification."
-    )
-    public ResponseEntity<ApiResponse<List<PlaceResponse>>> getVerifiedVegetarianRestaurants(
-            @RequestParam("lat") double lat,
-            @RequestParam("lng") double lng,
-            @RequestParam(value = "radius", defaultValue = "5000") int radius) {
-        List<PlaceResponse> places = placeProvider.findNearbyVegetarianPlaces(
-                        lat, lng, radius, PlaceCategory.RESTAURANT, null).stream()
-                .filter(PlaceResponse::isVerified)
-                .toList();
-        return ResponseEntity.ok(ApiResponse.success("Tìm thấy " + places.size() + " địa điểm có thẻ chay độc quyền trên OpenStreetMap.", places));
-    }
-
-    @GetMapping("/verified/search")
-    @Operation(
-            summary = "Search restaurants with exclusive vegetarian OpenStreetMap tags",
-            description = "Returns only nearby restaurant candidates whose OpenStreetMap tags explicitly indicate vegetarian-only or vegetarian/vegan cuisine. OSM tags are not independent VEGEAI verification."
-    )
-    public ResponseEntity<ApiResponse<List<PlaceResponse>>> searchVerifiedVegetarianRestaurants(
-            @RequestParam("query") String query,
-            @RequestParam(value = "lat", required = false) Double lat,
-            @RequestParam(value = "lng", required = false) Double lng,
-            @RequestParam(value = "radius", defaultValue = "10000") int radius) {
-        List<PlaceResponse> places = placeProvider.searchVegetarianPlaces(
-                        query, lat, lng, radius, PlaceCategory.RESTAURANT).stream()
-                .filter(PlaceResponse::isVerified)
-                .toList();
-        return ResponseEntity.ok(ApiResponse.success("Tìm thấy " + places.size() + " địa điểm có thẻ chay độc quyền trên OpenStreetMap.", places));
->>>>>>> 6a63815723b213a298a5c7dd70a9dbc7665793ab
     }
 
     @GetMapping("/nearby")

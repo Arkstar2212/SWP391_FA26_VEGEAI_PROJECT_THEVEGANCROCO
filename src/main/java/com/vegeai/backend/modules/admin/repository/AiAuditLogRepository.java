@@ -25,4 +25,20 @@ public interface AiAuditLogRepository extends JpaRepository<AiAuditLog, UUID> {
     List<AiAuditLog> findTop50ByOrderByCreatedAtDesc();
 
     AiAuditLog findFirstByModelAndCreatedAtAfterOrderByCreatedAtDesc(String model, Instant from);
+
+    @Query("""
+            select log.operation as operation, count(log) as totalRequests,
+                   sum(case when log.status = 'SUCCESS' then 0 else 1 end) as failedRequests,
+                   avg(log.latencyMs) as averageLatencyMs
+            from AiAuditLog log where log.createdAt > :from
+            group by log.operation order by count(log) desc
+            """)
+    List<OperationSummary> summarizeOperationsSince(@Param("from") Instant from);
+
+    interface OperationSummary {
+        String getOperation();
+        long getTotalRequests();
+        long getFailedRequests();
+        Double getAverageLatencyMs();
+    }
 }

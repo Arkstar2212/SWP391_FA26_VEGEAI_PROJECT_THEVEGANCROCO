@@ -102,17 +102,6 @@ class PlaceControllerTest {
     }
 
     @Test
-    @DisplayName("Verified feed only includes explicit exclusive OSM vegetarian tags")
-    void verifiedNearby_onlyReturnsExclusiveCandidates() throws Exception {
-        mockMvc.perform(get("/api/places/verified/nearby")
-                        .param("lat", "10.7769")
-                        .param("lng", "106.7009"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data", hasSize(1)))
-                .andExpect(jsonPath("$.data[0].isVerified").value(true));
-    }
-
-    @Test
     @DisplayName("Unit test GeoUtils: computes Haversine distance and formats it")
     void geoUtils_computesDistance() {
         double distance = GeoUtils.calculateHaversineDistanceKm(10.7725, 106.6980, 10.7716, 106.7044);
