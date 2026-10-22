@@ -4,6 +4,7 @@ import com.vegeai.backend.common.dto.ApiResponse;
 import com.vegeai.backend.modules.ai.dto.FridgeScanResponse;
 import com.vegeai.backend.modules.ai.dto.GenerateRecipeAiRequest;
 import com.vegeai.backend.modules.ai.dto.GeneratedRecipeAiResponse;
+import com.vegeai.backend.modules.ai.dto.VideoRecipeAiRequest;
 import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
  *  - Vegan / Vegetarian vs Non-Vegetarian Detection & Warning.
  *  - Visual Freshness Level Estimation (Fresh / Usable / Spoiled).
  *  - Personalized Allergy Cross-Checking with User Profile.
+ *  - Video-to-Recipe transcription & summarization.
  */
 @RestController
 @RequestMapping("/api/ai")
@@ -57,6 +59,7 @@ public class AiVisionController {
                        - `VEGAN`: Thuần chay (rau củ, nấm, đậu...).
                        - `LACTO_OVO`: Chay có trứng, sữa.
                        - `NON_VEG`: Thịt, cá, hải sản, xúc xích mặn... $\\rightarrow$ Cảnh báo đỏ (`hasNonVegetarianItem = true`).
+                       - `NON_FOOD`: Vật phẩm không phải thực phẩm (củi khô, gỗ, que, cành cây...).
                     3. **Đánh giá độ tươi trực quan (Visual Freshness Estimation):**
                        - `FRESH`: Tươi ngon (dùng trong 3-5 ngày).
                        - `USABLE`: Héo nhẹ, cần dùng sớm trong 24-48 giờ.
@@ -121,5 +124,23 @@ public class AiVisionController {
         GeneratedRecipeAiResponse recipe = geminiAiService.generateCustomRecipe(req, username, isGuest);
 
         return ResponseEntity.ok(ApiResponse.success("Tạo công thức món ăn thành công.", recipe));
+    }
+
+    @PostMapping("/video-recipe")
+    @Operation(
+            summary = "AI trích xuất công thức và hướng dẫn nấu từ Video",
+            description = "Phân tích tiêu đề, mô tả và nội dung video ẩm thực để bóc tách nguyên liệu và các bước nấu chi tiết."
+    )
+    public ResponseEntity<ApiResponse<GeneratedRecipeAiResponse>> extractRecipeFromVideo(
+            @RequestBody VideoRecipeAiRequest req) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isGuest = (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken);
+        String username = isGuest ? "Guest" : auth.getName();
+
+        log.info("[AI-VIDEO-RECIPE] Extracting recipe for video '{}' by user '{}'", req.getTitle(), username);
+        GeneratedRecipeAiResponse recipe = geminiAiService.extractRecipeFromVideo(
+                req.getTitle(), req.getDescription(), req.getVideoUrl(), username, isGuest);
+
+        return ResponseEntity.ok(ApiResponse.success("Trích xuất công thức từ video thành công.", recipe));
     }
 }

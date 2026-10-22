@@ -33,6 +33,7 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
     long countByStatus(AccountStatus status);
 
     long countByRole(UserRole role);
+    java.util.List<com.vegeai.backend.modules.user.entity.User> findByRole(UserRole role);
 
     long countByCreatedAtAfter(LocalDateTime dateTime);
 }

@@ -32,7 +32,7 @@ public class RecipeDataInitializer implements CommandLineRunner {
             initTags();
         }
 
-        if (recipeRepository.count() == 0) {
+        if (recipeRepository.count() < 7) {
             log.info("[RECIPE-INIT] Khởi tạo các công thức chuẩn mẫu (Verified Recipes)...");
             initSampleRecipes();
         }
@@ -180,7 +180,134 @@ public class RecipeDataInitializer implements CommandLineRunner {
         r3.addIngredient(RecipeIngredient.builder().name("Sả băm").normalizedName("sa bam").amount(2.0).unit("muỗng canh").isOptional(false).build());
         r3.addIngredient(RecipeIngredient.builder().name("Ớt hiểm").normalizedName("ot hiem").amount(1.0).unit("quả").isOptional(true).build());
 
-        recipeRepository.saveAll(List.of(r1, r2, r3));
+                // Món 4: Cà ri đậu gà khoai lang cốt dừa
+        Recipe r4 = Recipe.builder()
+                .title("Cà ri đậu gà khoai lang cốt dừa")
+                .slug("ca-ri-dau-ga-khoai-lang-cot-dua")
+                .description("Món cà ri sánh mịn, thơm bùi ngậy từ nước cốt dừa và khoai lang mật, giàu đạm thực vật từ đậu gà.")
+                .prepTimeMinutes(15)
+                .cookTimeMinutes(25)
+                .servings(4)
+                .difficulty(DifficultyLevel.MEDIUM)
+                .calories(380)
+                .proteinGrams(14.2)
+                .carbsGrams(48.0)
+                .fatGrams(12.5)
+                .fiberGrams(8.5)
+                .imageUrl("https://images.unsplash.com/photo-1546833999-b9f581a1996d")
+                .instructions(List.of(
+                        "Đậu gà ngâm mềm luộc chín tới. Khoai lang và cà rốt gọt vỏ, cắt khối vuông vừa ăn.",
+                        "Phi thơm hành boa-rô băm và bột cà ri hữu cơ với 1 muỗng dầu dừa cho dậy mùi thơm nức.",
+                        "Cho khoai lang, cà rốt và đậu gà vào đảo đều trong 3 phút cho ngấm gia vị.",
+                        "Thêm 400ml nước dừa tươi và 150ml nước cốt dừa, đun nhỏ lửa trong 15 phút đến khi khoai dẻo ngọt sánh mịn."
+                ))
+                .isVerified(true)
+                .status(RecipeStatus.PUBLISHED)
+                .tags(collectTags(tagMap, "VEGAN", "ONE_POT", "HIGH_PROTEIN", "HEART_HEALTHY", "GLUTEN_FREE", "SOY_FREE"))
+                .build();
+
+        r4.addIngredient(RecipeIngredient.builder().name("Đậu gà luộc").normalizedName("dau ga luoc").amount(250.0).unit("g").isOptional(false).build());
+        r4.addIngredient(RecipeIngredient.builder().name("Khoai lang mật").normalizedName("khoai lang mat").amount(200.0).unit("g").isOptional(false).build());
+        r4.addIngredient(RecipeIngredient.builder().name("Nước cốt dừa").normalizedName("nuoc cot dua").amount(150.0).unit("ml").isOptional(false).build());
+        r4.addIngredient(RecipeIngredient.builder().name("Bột cà ri").normalizedName("bot ca ri").amount(1.0).unit("gói").isOptional(false).build());
+
+        // Món 5: Canh rong biển đậu hũ hạt sen dưỡng tâm
+        Recipe r5 = Recipe.builder()
+                .title("Canh rong biển đậu hũ hạt sen dưỡng tâm")
+                .slug("canh-rong-bien-dau-hu-hat-sen-duong-tam")
+                .description("Vị ngọt thanh khiết từ hạt sen tươi và rong biển giàu iot, khoáng chất biển sâu giúp an thần ngủ ngon.")
+                .prepTimeMinutes(10)
+                .cookTimeMinutes(20)
+                .servings(3)
+                .difficulty(DifficultyLevel.EASY)
+                .calories(160)
+                .proteinGrams(9.8)
+                .carbsGrams(22.0)
+                .fatGrams(3.5)
+                .fiberGrams(4.8)
+                .imageUrl("https://images.unsplash.com/photo-1547592180-85f173990554")
+                .instructions(List.of(
+                        "Hạt sen tươi thông tâm, rửa sạch. Rong biển khô ngâm nước lọc 10 phút cho nở mềm rồi vớt ra cắt khúc.",
+                        "Ninh hạt sen với 800ml nước cùng 2 lát gừng trong 15 phút cho hạt sen chín bở bùi ngọt.",
+                        "Cho đậu hũ non cắt miếng vuông và rong biển vào nấu sôi thêm 3 phút.",
+                        "Nêm muối hồng và dầu mè nguyên chất, tắt bếp rắc chút tiêu sọ xay."
+                ))
+                .isVerified(true)
+                .status(RecipeStatus.PUBLISHED)
+                .tags(collectTags(tagMap, "VEGAN", "SOUP", "DIGESTIVE", "HEART_HEALTHY", "LOW_CALORIE", "NOT_SPICY"))
+                .build();
+
+        r5.addIngredient(RecipeIngredient.builder().name("Hạt sen tươi").normalizedName("hat sen tuoi").amount(100.0).unit("g").isOptional(false).build());
+        r5.addIngredient(RecipeIngredient.builder().name("Rong biển khô").normalizedName("rong bien kho").amount(20.0).unit("g").isOptional(false).build());
+        r5.addIngredient(RecipeIngredient.builder().name("Đậu hũ non").normalizedName("dau hu non").amount(1.0).unit("bìa").isOptional(false).isAllergen(true).allergenType("SOY").build());
+
+        // Món 6: Gỏi cuốn ngũ sắc tương bơ đậu phộng
+        Recipe r6 = Recipe.builder()
+                .title("Gỏi cuốn ngũ sắc tương bơ đậu phộng")
+                .slug("goi-cuon-ngu-sac-tuong-bo-dau-phong")
+                .description("Món cuốn tươi mát trọn vẹn chất chống oxy hóa từ bắp cải tím, ớt chuông, bơ chín, xà lách giòn và sốt bơ lạc.")
+                .prepTimeMinutes(15)
+                .cookTimeMinutes(5)
+                .servings(2)
+                .difficulty(DifficultyLevel.EASY)
+                .calories(280)
+                .proteinGrams(11.5)
+                .carbsGrams(34.0)
+                .fatGrams(10.2)
+                .fiberGrams(6.2)
+                .imageUrl("https://images.unsplash.com/photo-1540420773420-3366772f4999")
+                .instructions(List.of(
+                        "Bắp cải tím, dưa leo, cà rốt và ớt chuông bào sợi mỏng. Quả bơ thái lát dài.",
+                        "Đậu hũ khuôn thái thanh dài chiên vàng đều.",
+                        "Làm ướt bánh tráng gạo lứt, xếp rau thơm, bắp cải, đậu hũ, bơ vào rồi cuộn chặt tay.",
+                        "Pha sốt chấm: Trộn đều bơ đậu phộng mịn, tương tamari, nước cốt chanh và một chút nước ấm đến khi sánh ngậy."
+                ))
+                .isVerified(true)
+                .status(RecipeStatus.PUBLISHED)
+                .tags(collectTags(tagMap, "RAW_VEGAN", "SALAD", "QUICK_15", "LOW_CALORIE", "HEART_HEALTHY", "GLUTEN_FREE"))
+                .build();
+
+        r6.addIngredient(RecipeIngredient.builder().name("Bánh tráng gạo lứt").normalizedName("banh trang gao lut").amount(1.0).unit("tập").isOptional(false).build());
+        r6.addIngredient(RecipeIngredient.builder().name("Quả bơ sáp").normalizedName("qua bo sap").amount(1.0).unit("quả").isOptional(false).build());
+        r6.addIngredient(RecipeIngredient.builder().name("Bắp cải tím").normalizedName("bap cai tim").amount(100.0).unit("g").isOptional(false).build());
+        r6.addIngredient(RecipeIngredient.builder().name("Bơ đậu phộng").normalizedName("bo dau phong").amount(2.0).unit("muỗng canh").isOptional(false).isAllergen(true).allergenType("PEANUTS").build());
+
+        // Món 7: Đậu khuôn kho nấm đông cô tiêu xanh
+        Recipe r7 = Recipe.builder()
+                .title("Đậu khuôn kho nấm đông cô tiêu xanh")
+                .slug("dau-khuon-kho-nam-dong-co-tieu-xanh")
+                .description("Đậu hũ chiên vàng giòn thấm đẫm gia vị mặn ngọt hài hòa, nấm đông cô dai ngọt cùng chùm tiêu xanh thơm lừng.")
+                .prepTimeMinutes(10)
+                .cookTimeMinutes(20)
+                .servings(3)
+                .difficulty(DifficultyLevel.EASY)
+                .calories(220)
+                .proteinGrams(15.0)
+                .carbsGrams(14.5)
+                .fatGrams(9.0)
+                .fiberGrams(5.0)
+                .imageUrl("https://images.unsplash.com/photo-1546069901-ba9599a7e63c")
+                .instructions(List.of(
+                        "Đậu hũ khuôn cắt miếng vuông chiên vàng giòn 4 mặt.",
+                        "Nấm đông cô ngâm mềm rửa sạch, khía chữ thập trên mũ nấm.",
+                        "Cho đậu hũ và nấm vào tộ đất, ướp cùng nước tương tamari, mật mía, tiêu xanh đập dập trong 10 phút.",
+                        "Bắc tộ lên bếp đun sôi, thêm 100ml nước dừa, kho nhỏ lửa 15 phút cho nước keo lại óng ánh."
+                ))
+                .isVerified(true)
+                .status(RecipeStatus.PUBLISHED)
+                .tags(collectTags(tagMap, "VEGAN", "BRAISED", "HIGH_PROTEIN", "BUDGET", "UNDER_30"))
+                .build();
+
+        r7.addIngredient(RecipeIngredient.builder().name("Đậu hũ khuôn").normalizedName("dau hu khuon").amount(3.0).unit("bìa").isOptional(false).isAllergen(true).allergenType("SOY").build());
+        r7.addIngredient(RecipeIngredient.builder().name("Nấm đông cô tươi").normalizedName("nam dong co tuoi").amount(150.0).unit("g").isOptional(false).build());
+        r7.addIngredient(RecipeIngredient.builder().name("Tiêu xanh").normalizedName("tieu xanh").amount(2.0).unit("chùm").isOptional(false).build());
+
+        List<Recipe> allRecipes = List.of(r1, r2, r3, r4, r5, r6, r7);
+        for (Recipe r : allRecipes) {
+            if (!recipeRepository.existsBySlug(r.getSlug())) {
+                recipeRepository.save(r);
+            }
+        }
     }
 
     private Set<Tag> collectTags(Map<String, Tag> tagMap, String... codes) {

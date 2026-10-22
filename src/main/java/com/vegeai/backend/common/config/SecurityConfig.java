@@ -81,23 +81,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public auth endpoints
                         .requestMatchers(
-                                "/api/auth/register",
-                                "/api/auth/login",
-                                "/api/auth/refresh",
-                                "/api/auth/logout",
-                                "/api/auth/verify-email",
-                                "/api/auth/resend-otp",
-                                "/api/auth/forgot-password",
-                                "/api/auth/reset-password"
+                                "/api/auth/**"
                         ).permitAll()
                         // AI endpoints (Chatbot, Multimodal Fridge Scanner Vision & Custom Recipe Generator)
-                        .requestMatchers("/api/ai/chat", "/api/ai/fridge-scan", "/api/ai/generate-recipe").permitAll()
+                        .requestMatchers("/api/ai/chat", "/api/ai/fridge-scan", "/api/ai/generate-recipe", "/api/ai/video-recipe").permitAll()
                         // Swagger / OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                          "/api-docs/**", "/v3/api-docs/**").permitAll()
                         // Public content
                         .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/blog/posts", "/api/blog/posts/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/blog/posts", "/api/blog/posts/*", "/api/blog/posts/*/comments").permitAll()
                         // Public nutrition calculator & dropdown options (stateless, nothing saved)
                         .requestMatchers(HttpMethod.POST, "/api/nutrition/calculate").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/nutrition/options").permitAll()

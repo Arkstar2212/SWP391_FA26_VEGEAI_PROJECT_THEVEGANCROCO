@@ -51,12 +51,20 @@ public class FridgeScanResponse {
         @Schema(description = "Tên nguyên liệu tiếng Việt", example = "Cải ngọt")
         private String name;
 
-        @Schema(description = "Phân loại chay: VEGAN (Thuần chay), LACTO_OVO (Chay trứng sữa), NON_VEG (Đồ mặn)", example = "VEGAN")
+        @Schema(description = "Phân loại chay: VEGAN (Thuần chay), LACTO_OVO (Chay trứng sữa), NON_VEG (Đồ mặn), NON_FOOD (Vật phẩm không phải thực phẩm)", example = "VEGAN")
         private String category;
 
         @Schema(description = "Xác nhận có phải món chay hay không", example = "true")
         @com.fasterxml.jackson.annotation.JsonProperty("isVegetarian")
         private boolean isVegetarian;
+
+        @Schema(description = "Xác nhận có phải nguyên liệu thực phẩm ăn được hay không (false nếu là củi khô, que gỗ, đồ vật...)", example = "true")
+        @com.fasterxml.jackson.annotation.JsonProperty("isEdible")
+        @Builder.Default
+        private boolean isEdible = true;
+
+        @Schema(description = "Lý do cảnh báo nếu vật phẩm không ăn được hoặc không thuộc nguyên liệu nấu ăn", example = "Củi khô không phải thực phẩm nấu ăn")
+        private String rejectionReason;
 
         @Schema(description = "Tình trạng tươi mới: FRESH (Tươi), USABLE (Cần dùng ngay), SPOILED (Đã hỏng/nấm mốc)", example = "FRESH")
         private String freshness;

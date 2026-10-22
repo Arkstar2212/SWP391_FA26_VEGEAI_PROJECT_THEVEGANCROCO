@@ -45,6 +45,9 @@ public interface FridgeItemRepository extends JpaRepository<FridgeItem, UUID> {
      */
     long countByUserIdAndStatus(UUID userId, FridgeItemStatus status);
 
+    /** Global sweep used by the notification scheduler. */
+    List<FridgeItem> findByStatusAndExpiryDateLessThanEqual(FridgeItemStatus status, LocalDate thresholdDate);
+
     /**
      * Đếm số món theo trạng thái độ tươi.
      */

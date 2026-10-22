@@ -67,6 +67,24 @@ public class EmailService {
         }
     }
 
+    /**
+     * Sends the login 2FA verification OTP. Async.
+     */
+    @Async
+    public void sendLoginOtp(User user, String otp) {
+        String subject = "[VEGEAI] 🔐 Mã xác thực đăng nhập của bạn";
+        String html = buildOtpEmailHtml(user.getFullName(), otp,
+                "xác thực đăng nhập tài khoản", 3);
+        try {
+            sendHtml(user.getEmail(), subject, html);
+        } catch (Exception ex) {
+            log.error("Failed to send login OTP email to {}: {}", user.getEmail(), ex.getMessage());
+            log.warn("===============================================================================");
+            log.warn(">>> [OTP DEV FALLBACK] LOGIN OTP FOR [{}]: [{}] <<<", user.getEmail(), otp);
+            log.warn("===============================================================================");
+        }
+    }
+
     // ── Internal helpers ─────────────────────────────────────────────────────
 
     private void sendHtml(String to, String subject, String htmlBody) {
