@@ -106,34 +106,85 @@ public class AuthController {
     // ── 2.3 Login ────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
-    @Operation(summary = "Login and receive access token + HttpOnly refresh cookie", description = """
-            **Đăng nhập hệ thống.**
+    @Operation(summary = "Login step 1: Validate credentials & issue login 2FA OTP, or complete with OTP", description = """
+            **Đăng nhập hệ thống (Hỗ trợ 2FA OTP & Remember Me).**
             
-            **Quy tắc điền thông tin:**
-            - `usernameOrEmail`: Tên đăng nhập hoặc email đã đăng ký.
-            - `password`: Chuỗi mã hóa SHA-256 (64 ký tự hex) từ client.
-            
-            **Tài khoản mẫu để test:**
-            - Quản trị viên (ADMIN): `admin` / `e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7` (Mật khẩu gốc: `Admin@123`).
-            
-            **Kết quả trả về:**
-            - `accessToken`: JWT Bearer dùng để gắn vào nút **Authorize** trên Swagger UI (hạn 15 phút).
-            - `refreshToken`: Tự động lưu vào HttpOnly Cookie (hạn 1 ngày).
+            - Bước 1: Gửi `usernameOrEmail`, `password`, `rememberMe`. Backend kiểm tra thông tin và gửi mã OTP 6 số về email.
+            - Bước 2: Khi có mã OTP, gửi tiếp tới `/api/auth/verify-login-otp` hoặc truyền kèm `otp` ngay trong body này.
             """)
-    public ResponseEntity<ApiResponse<AuthResponse>> login(
+    public ResponseEntity<ApiResponse<?>> login(
             @Valid @RequestBody LoginRequest req,
             HttpServletRequest request,
             HttpServletResponse response) {
 
         String clientIp = extractClientIp(request);
-        AuthService.LoginResult result = authService.login(req, clientIp);
 
-        // Set refresh token as HttpOnly cookie
-        ResponseCookie refreshCookie = buildRefreshCookie(result.refreshTokenValue());
+        if (req.getOtp() != null && !req.getOtp().isBlank()) {
+            VerifyLoginOtpRequest verifyReq = VerifyLoginOtpRequest.builder()
+                    .usernameOrEmail(req.getUsernameOrEmail())
+                    .otp(req.getOtp())
+                    .rememberMe(req.getRememberMe())
+                    .build();
+            AuthService.LoginResult result = authService.verifyLoginOtp(verifyReq, clientIp);
+            ResponseCookie refreshCookie = buildRefreshCookie(result.refreshTokenValue(), Boolean.TRUE.equals(req.getRememberMe()));
+            response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+            return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công.", result.authResponse()));
+        }
+
+        LoginInitResponse initResponse = authService.initLogin(req, clientIp);
+        return ResponseEntity.ok(ApiResponse.success("Thông tin chính xác. Mã OTP đã được gửi.", initResponse));
+    }
+
+    @PostMapping("/verify-login-otp")
+    @Operation(summary = "Verify login 2FA OTP and receive tokens", description = """
+            **Xác thực mã OTP đăng nhập 6 số.**
+            - `usernameOrEmail`: Tên đăng nhập hoặc email.
+            - `otp`: Mã số 6 chữ số nhận từ email.
+            - `rememberMe`: true (giữ đăng nhập 1 ngày) hoặc false (phiên làm việc tạm thời).
+            """)
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyLoginOtp(
+            @Valid @RequestBody VerifyLoginOtpRequest req,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        String clientIp = extractClientIp(request);
+        AuthService.LoginResult result = authService.verifyLoginOtp(req, clientIp);
+
+        ResponseCookie refreshCookie = buildRefreshCookie(result.refreshTokenValue(), Boolean.TRUE.equals(req.getRememberMe()));
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-        return ResponseEntity.ok(ApiResponse.success("Login successful.", result.authResponse()));
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công.", result.authResponse()));
     }
+
+    @PostMapping("/google")
+    @Operation(summary = "Authenticate with Google OAuth2 ID Token", description = """
+            **Đăng nhập bằng tài khoản Google (OAuth 2.0 / Google Identity Services).**
+            - `idToken`: Chuỗi JWT ID Token do Google cấp sau khi người dùng xác thực thành công.
+            - `rememberMe`: true (lưu phiên 1 ngày) hoặc false.
+            - Tự động tạo tài khoản mới (Role: MEMBER, Trạng thái: ACTIVE) nếu lần đầu đăng nhập.
+            """)
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogle(
+            @Valid @RequestBody GoogleLoginRequest req,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        String clientIp = extractClientIp(request);
+        AuthService.LoginResult result = authService.loginWithGoogle(req, clientIp);
+
+        ResponseCookie refreshCookie = buildRefreshCookie(result.refreshTokenValue(), Boolean.TRUE.equals(req.getRememberMe()));
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập Google thành công.", result.authResponse()));
+    }
+
+    @PostMapping("/resend-login-otp")
+    @Operation(summary = "Resend login 2FA OTP", description = "Gửi lại mã OTP đăng nhập (thời gian chờ tối thiểu 30 giây).")
+    public ResponseEntity<ApiResponse<Void>> resendLoginOtp(
+            @Valid @RequestBody ResendLoginOtpRequest req) {
+        authService.resendLoginOtp(req.getUsernameOrEmail());
+        return ResponseEntity.ok(ApiResponse.success("Mã OTP đăng nhập mới đã được gửi đến email của bạn.", null));
+    }
+
 
     // ── 2.4 Refresh ──────────────────────────────────────────────────────────
 
@@ -240,14 +291,23 @@ public class AuthController {
 
     // ── Cookie helpers ────────────────────────────────────────────────────────
 
-    private ResponseCookie buildRefreshCookie(String tokenValue) {
-        return ResponseCookie.from(REFRESH_TOKEN_COOKIE, tokenValue)
+    private ResponseCookie buildRefreshCookie(String tokenValue, boolean rememberMe) {
+        var builder = ResponseCookie.from(REFRESH_TOKEN_COOKIE, tokenValue)
                 .httpOnly(true)
                 .secure(false)     // Set to true in production (HTTPS)
                 .sameSite("Strict")
-                .path(REFRESH_COOKIE_PATH)
-                .maxAge(Duration.ofDays(1))
-                .build();
+                .path(REFRESH_COOKIE_PATH);
+
+        if (rememberMe) {
+            builder.maxAge(Duration.ofDays(1)); // exactly 1 day (24 hours) as requested
+        } else {
+            builder.maxAge(-1); // browser session cookie (cleared when browser closes)
+        }
+        return builder.build();
+    }
+
+    private ResponseCookie buildRefreshCookie(String tokenValue) {
+        return buildRefreshCookie(tokenValue, true);
     }
 
     private String extractRefreshCookie(HttpServletRequest request) {

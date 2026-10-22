@@ -17,6 +17,7 @@ import java.util.UUID;
 
 @Service @RequiredArgsConstructor @Transactional
 public class QuestionService {
+    private final com.vegeai.backend.modules.notification.service.NotificationService notifications;
     private final QuestionRepository questions;
     private final CommunityAccess access;
 
@@ -91,6 +92,7 @@ public class QuestionService {
         question.setAnsweredBy(admin);
         question.setAnsweredAt(LocalDateTime.now());
         questions.flush();
+        notifications.notify(question.getAuthor().getUserId(), com.vegeai.backend.modules.notification.service.NotificationService.QUESTION_ANSWERED, "Câu hỏi của bạn đã có câu trả lời", "Quản trị viên đã trả lời câu hỏi của bạn.", "/questions/mine/" + question.getId(), "ANSWER:" + question.getId() + ":" + question.getVersion());
         return response(question, true);
     }
 

@@ -17,6 +17,7 @@ import java.util.UUID;
 
 @Service @RequiredArgsConstructor @Transactional
 public class VideoService {
+    private final com.vegeai.backend.modules.notification.service.NotificationService notifications;
     private final VideoRepository videos;
     private final VideoCommentRepository comments;
     private final VideoFavoriteRepository favorites;
@@ -88,7 +89,11 @@ public class VideoService {
         comment.setAuthor(author);
         comment.setVideo(video);
         comment.setContent(input.content().strip());
-        return response(comments.saveAndFlush(comment));
+        VideoComment saved = comments.saveAndFlush(comment);
+        if (!video.getCreatedBy().getUserId().equals(author.getUserId())) {
+            notifications.notify(video.getCreatedBy().getUserId(), com.vegeai.backend.modules.notification.service.NotificationService.NEW_COMMENT, "Bình luận mới", access.name(author) + " vừa bình luận về \"" + video.getTitle() + "\".", "/videos/" + video.getId(), "COMMENT:" + saved.getId());
+        }
+        return response(saved);
     }
 
     public CommentResponse editComment(String principal, UUID videoId, UUID commentId, CommentInput input) {

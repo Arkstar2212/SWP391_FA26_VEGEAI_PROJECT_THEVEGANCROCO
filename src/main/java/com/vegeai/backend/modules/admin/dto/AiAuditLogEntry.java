@@ -18,5 +18,5 @@ public class AiAuditLogEntry {
     private final long latencyMs;
     private final String userType;
     private final String status;
-    private final String promptSummary;
+    private final String errorType;
 }

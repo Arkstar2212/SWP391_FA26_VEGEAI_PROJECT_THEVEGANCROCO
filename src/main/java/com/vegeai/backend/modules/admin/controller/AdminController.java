@@ -127,9 +127,9 @@ public class AdminController {
 
     @GetMapping("/ai/status")
     @Operation(summary = "Get AI Ops status and model telemetry", description = """
-            **Giám sát trạng thái hoạt động các mô hình AI (FR-ADMIN-03).**
-            
-            - Đo lường độ trễ (latency ms), trạng thái hoạt động (HEALTHY/DEGRADED), uptime và hạn mức gọi API của các mô hình LLM (Gemini 1.5, Whisper STT, Guardrail moderation).
+            **Giám sát số liệu vận hành được ghi lại từ các yêu cầu AI thực tế.**
+
+            - Tổng hợp lượt gọi, tỷ lệ thành công và độ trễ trong 24 giờ gần nhất.
             """)
     public ResponseEntity<ApiResponse<AiOpsStatusResponse>> getAiOpsStatus() {
         AiOpsStatusResponse status = adminService.getAiOpsStatus();
@@ -138,9 +138,9 @@ public class AdminController {
 
     @GetMapping("/ai/audit-logs")
     @Operation(summary = "Get AI audit trail logs", description = """
-            **Xem nhật ký kiểm tra (Audit Trail) các truy vấn AI.**
-            
-            - Ghi lại các tương tác AI gần nhất, thời gian phản hồi, trạng thái kiểm duyệt nội dung (SAFE/FLAGGED) phục vụ giám sát và can thiệp thủ công.
+            **Xem các sự kiện gọi AI gần nhất.**
+
+            - Log không lưu nguyên câu hỏi, prompt hoặc dữ liệu cá nhân của người dùng.
             """)
     public ResponseEntity<ApiResponse<List<AiAuditLogEntry>>> getAiAuditLogs() {
         List<AiAuditLogEntry> logs = adminService.getAiAuditLogs();

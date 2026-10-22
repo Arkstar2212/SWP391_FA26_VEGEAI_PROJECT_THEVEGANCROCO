@@ -54,8 +54,8 @@ services:
     environment:
       SERVER_PORT: 8081
       DB_URL: jdbc:postgresql://postgres:5432/vegeai
-      DB_USERNAME: ${DB_USERNAME:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-DBPGVEGEAI123}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
@@ -65,9 +65,11 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-giflvl123@gmail.com}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-pnpsiwgmapmdhqkr}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-164354959561-84vaff9lo56ummq04itrgq642kmjd4qo.apps.googleusercontent.com}
     ports:
+
       - "8081:8081"
     networks:
       - vegeai-net
