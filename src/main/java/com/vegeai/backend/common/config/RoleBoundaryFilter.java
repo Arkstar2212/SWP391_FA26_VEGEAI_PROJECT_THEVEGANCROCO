@@ -28,6 +28,7 @@ public class RoleBoundaryFilter extends OncePerRequestFilter {
         boolean adminArea = within(path, "/api/admin");
         boolean personal = within(path, "/api/ai") || within(path, "/api/fridge")
                 || within(path, "/api/nutrition") || within(path, "/api/meal-plans") || within(path, "/api/recipes/cookbook")
+                || within(path, "/api/questions/mine") || within(path, "/api/videos/favorites")
                 || path.equals("/api/recipes/fridge-match");
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if ((!adminArea && !personal) || auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
@@ -39,6 +40,8 @@ public class RoleBoundaryFilter extends OncePerRequestFilter {
         catch (IllegalArgumentException ex) { user = null; }
         ErrorCode error = user == null ? ErrorCode.UNAUTHORIZED
                 : user.getStatus() == AccountStatus.PENDING_VERIFICATION ? ErrorCode.ACCOUNT_PENDING_VERIFICATION
+                : user.getStatus() == AccountStatus.LOCKED ? ErrorCode.ACCOUNT_LOCKED
+                : user.getStatus() == AccountStatus.DISABLED ? ErrorCode.ACCOUNT_DISABLED
                 : user.getStatus() != AccountStatus.ACTIVE
                 || (adminArea && user.getRole() != UserRole.ADMIN)
                 || (personal && user.getRole() != UserRole.MEMBER) ? ErrorCode.FORBIDDEN : null;
