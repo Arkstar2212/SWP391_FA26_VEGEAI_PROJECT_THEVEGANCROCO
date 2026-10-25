@@ -51,7 +51,7 @@ public class FridgeService {
             String normName = normalizeName(dto.getName());
 
             Optional<FridgeItem> existingOpt = fridgeItemRepository
-                    .findByUserIdAndNormalizedNameAndStatus(userId, normName, FridgeItemStatus.ACTIVE);
+                    .findFirstByUserIdAndNormalizedNameAndStatusOrderByCreatedAtDesc(userId, normName, FridgeItemStatus.ACTIVE);
 
             if (existingOpt.isPresent()) {
                 // Đã có trong tủ -> Quét lại lần sau: Cập nhật vòng đời & hạn dùng
@@ -165,6 +165,56 @@ public class FridgeService {
         LocalDate expiry = (request.getExpiryDate() != null)
                 ? request.getExpiryDate()
                 : LocalDate.now().plusDays(shelfLifeDays);
+
+        Optional<FridgeItem> existingOpt = fridgeItemRepository
+                .findFirstByUserIdAndNormalizedNameAndStatusOrderByCreatedAtDesc(user.getUserId(), normName, FridgeItemStatus.ACTIVE);
+
+        if (existingOpt.isPresent()) {
+            FridgeItem existing = existingOpt.get();
+            existing.setLastScannedAt(LocalDateTime.now());
+
+            // Hợp nhất số lượng nếu món đã tồn tại trong tủ
+            if (request.getQuantity() != null && request.getQuantity() > 0) {
+                if (existing.getQuantity() != null && existing.getQuantity() > 0) {
+                    existing.setQuantity(existing.getQuantity() + request.getQuantity());
+                } else {
+                    existing.setQuantity(request.getQuantity());
+                }
+            }
+
+            if (request.getUnit() != null && !request.getUnit().isBlank()) {
+                existing.setUnit(request.getUnit());
+            }
+            if (request.getCategory() != null && !request.getCategory().isBlank()) {
+                existing.setCategory(request.getCategory());
+            }
+            if (request.getFreshnessStatus() != null) {
+                existing.setFreshnessStatus(request.getFreshnessStatus());
+            }
+            if (request.getStorageTip() != null && !request.getStorageTip().isBlank()) {
+                existing.setStorageTip(request.getStorageTip());
+            }
+            if (request.getNotes() != null && !request.getNotes().isBlank()) {
+                existing.setNotes(request.getNotes());
+            }
+
+            // Cập nhật hạn sử dụng: ưu tiên ngày hạn xa hơn hoặc ngày mới thêm
+            if (existing.getExpiryDate() == null || expiry.isAfter(existing.getExpiryDate())) {
+                existing.setExpiryDate(expiry);
+                existing.setEstimatedShelfLifeDays(shelfLifeDays);
+            }
+
+            long daysRemaining = existing.calculateDaysRemaining();
+            if (daysRemaining <= 1 && existing.getFreshnessStatus() == FreshnessStatus.FRESH) {
+                existing.setFreshnessStatus(FreshnessStatus.USABLE);
+            } else if (daysRemaining < 0) {
+                existing.setFreshnessStatus(FreshnessStatus.SPOILED);
+            }
+
+            FridgeItem saved = fridgeItemRepository.save(existing);
+            log.info("[FRIDGE] Gộp số lượng món đã có trong tủ: '{}', tổng sl={}, userId={}", saved.getName(), saved.getQuantity(), user.getUserId());
+            return mapToResponse(saved);
+        }
 
         FridgeItem item = FridgeItem.builder()
                 .userId(user.getUserId())

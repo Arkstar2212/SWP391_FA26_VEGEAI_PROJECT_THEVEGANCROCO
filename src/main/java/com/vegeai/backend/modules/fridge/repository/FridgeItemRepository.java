@@ -32,6 +32,8 @@ public interface FridgeItemRepository extends JpaRepository<FridgeItem, UUID> {
     /**
      * Tìm món đang còn trong tủ (ACTIVE) theo tên đã chuẩn hóa để phục vụ cơ chế "lưu nhớ & cập nhật" khi quét lại.
      */
+    Optional<FridgeItem> findFirstByUserIdAndNormalizedNameAndStatusOrderByCreatedAtDesc(UUID userId, String normalizedName, FridgeItemStatus status);
+
     Optional<FridgeItem> findByUserIdAndNormalizedNameAndStatus(UUID userId, String normalizedName, FridgeItemStatus status);
 
     /**

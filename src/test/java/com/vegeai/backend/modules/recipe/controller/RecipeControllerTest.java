@@ -164,8 +164,8 @@ class RecipeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(filter)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[*].title", not(hasItem("Canh cải ngọt nấu nấm bào ngư"))))
-                .andExpect(jsonPath("$.data.items[*].title", hasItem("Đậu phụ sốt cà chua tươi")));
+                .andExpect(jsonPath("$.data.items[*].title", hasItem("Canh cải ngọt nấu nấm bào ngư")))
+                .andExpect(jsonPath("$.data.items[*].title", not(hasItem("Đậu phụ sốt cà chua tươi"))));
     }
 
     @Test

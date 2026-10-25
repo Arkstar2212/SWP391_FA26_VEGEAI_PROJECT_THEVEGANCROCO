@@ -3,6 +3,7 @@ package com.vegeai.backend.modules.recipe.repository;
 import com.vegeai.backend.modules.recipe.dto.RecipeFilterRequest;
 import com.vegeai.backend.modules.recipe.entity.InclusionMode;
 import com.vegeai.backend.modules.recipe.entity.Recipe;
+import com.vegeai.backend.modules.recipe.entity.RecipeIngredient;
 import com.vegeai.backend.modules.recipe.entity.RecipeStatus;
 import com.vegeai.backend.modules.recipe.entity.Tag;
 import jakarta.persistence.criteria.*;
@@ -56,7 +57,7 @@ public class RecipeSpecification {
                 predicates.add(cb.equal(root.get("difficulty"), filter.getDifficulty()));
             }
 
-            // 7. EXCLUSION TAGS (Loại trừ tuyệt đối: Dị ứng, Thành phần kiêng)
+            // 7. EXCLUSION TAGS (Loại trừ tuyệt đối: Dị ứng, Thành phần kiêng & Thẻ phân loại)
             if (filter.getExcludeTagCodes() != null && !filter.getExcludeTagCodes().isEmpty()) {
                 List<String> cleanExclude = filter.getExcludeTagCodes().stream()
                         .map(String::trim)
@@ -65,15 +66,107 @@ public class RecipeSpecification {
                         .toList();
 
                 if (!cleanExclude.isEmpty()) {
-                    Subquery<Long> excludeSub = query.subquery(Long.class);
-                    Root<Recipe> excludeRoot = excludeSub.from(Recipe.class);
-                    Join<Recipe, Tag> excludeTagJoin = excludeRoot.join("tags");
-                    excludeSub.select(cb.literal(1L))
-                            .where(
-                                    cb.equal(excludeRoot.get("recipeId"), root.get("recipeId")),
-                                    excludeTagJoin.get("code").in(cleanExclude)
-                            );
-                    predicates.add(cb.not(cb.exists(excludeSub)));
+                    List<String> generalExclude = new ArrayList<>();
+
+                    for (String code : cleanExclude) {
+                        switch (code) {
+                            case "SOY_FREE", "SOY", "CONTAINS_SOY" -> {
+                                // Người dùng chọn loại trừ Đậu nành -> Loại bỏ món chứa đậu nành
+                                Subquery<Long> soyIngSub = query.subquery(Long.class);
+                                Root<RecipeIngredient> soyIngRoot = soyIngSub.from(RecipeIngredient.class);
+                                soyIngSub.select(cb.literal(1L))
+                                        .where(
+                                                cb.equal(soyIngRoot.get("recipe").get("recipeId"), root.get("recipeId")),
+                                                cb.or(
+                                                        cb.equal(cb.upper(soyIngRoot.get("allergenType")), "SOY"),
+                                                        cb.like(cb.lower(soyIngRoot.get("normalizedName")), "%dau phu%"),
+                                                        cb.like(cb.lower(soyIngRoot.get("normalizedName")), "%dau hu%"),
+                                                        cb.like(cb.lower(soyIngRoot.get("normalizedName")), "%dau nanh%"),
+                                                        cb.like(cb.lower(soyIngRoot.get("normalizedName")), "%tofu%")
+                                                )
+                                        );
+                                predicates.add(cb.not(cb.exists(soyIngSub)));
+                            }
+                            case "GLUTEN_FREE", "GLUTEN", "CONTAINS_GLUTEN" -> {
+                                // Người dùng chọn loại trừ Gluten -> Loại bỏ món chứa gluten
+                                Subquery<Long> glutenIngSub = query.subquery(Long.class);
+                                Root<RecipeIngredient> glutenIngRoot = glutenIngSub.from(RecipeIngredient.class);
+                                glutenIngSub.select(cb.literal(1L))
+                                        .where(
+                                                cb.equal(glutenIngRoot.get("recipe").get("recipeId"), root.get("recipeId")),
+                                                cb.or(
+                                                        cb.equal(cb.upper(glutenIngRoot.get("allergenType")), "GLUTEN"),
+                                                        cb.like(cb.lower(glutenIngRoot.get("normalizedName")), "%bot mi%"),
+                                                        cb.like(cb.lower(glutenIngRoot.get("normalizedName")), "%mi can%"),
+                                                        cb.like(cb.lower(glutenIngRoot.get("normalizedName")), "%lua mi%"),
+                                                        cb.like(cb.lower(glutenIngRoot.get("normalizedName")), "%seitan%")
+                                                )
+                                        );
+                                predicates.add(cb.not(cb.exists(glutenIngSub)));
+                            }
+                            case "NUT_FREE", "NUT", "PEANUT", "PEANUTS", "CONTAINS_NUT" -> {
+                                // Người dùng chọn loại trừ Đậu phộng & Các loại hạt -> Loại bỏ món chứa hạt
+                                Subquery<Long> nutIngSub = query.subquery(Long.class);
+                                Root<RecipeIngredient> nutIngRoot = nutIngSub.from(RecipeIngredient.class);
+                                nutIngSub.select(cb.literal(1L))
+                                        .where(
+                                                cb.equal(nutIngRoot.get("recipe").get("recipeId"), root.get("recipeId")),
+                                                cb.or(
+                                                        cb.equal(cb.upper(nutIngRoot.get("allergenType")), "PEANUT"),
+                                                        cb.equal(cb.upper(nutIngRoot.get("allergenType")), "PEANUTS"),
+                                                        cb.equal(cb.upper(nutIngRoot.get("allergenType")), "NUT"),
+                                                        cb.equal(cb.upper(nutIngRoot.get("allergenType")), "TREE_NUTS"),
+                                                        cb.like(cb.lower(nutIngRoot.get("normalizedName")), "%dau phong%"),
+                                                        cb.like(cb.lower(nutIngRoot.get("normalizedName")), "%lac%"),
+                                                        cb.like(cb.lower(nutIngRoot.get("normalizedName")), "%hat dieu%"),
+                                                        cb.like(cb.lower(nutIngRoot.get("normalizedName")), "%hanh nhan%"),
+                                                        cb.like(cb.lower(nutIngRoot.get("normalizedName")), "%oc cho%")
+                                                )
+                                        );
+                                predicates.add(cb.not(cb.exists(nutIngSub)));
+                            }
+                            case "MUSHROOM_FREE", "MUSHROOM", "MUSHROOMS", "CONTAINS_MUSHROOM" -> {
+                                // Người dùng chọn loại trừ Nấm -> Loại bỏ món chứa nấm
+                                Subquery<Long> mushroomIngSub = query.subquery(Long.class);
+                                Root<RecipeIngredient> mushroomIngRoot = mushroomIngSub.from(RecipeIngredient.class);
+                                mushroomIngSub.select(cb.literal(1L))
+                                        .where(
+                                                cb.equal(mushroomIngRoot.get("recipe").get("recipeId"), root.get("recipeId")),
+                                                cb.or(
+                                                        cb.equal(cb.upper(mushroomIngRoot.get("allergenType")), "MUSHROOM"),
+                                                        cb.like(cb.lower(mushroomIngRoot.get("normalizedName")), "%nam%")
+                                                )
+                                        );
+                                predicates.add(cb.not(cb.exists(mushroomIngSub)));
+                            }
+                            case "NOT_SPICY", "SPICY", "CAY" -> {
+                                // Người dùng chọn loại trừ Cay -> Món phải có thẻ NOT_SPICY
+                                Subquery<Long> spicyTagSub = query.subquery(Long.class);
+                                Root<Recipe> spicyRoot = spicyTagSub.from(Recipe.class);
+                                Join<Recipe, Tag> spicyTagJoin = spicyRoot.join("tags");
+                                spicyTagSub.select(cb.literal(1L))
+                                        .where(
+                                                cb.equal(spicyRoot.get("recipeId"), root.get("recipeId")),
+                                                cb.equal(spicyTagJoin.get("code"), "NOT_SPICY")
+                                        );
+                                predicates.add(cb.exists(spicyTagSub));
+                            }
+                            default -> generalExclude.add(code);
+                        }
+                    }
+
+                    // Xử lý các thẻ phân loại thông thường khác (ví dụ: FRIED, HOTPOT, BRAISED...)
+                    if (!generalExclude.isEmpty()) {
+                        Subquery<Long> excludeSub = query.subquery(Long.class);
+                        Root<Recipe> excludeRoot = excludeSub.from(Recipe.class);
+                        Join<Recipe, Tag> excludeTagJoin = excludeRoot.join("tags");
+                        excludeSub.select(cb.literal(1L))
+                                .where(
+                                        cb.equal(excludeRoot.get("recipeId"), root.get("recipeId")),
+                                        excludeTagJoin.get("code").in(generalExclude)
+                                );
+                        predicates.add(cb.not(cb.exists(excludeSub)));
+                    }
                 }
             }
 

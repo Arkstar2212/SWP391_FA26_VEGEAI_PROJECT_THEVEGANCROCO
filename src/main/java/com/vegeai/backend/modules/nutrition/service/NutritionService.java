@@ -6,7 +6,9 @@ import com.vegeai.backend.modules.nutrition.dto.NutritionCalculateRequest;
 import com.vegeai.backend.modules.nutrition.dto.NutritionProfileRequest;
 import com.vegeai.backend.modules.nutrition.dto.NutritionProfileResponse;
 import com.vegeai.backend.modules.nutrition.dto.NutritionTargetsResponse;
+import com.vegeai.backend.modules.nutrition.entity.ActivityLevel;
 import com.vegeai.backend.modules.nutrition.entity.Gender;
+import com.vegeai.backend.modules.nutrition.entity.NutritionGoal;
 import com.vegeai.backend.modules.nutrition.entity.NutritionProfile;
 import com.vegeai.backend.modules.nutrition.repository.NutritionProfileRepository;
 import com.vegeai.backend.modules.user.entity.User;
@@ -38,11 +40,32 @@ public class NutritionService {
 
     // ── Queries ──────────────────────────────────────────────────────────────
 
-    @Transactional(readOnly = true)
+    @Transactional
     public NutritionProfileResponse getMyProfile(String userIdStr) {
         UUID userId = parseUuid(userIdStr);
         NutritionProfile profile = profileRepository.findByUser_UserId(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.NUTRITION_PROFILE_NOT_FOUND));
+                .orElseGet(() -> {
+                    User user = userRepository.findById(userId)
+                            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                    if (user.getHeightCm() != null && user.getWeightKg() != null) {
+                        LocalDate dob = user.getDateOfBirth() != null ? user.getDateOfBirth() : LocalDate.of(1998, 1, 1);
+                        Gender gender = parseGender(user.getGender()).orElse(Gender.FEMALE);
+                        NutritionProfile newProfile = NutritionProfile.builder()
+                                .user(user)
+                                .gender(gender)
+                                .dateOfBirth(dob)
+                                .heightCm(user.getHeightCm())
+                                .weightKg(user.getWeightKg())
+                                .activityLevel(ActivityLevel.MODERATE)
+                                .goal(NutritionGoal.MAINTAIN)
+                                .customDailyCalories(user.getDailyCalorieTarget())
+                                .build();
+                        NutritionCalculation calc = calculate(newProfile, ageOf(dob));
+                        applySnapshot(newProfile, calc);
+                        return profileRepository.save(newProfile);
+                    }
+                    throw new AppException(ErrorCode.NUTRITION_PROFILE_NOT_FOUND);
+                });
         int age = ageOf(profile.getDateOfBirth());
         NutritionCalculation calc = calculate(profile, age);
         return NutritionProfileResponse.from(profile, age, NutritionTargetsResponse.from(calc));
@@ -114,17 +137,37 @@ public class NutritionService {
      */
     @Transactional
     public boolean syncFromUser(User user, Integer explicitCalorieTarget) {
+        if (user == null) return false;
         Optional<NutritionProfile> existing = profileRepository.findByUser_UserId(user.getUserId());
-        if (existing.isEmpty()) {
-            return false;
+        NutritionProfile profile;
+        if (existing.isPresent()) {
+            profile = existing.get();
+        } else {
+            if (user.getHeightCm() == null || user.getWeightKg() == null) {
+                return false;
+            }
+            LocalDate dob = user.getDateOfBirth() != null ? user.getDateOfBirth() : LocalDate.of(1998, 1, 1);
+            Gender gender = parseGender(user.getGender()).orElse(Gender.FEMALE);
+            profile = NutritionProfile.builder()
+                    .user(user)
+                    .gender(gender)
+                    .dateOfBirth(dob)
+                    .heightCm(user.getHeightCm())
+                    .weightKg(user.getWeightKg())
+                    .activityLevel(ActivityLevel.MODERATE)
+                    .goal(NutritionGoal.MAINTAIN)
+                    .build();
         }
-        NutritionProfile profile = existing.get();
 
         if (user.getHeightCm() != null) profile.setHeightCm(user.getHeightCm());
         if (user.getWeightKg() != null) profile.setWeightKg(user.getWeightKg());
         if (user.getDateOfBirth() != null) profile.setDateOfBirth(user.getDateOfBirth());
         parseGender(user.getGender()).ifPresent(profile::setGender);
-        if (explicitCalorieTarget != null) profile.setCustomDailyCalories(explicitCalorieTarget);
+        if (explicitCalorieTarget != null) {
+            profile.setCustomDailyCalories(explicitCalorieTarget);
+        } else if (user.getDailyCalorieTarget() != null && profile.getCustomDailyCalories() == null) {
+            profile.setCustomDailyCalories(user.getDailyCalorieTarget());
+        }
 
         NutritionCalculation calc = calculate(profile, ageOf(profile.getDateOfBirth()));
         applySnapshot(profile, calc);
@@ -143,6 +186,7 @@ public class NutritionService {
     }
 
     private int ageOf(LocalDate dateOfBirth) {
+        if (dateOfBirth == null) return 25;
         int age = calculator.calculateAge(dateOfBirth, LocalDate.now());
         if (age < NutritionCalculator.MIN_AGE || age > NutritionCalculator.MAX_AGE) {
             throw new AppException(ErrorCode.NUTRITION_AGE_OUT_OF_RANGE);
