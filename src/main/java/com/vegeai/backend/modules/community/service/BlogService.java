@@ -112,6 +112,7 @@ public class BlogService {
     }
 
     private void runAiModeration(BlogPost post) {
+        post.setAiModerationAgreedWithAdmin(null);
         try {
             var result = ai.moderateContent(post.getTitle(), post.getContent());
             if (result.flagged()) {
@@ -156,6 +157,10 @@ public class BlogService {
         post.setReviewedAt(LocalDateTime.now());
         post.setModerationReason(approve ? null : reason);
         if (approve) post.setPublishedAt(LocalDateTime.now());
+        // Feeds the AI/admin agreement rate on the AI monitoring dashboard: AI flagged = it advised rejection.
+        if (post.getAiModerationStatus() == AiModerationStatus.SAFE || post.getAiModerationStatus() == AiModerationStatus.FLAGGED) {
+            post.setAiModerationAgreedWithAdmin((post.getAiModerationStatus() == AiModerationStatus.FLAGGED) == !approve);
+        }
         posts.flush();
 
         notifications.notify(post.getAuthor().getUserId(),

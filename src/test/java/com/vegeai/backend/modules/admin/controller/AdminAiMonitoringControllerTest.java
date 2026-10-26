@@ -110,7 +110,7 @@ class AdminAiMonitoringControllerTest {
                 .andExpect(jsonPath("$.data.totalTokens").value(200))
                 .andExpect(jsonPath("$.data.guestRequestsToday").value(1))
                 .andExpect(jsonPath("$.data.systemLogCount").isNumber())
-                .andExpect(jsonPath("$.data.services", hasSize(4)))
+                .andExpect(jsonPath("$.data.services", hasSize(6)))
                 .andExpect(jsonPath("$.data.services[?(@.operation == 'NUTRITION_CHAT')].health", contains("HEALTHY")))
                 .andExpect(jsonPath("$.data.services[?(@.operation == 'FRIDGE_SCAN')].health", contains("DOWN")))
                 .andExpect(jsonPath("$.data.services[?(@.operation == 'MEAL_PLAN_RANKING')].health", contains("NO_DATA")));
