@@ -136,6 +136,9 @@ class AdminAiMonitoringControllerTest {
         mockMvc.perform(get(BASE + "/events").param("level", "FLAGGED").header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(jsonPath("$.data.items", hasSize(1)))
                 .andExpect(jsonPath("$.data.items[0].outcome").value("FLAGGED"));
+        mockMvc.perform(get(BASE + "/events").param("level", "SUCCESS").header(HttpHeaders.AUTHORIZATION, adminToken))
+                .andExpect(jsonPath("$.data.items", hasSize(1)))
+                .andExpect(jsonPath("$.data.items[0].operation").value("NUTRITION_CHAT"));
         String displayedId = "#REQ-" + flagged.getId().toString().substring(0, 8).toUpperCase();
         mockMvc.perform(get(BASE + "/events").param("search", displayedId).header(HttpHeaders.AUTHORIZATION, adminToken))
                 .andExpect(jsonPath("$.data.items", hasSize(1)))

@@ -49,6 +49,8 @@ public class AiMonitoringService {
     private static final int MAX_AUDIT_WINDOW = 2000;
     private static final String MODERATION = "CONTENT_MODERATION";
     private static final String AI_EVENT = "AI_EVENT";
+    /** "Hôm nay" follows Vietnam time even when the server runs in another zone. */
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final AiMonitoringRepository logs;
     private final AiEventLockRepository locks;
@@ -72,7 +74,7 @@ public class AiMonitoringService {
 
         long moderationChecks = logs.countByOperationAndStatusAndCreatedAtGreaterThanEqual(MODERATION, "SUCCESS", from);
         long moderationFlagged = logs.countByOperationAndOutcomeAndCreatedAtGreaterThanEqual(MODERATION, "FLAGGED", from);
-        Instant startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Instant startOfToday = LocalDate.now(BUSINESS_ZONE).atStartOfDay(BUSINESS_ZONE).toInstant();
         long guestToday = logs.count(between(startOfToday).and(equal("userType", "GUEST")));
 
         AiAuditLog latest = logs.findFirstByOrderByCreatedAtDesc();
@@ -237,14 +239,16 @@ public class AiMonitoringService {
     private static Specification<AiAuditLog> eventFilter(TimeRange range, String operation, EventLevel level, String search) {
         Instant now = Instant.now();
         Instant from = switch (range == null ? TimeRange.LAST_24_HOURS : range) {
-            case TODAY -> LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
+            case TODAY -> LocalDate.now(BUSINESS_ZONE).atStartOfDay(BUSINESS_ZONE).toInstant();
             case LAST_24_HOURS -> now.minus(Duration.ofHours(24));
             case LAST_7_DAYS -> now.minus(Duration.ofDays(7));
             case LAST_30_DAYS -> now.minus(Duration.ofDays(30));
         };
         Specification<AiAuditLog> spec = between(from);
         if (operation != null && !operation.isBlank()) spec = spec.and(equal("operation", operation.trim()));
-        if (level == EventLevel.SUCCESS) spec = spec.and(equal("status", "SUCCESS"));
+        // FLAGGED moderation calls succeed technically but are their own level in the UI, so SUCCESS excludes them.
+        if (level == EventLevel.SUCCESS) spec = spec.and(equal("status", "SUCCESS")).and((root, query, cb) ->
+                cb.or(cb.isNull(root.get("outcome")), cb.notEqual(root.get("outcome"), "FLAGGED")));
         if (level == EventLevel.FAILED) spec = spec.and((root, query, cb) -> cb.notEqual(root.get("status"), "SUCCESS"));
         if (level == EventLevel.FLAGGED) spec = spec.and(equal("outcome", "FLAGGED"));
         String term = normalizeSearch(search);
