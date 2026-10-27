@@ -330,17 +330,7 @@ public class AuthService {
 
     @Transactional
     public LoginResult login(LoginRequest req, String clientIp) {
-        if (req.getOtp() != null && !req.getOtp().isBlank()) {
-            // If OTP is already provided, verify directly
-            VerifyLoginOtpRequest verifyReq = VerifyLoginOtpRequest.builder()
-                    .usernameOrEmail(req.getUsernameOrEmail())
-                    .otp(req.getOtp())
-                    .rememberMe(req.getRememberMe())
-                    .build();
-            return verifyLoginOtp(verifyReq, clientIp);
-        }
-
-        // Direct legacy login fallback (e.g. for backward compatibility or direct calls)
+        // Verified accounts log in directly. OTP belongs only to registration/email verification.
         String identifier = req.getUsernameOrEmail().trim();
         loginRateLimitService.checkAllowed(identifier, clientIp);
 

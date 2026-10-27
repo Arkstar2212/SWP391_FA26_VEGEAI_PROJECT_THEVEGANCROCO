@@ -4,36 +4,33 @@ import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.common.exception.*;
 import com.vegeai.backend.modules.community.dto.BlogDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
-import com.vegeai.backend.modules.community.repository.BlogCommentRepository;
 import com.vegeai.backend.modules.community.repository.BlogPostRepository;
-import com.vegeai.backend.modules.ai.service.GeminiAiService;
+import com.vegeai.backend.modules.interactions.entity.InteractionTarget;
+import com.vegeai.backend.modules.interactions.repository.ContentCommentRepository;
+import com.vegeai.backend.modules.interactions.repository.ContentRatingRepository;
 import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.entity.UserRole;
-import com.vegeai.backend.modules.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
-@Service @RequiredArgsConstructor @Transactional @Slf4j
+@Service @RequiredArgsConstructor @Transactional
 public class BlogService {
     private final BlogPostRepository posts;
-    private final BlogCommentRepository comments;
     private final CommunityAccess access;
-    private final GeminiAiService ai;
-    private final NotificationService notifications;
-    private final UserRepository users;
+    private final NotificationService notificationService;
+    private final ContentCommentRepository comments;
+    private final ContentRatingRepository ratings;
 
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> published(String keyword, BlogCategory category, int page, int size) {
-        return list(null, BlogStatus.PUBLISHED, keyword, category, page, size, false);
+        return list(null, BlogStatus.PUBLISHED, keyword, category, page, size, false, null);
     }
 
     @Transactional(readOnly = true)
@@ -45,7 +42,7 @@ public class BlogService {
 
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> mine(String principal, BlogStatus status, int page, int size) {
-        return list(access.user(principal).getUserId(), status, null, null, page, size, true);
+        return list(access.user(principal).getUserId(), status, null, null, page, size, true, null);
     }
 
     @Transactional(readOnly = true)
@@ -69,7 +66,13 @@ public class BlogService {
         boolean directEdit = post.getStatus() == BlogStatus.PUBLISHED && access.user(principal).getRole() == UserRole.ADMIN;
         if (!directEdit) requireEditable(post);
         apply(post, input);
-        if (directEdit) requirePublicationContent(post);
+        if (directEdit) {
+            requirePublicationContent(post);
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+            post.setAiModerationAgreedWithAdmin(null);
+            post.clearAiModerationClaim();
+        }
         posts.flush();
         return response(post, true, true);
     }
@@ -79,19 +82,27 @@ public class BlogService {
         requireEditable(post);
         requirePublicationContent(post);
         boolean directPublish = access.user(principal).getRole() == UserRole.ADMIN;
+        // Persist the work state in the same transaction so the background worker can resume it after a restart.
+        if (directPublish) {
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+            post.setAiModerationAgreedWithAdmin(null);
+            post.clearAiModerationClaim();
+        } else {
+            post.queueAiModeration();
+        }
         post.setStatus(directPublish ? BlogStatus.PUBLISHED : BlogStatus.PENDING_REVIEW);
         post.setSubmittedAt(directPublish ? null : LocalDateTime.now());
-        if (directPublish) {
-            post.setPublishedAt(LocalDateTime.now());
-            post.setReviewer(access.user(principal));
-            post.setReviewedAt(LocalDateTime.now());
-            post.setModerationReason(null);
-            post.setAiModerationStatus(com.vegeai.backend.modules.community.entity.AiModerationStatus.SAFE);
-            post.setAiModerationReason("Directly published by administrator.");
-        } else {
-            runAiModeration(post);
-        }
+        post.setReviewer(directPublish ? post.getAuthor() : null);
+        post.setReviewedAt(directPublish ? LocalDateTime.now() : null);
+        post.setPublishedAt(directPublish ? LocalDateTime.now() : null);
+        post.setModerationReason(null);
         posts.flush();
+        // Member submissions enter the moderator queue; direct admin publication does not need a queue notice.
+        if (!directPublish) {
+            notificationService.notifyAdministrators("BLOG_SUBMITTED", "Bài viết mới cần được duyệt",
+                    "Một thành viên vừa gửi bài viết mới lên blog.", "/admin/blog/" + post.getId());
+        }
         return response(post, true, true);
     }
 
@@ -99,121 +110,166 @@ public class BlogService {
         BlogPost post = ownedForUpdate(principal, id, version);
         requireStatus(post, BlogStatus.PENDING_REVIEW);
         post.setStatus(BlogStatus.DRAFT);
+        post.setSubmittedAt(null);
+        if (post.getAiModerationStatus() == AiModerationStatus.CHECKING) {
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+        }
+        post.clearAiModerationClaim();
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public PostResponse archive(String principal, UUID id, Long version) {
+        BlogPost post = ownedForUpdate(principal, id, version);
+        if (post.getStatus() == BlogStatus.ARCHIVED) throw new AppException(ErrorCode.BLOG_STATE_CONFLICT);
+        // Keep the prior state so restoring a published post does not turn it into an unpublished draft.
+        post.setArchivedFromStatus(post.getStatus());
+        post.setStatus(BlogStatus.ARCHIVED);
+        post.clearAiModerationClaim();
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public PostResponse restore(String principal, UUID id, Long version) {
+        BlogPost post = ownedForUpdate(principal, id, version);
+        requireStatus(post, BlogStatus.ARCHIVED);
+        BlogStatus previousStatus = post.getArchivedFromStatus();
+        post.setStatus(previousStatus == null || previousStatus == BlogStatus.ARCHIVED
+                ? BlogStatus.DRAFT : previousStatus);
+        post.setArchivedFromStatus(null);
+        if (post.getStatus() == BlogStatus.PENDING_REVIEW
+                && post.getAiModerationStatus() == AiModerationStatus.CHECKING) {
+            post.queueAiModeration();
+        }
         posts.flush();
         return response(post, true, true);
     }
 
     public void delete(String principal, UUID id, Long version) {
-        BlogPost post = ownedForUpdate(principal, id, version);
-        if (post.getStatus() != BlogStatus.DRAFT && post.getStatus() != BlogStatus.REJECTED) {
-            throw new AppException(ErrorCode.BLOG_STATE_CONFLICT);
-        }
-        posts.delete(post);
+        archive(principal, id, version);
     }
 
-    private void runAiModeration(BlogPost post) {
-        try {
-            var result = ai.moderateContent(post.getTitle(), post.getContent());
-            if (result.flagged()) {
-                post.setAiModerationStatus(com.vegeai.backend.modules.community.entity.AiModerationStatus.FLAGGED);
-                post.setAiModerationReason(result.reason());
-            } else {
-                post.setAiModerationStatus(com.vegeai.backend.modules.community.entity.AiModerationStatus.SAFE);
-                post.setAiModerationReason("AI safe.");
-            }
-        } catch (Exception ex) {
-            log.warn("AI moderation failed: {}", ex.getMessage());
-            post.setAiModerationStatus(com.vegeai.backend.modules.community.entity.AiModerationStatus.UNAVAILABLE);
-            post.setAiModerationReason("System busy.");
-        }
+    @PreAuthorize("hasRole('ADMIN')") @Transactional(readOnly = true)
+    public PageResponse<PostResponse> queue(String principal, BlogStatus status, AiModerationStatus aiStatus,
+                                            String keyword, int page, int size) {
+        access.admin(principal);
+        return list(null, status, keyword, null, page, size, true, aiStatus);
     }
 
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ADMIN')")
-    public PageResponse<PostResponse> queue(String principal, BlogStatus status, String keyword, int page, int size) {
-        return list(null, status, keyword, null, page, size, true);
-    }
-
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')") @Transactional(readOnly = true)
     public PostResponse reviewPost(String principal, UUID id) {
+        access.admin(principal);
         return response(find(id), true, true);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    public PostResponse review(String reviewerPrincipal, UUID id, ReviewInput input) {
+    public PostResponse review(String principal, UUID id, ReviewInput input) {
+        User admin = access.admin(principal);
         BlogPost post = locked(id);
-        requireStatus(post, BlogStatus.PENDING_REVIEW);
         access.revision(post.getVersion(), input.version());
-        User reviewer = access.user(reviewerPrincipal);
-        boolean approve = input.decision() == Decision.APPROVE;
+        requireStatus(post, BlogStatus.PENDING_REVIEW);
         String reason = input.reason() == null ? "" : input.reason().strip();
-        if (!approve && reason.isBlank()) {
-            throw new AppException(ErrorCode.VALIDATION_ERROR, "A reason is mandatory when rejecting a blog post.");
+        if (input.decision() == Decision.REJECT && reason.isBlank()) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "A rejection reason is required.");
         }
+        boolean approve = input.decision() == Decision.APPROVE;
         post.setStatus(approve ? BlogStatus.PUBLISHED : BlogStatus.REJECTED);
-        post.setReviewer(reviewer);
+        // A human decision cancels any still-running AI result for this pending submission.
+        if (post.getAiModerationStatus() == AiModerationStatus.CHECKING) {
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+        }
+        post.clearAiModerationClaim();
+        post.setReviewer(admin);
         post.setReviewedAt(LocalDateTime.now());
         post.setModerationReason(approve ? null : reason);
-        if (approve) post.setPublishedAt(LocalDateTime.now());
+        post.setPublishedAt(approve ? LocalDateTime.now() : null);
+        if (post.getAiModerationStatus() == AiModerationStatus.SAFE
+                || post.getAiModerationStatus() == AiModerationStatus.FLAGGED) {
+            boolean aiRecommendedReview = post.getAiModerationStatus() == AiModerationStatus.FLAGGED;
+            post.setAiModerationAgreedWithAdmin(aiRecommendedReview == !approve);
+        }
         posts.flush();
-
-        notifications.notify(post.getAuthor().getUserId(),
-                approve ? NotificationService.BLOG_APPROVED : NotificationService.BLOG_REJECTED,
-                approve ? "Bài viết đã được xuất bản 🎉" : "Bài viết cần chỉnh sửa",
-                approve ? "\"" + post.getTitle() + "\" đã được duyệt và hiển thị trên Blog cộng đồng."
-                        : "\"" + post.getTitle() + "\" chưa được duyệt. Lý do: " + reason,
-                approve ? "/blog/" + post.getId() : "/blog/my-posts/" + post.getId(),
-                "BLOG_REVIEW:" + post.getId() + ":" + post.getVersion());
+        // Moderation results are delivered only to the author who owns this post.
+        notificationService.notifyUser(post.getAuthor(), "BLOG_REVIEWED",
+                approve ? "Bài viết đã được duyệt" : "Bài viết cần chỉnh sửa",
+                approve ? "Bài viết của bạn đã được duyệt và đăng trên blog."
+                        : "Bài viết của bạn chưa được duyệt. Mở trang bài viết để xem lý do.",
+                "/blog/my-posts/" + post.getId());
         return response(post, true, true);
     }
 
-    // ── Blog Comments & Ratings ──────────────────────────────────────────────
-
-    @Transactional(readOnly = true)
-    public List<BlogCommentResponse> getComments(UUID postId) {
-        find(postId); // verify existence
-        return comments.findByPostIdOrderByCreatedAtDesc(postId).stream()
-                .map(c -> new BlogCommentResponse(c.getId(), c.getPost().getId(),
-                        c.getAuthor().getUserId(), access.name(c.getAuthor()),
-                        c.getContent(), c.getRating() == null ? 5 : c.getRating(), c.getCreatedAt()))
-                .toList();
+    public PostResponse adminUpdate(String principal, UUID id, PostInput input) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), input.version());
+        apply(post, input);
+        if (post.getStatus() == BlogStatus.PENDING_REVIEW) {
+            post.queueAiModeration();
+        } else if (post.getStatus() == BlogStatus.PUBLISHED
+                || (post.getStatus() == BlogStatus.ARCHIVED
+                && post.getArchivedFromStatus() == BlogStatus.PUBLISHED)) {
+            post.setAiModerationStatus(AiModerationStatus.NOT_CHECKED);
+            post.setAiModerationReason(null);
+            post.setAiModerationAgreedWithAdmin(null);
+            post.clearAiModerationClaim();
+        }
+        if (post.getStatus() == BlogStatus.PUBLISHED
+                || (post.getStatus() == BlogStatus.ARCHIVED && post.getArchivedFromStatus() == BlogStatus.PUBLISHED)) {
+            requirePublicationContent(post);
+        }
+        posts.flush();
+        return response(post, true, true);
     }
 
-    public BlogCommentResponse addComment(String principal, UUID postId, BlogCommentInput input) {
-        BlogPost post = locked(postId);
-        if (post.getStatus() != BlogStatus.PUBLISHED) {
-            throw new AppException(ErrorCode.BLOG_STATE_CONFLICT, "Only published posts can receive comments.");
-        }
-        User author = access.user(principal);
-
-        BlogComment comment = new BlogComment();
-        comment.setPost(post);
-        comment.setAuthor(author);
-        comment.setContent(input.content().strip());
-        int rating = input.rating() == null ? 5 : Math.max(1, Math.min(5, input.rating()));
-        comment.setRating(rating);
-
-        BlogComment saved = comments.saveAndFlush(comment);
-
-        // Recalculate post rating average
-        List<BlogComment> allComments = comments.findByPostIdOrderByCreatedAtDesc(postId);
-        double sum = allComments.stream().mapToInt(c -> c.getRating() == null ? 5 : c.getRating()).sum();
-        double avg = allComments.isEmpty() ? 5.0 : Math.round((sum / allComments.size()) * 10.0) / 10.0;
-        post.setRatingAverage(avg);
-        post.setRatingCount(allComments.size());
+    public PostResponse adminArchive(String principal, UUID id, Long version) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), version);
+        if (post.getStatus() == BlogStatus.ARCHIVED) throw new AppException(ErrorCode.BLOG_STATE_CONFLICT);
+        post.setArchivedFromStatus(post.getStatus());
+        post.setStatus(BlogStatus.ARCHIVED);
+        post.clearAiModerationClaim();
         posts.flush();
+        return response(post, true, true);
+    }
 
-        return new BlogCommentResponse(saved.getId(), post.getId(), author.getUserId(),
-                access.name(author), saved.getContent(), saved.getRating(), saved.getCreatedAt());
+    public PostResponse adminRestore(String principal, UUID id, Long version) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), version);
+        requireStatus(post, BlogStatus.ARCHIVED);
+        BlogStatus previousStatus = post.getArchivedFromStatus();
+        post.setStatus(previousStatus == null || previousStatus == BlogStatus.ARCHIVED
+                ? BlogStatus.DRAFT : previousStatus);
+        post.setArchivedFromStatus(null);
+        if (post.getStatus() == BlogStatus.PENDING_REVIEW
+                && post.getAiModerationStatus() == AiModerationStatus.CHECKING) {
+            post.queueAiModeration();
+        }
+        posts.flush();
+        return response(post, true, true);
+    }
+
+    public void adminDelete(String principal, UUID id, Long version) {
+        access.admin(principal);
+        BlogPost post = locked(id);
+        access.revision(post.getVersion(), version);
+        comments.deleteByTargetTypeAndTargetId(InteractionTarget.BLOG, id);
+        ratings.deleteByTargetTypeAndTargetId(InteractionTarget.BLOG, id);
+        posts.delete(post);
+        posts.flush();
     }
 
     private PageResponse<PostResponse> list(UUID author, BlogStatus status, String keyword,
-                                            BlogCategory category, int page, int size, boolean privateView) {
+                                            BlogCategory category, int page, int size, boolean privateView,
+                                            AiModerationStatus aiStatus) {
         String pattern = access.keyword(keyword);
         Specification<BlogPost> spec = (root, query, cb) -> cb.conjunction();
         if (author != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("author").get("userId"), author));
         if (status != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        if (aiStatus != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("aiModerationStatus"), aiStatus));
         if (category != null) spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), category));
         if (pattern != null) spec = spec.and((root, query, cb) -> cb.or(
                 cb.like(cb.lower(root.get("title")), pattern, '\\'), cb.like(cb.lower(root.get("excerpt")), pattern, '\\')));
@@ -252,7 +308,6 @@ public class BlogService {
         post.setContent(input.content() == null ? "" : input.content().strip());
         post.setCategory(input.category());
         post.setCoverImage(cover(input.coverImage()));
-        post.setVideoUrl(input.videoUrl() == null || input.videoUrl().isBlank() ? null : input.videoUrl().strip());
     }
     private String cover(String value) {
         if (value == null || value.isBlank()) return null;
@@ -272,15 +327,13 @@ public class BlogService {
     private PostResponse response(BlogPost p, boolean content, boolean privateView) {
         int words = p.getContent().isBlank() ? 0 : p.getContent().strip().split("\\s+").length;
         return new PostResponse(p.getId(), p.getAuthor().getUserId(), access.name(p.getAuthor()), p.getTitle(), p.getExcerpt(),
-                content ? p.getContent() : null, p.getCoverImage(), p.getVideoUrl(),
-                p.getRatingAverage() == null ? 5.0 : p.getRatingAverage(),
-                p.getRatingCount() == null ? 0 : p.getRatingCount(),
-                p.getCategory(), p.getStatus(), p.getVersion(),
+                content ? p.getContent() : null, p.getCoverImage(), p.getCategory(), p.getStatus(), p.getVersion(),
                 Math.max(1, (int) Math.ceil(words / 200.0)), p.getCreatedAt(), p.getUpdatedAt(),
                 privateView ? p.getSubmittedAt() : null, privateView ? p.getReviewedAt() : null, p.getPublishedAt(),
+                privateView ? (p.getAiModerationStatus() == null ? AiModerationStatus.NOT_CHECKED : p.getAiModerationStatus()) : null,
+                privateView ? p.getAiModerationReason() : null,
+                privateView ? p.getAiModerationAgreedWithAdmin() : null,
                 privateView && p.getReviewer() != null ? access.name(p.getReviewer()) : null,
-                privateView ? p.getModerationReason() : null,
-                privateView && p.getAiModerationStatus() != null ? p.getAiModerationStatus().name() : null,
-                privateView ? p.getAiModerationReason() : null);
+                privateView ? p.getModerationReason() : null);
     }
 }

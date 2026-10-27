@@ -653,12 +653,12 @@ class AuthControllerTest extends GeminiIntegrationTestSupport {
     }
 
     @Nested
-    @DisplayName("AI Chatbot Guest Quota Guard (/api/ai/chat)")
+    @DisplayName("AI Chatbot Guest Access Guard (/api/ai/chat)")
     class AiChatbotQuotaTests {
 
         @Test
-        @DisplayName("Guest should be allowed 3 requests then blocked with 429 on 4th request")
-        void guestAiChatbotQuotaEnforced() throws Exception {
+        @DisplayName("Guest is rejected on every request; AI no longer has a guest trial")
+        void guestAiChatbotRequiresAuthentication() throws Exception {
             com.vegeai.backend.modules.ai.dto.AiChatRequest chatReq =
                     com.vegeai.backend.modules.ai.dto.AiChatRequest.builder()
                             .message("Can you recommend high-protein vegan breakfast?")
@@ -666,25 +666,15 @@ class AuthControllerTest extends GeminiIntegrationTestSupport {
 
             String uniqueIp = "10.200." + ((System.currentTimeMillis() / 1000) % 200) + "." + ((System.nanoTime() / 1000) % 200);
 
-            // Requests 1, 2, 3 should succeed
-            for (int i = 1; i <= 3; i++) {
+            for (int i = 1; i <= 4; i++) {
                 mockMvc.perform(post("/api/ai/chat")
                                 .header("X-Forwarded-For", uniqueIp)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(chatReq)))
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.success").value(true));
+                        .andExpect(status().isUnauthorized())
+                        .andExpect(jsonPath("$.success").value(false));
             }
 
-            // Request 4 must be blocked with HTTP 429 Too Many Requests
-            mockMvc.perform(post("/api/ai/chat")
-                            .header("X-Forwarded-For", uniqueIp)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(chatReq)))
-                    .andExpect(status().isTooManyRequests())
-                    .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.code").value(ErrorCode.GUEST_AI_QUOTA_EXCEEDED.getCode()))
-                    .andExpect(jsonPath("$.message", containsString("Guest trial limit reached")));
         }
     }
 }

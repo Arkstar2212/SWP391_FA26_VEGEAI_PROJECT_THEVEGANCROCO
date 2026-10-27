@@ -2,9 +2,11 @@ package com.vegeai.backend.modules.recipe.controller;
 
 import com.vegeai.backend.common.dto.ApiResponse;
 import com.vegeai.backend.modules.recipe.dto.*;
+import com.vegeai.backend.modules.recipe.entity.RecipeStatus;
 import com.vegeai.backend.modules.recipe.service.RecipeService;
 import com.vegeai.backend.modules.recipe.service.TagService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,6 +30,17 @@ public class AdminRecipeController {
 
     private final RecipeService recipeService;
     private final TagService tagService;
+
+    @GetMapping("/recipes")
+    @Operation(summary = "Lấy danh sách công thức để quản lý", description = "Hỗ trợ tìm kiếm và lọc theo trạng thái, bao gồm cả bản nháp và công thức lưu trữ.")
+    public ResponseEntity<ApiResponse<com.vegeai.backend.common.dto.PageResponse<AdminRecipeSummaryDto>>> listRecipes(
+            @RequestParam(required = false) String keyword,
+            @Parameter(description = "Lọc theo trạng thái PUBLISHED, DRAFT hoặc ARCHIVED")
+            @RequestParam(required = false) RecipeStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(ApiResponse.success(recipeService.listAdminRecipes(keyword, status, page, size)));
+    }
 
     @GetMapping("/recipes/{id}")
     public ResponseEntity<ApiResponse<RecipeDetailResponse>> detail(@PathVariable UUID id) {

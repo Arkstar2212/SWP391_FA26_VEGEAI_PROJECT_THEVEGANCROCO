@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -109,8 +111,10 @@ public class RecipeController {
             description = "Trả về thông tin chi tiết đầy đủ gồm: Dinh dưỡng (Calo, Protein, Carbs, Fat, Fiber), Định lượng nguyên liệu và Các bước nấu ăn."
     )
     public ResponseEntity<ApiResponse<RecipeDetailResponse>> getRecipeById(
-            @PathVariable UUID id) {
+            @PathVariable UUID id, Authentication authentication) {
         RecipeDetailResponse response = recipeService.getRecipeById(id);
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken)
+            response.setVideos(java.util.List.of());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -120,8 +124,10 @@ public class RecipeController {
             description = "Trả về chi tiết công thức thông qua đường dẫn thân thiện SEO (VD: dau-phu-sot-ca-chua-tuoi)."
     )
     public ResponseEntity<ApiResponse<RecipeDetailResponse>> getRecipeBySlug(
-            @PathVariable String slug) {
+            @PathVariable String slug, Authentication authentication) {
         RecipeDetailResponse response = recipeService.getRecipeBySlug(slug);
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken)
+            response.setVideos(java.util.List.of());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

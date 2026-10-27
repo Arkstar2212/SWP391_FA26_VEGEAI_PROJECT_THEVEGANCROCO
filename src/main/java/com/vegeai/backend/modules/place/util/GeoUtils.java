@@ -3,7 +3,7 @@ package com.vegeai.backend.modules.place.util;
 import java.util.Locale;
 
 /**
- * Tiện ích tính toán khoảng cách địa lý (Haversine Formula) và URL bản đồ Google Maps.
+ * Tiện ích tính toán khoảng cách địa lý (Haversine Formula).
  */
 public final class GeoUtils {
 
@@ -23,6 +23,10 @@ public final class GeoUtils {
      * @return Khoảng cách tính bằng km (làm tròn 2 chữ số thập phân)
      */
     public static double calculateHaversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
+        return Math.round(calculateExactHaversineDistanceKm(lat1,lon1,lat2,lon2)*100.0)/100.0;
+    }
+
+    public static double calculateExactHaversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
         double rLat1 = Math.toRadians(lat1);
@@ -30,9 +34,9 @@ public final class GeoUtils {
 
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
                 + Math.cos(rLat1) * Math.cos(rLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double c = 2 * Math.atan2(Math.sqrt(Math.min(1,a)), Math.sqrt(Math.max(0,1-a)));
         double distance = EARTH_RADIUS_KM * c;
-        return Math.round(distance * 100.0) / 100.0;
+        return distance;
     }
 
     /**
@@ -46,13 +50,4 @@ public final class GeoUtils {
         return String.format(Locale.US, "%.1f km", distanceKm);
     }
 
-    /**
-     * Tạo đường link Google Maps chỉ đường trực tiếp (Deep-link mở Google Maps app hoặc website).
-     */
-    public static String buildGoogleMapsDirectionsUrl(double lat, double lng, String placeId) {
-        if (placeId != null && !placeId.isBlank()) {
-            return "https://www.google.com/maps/dir/?api=1&destination=" + lat + "," + lng + "&destination_place_id=" + placeId;
-        }
-        return "https://www.google.com/maps/dir/?api=1&destination=" + lat + "," + lng;
-    }
 }

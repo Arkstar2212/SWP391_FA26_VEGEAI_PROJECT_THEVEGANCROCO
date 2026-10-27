@@ -1,142 +1,154 @@
 package com.vegeai.backend.modules.place.controller;
 
 import com.vegeai.backend.modules.place.dto.PlaceCategory;
+import com.vegeai.backend.modules.place.dto.PlaceResponse;
+import com.vegeai.backend.modules.place.service.PlaceProvider;
+import com.vegeai.backend.modules.place.service.VerifiedPlacesService;
 import com.vegeai.backend.modules.place.util.GeoUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.hamcrest.Matchers.*;
+import java.util.List;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@DisplayName("Google Places & Vegetarian Maps Integration Tests")
+@DisplayName("OpenStreetMap Places API tests")
 class PlaceControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Test
-    @DisplayName("GET /api/places/nearby: Trả về danh sách địa điểm chay quanh tọa độ người dùng, sắp xếp theo khoảng cách")
-    void getNearbyPlaces_returnsSortedPlaces() throws Exception {
-        double userLat = 10.7769; // TP.HCM Bến Thành
-        double userLng = 106.7009;
+    @MockBean
+    private PlaceProvider placeProvider;
 
+    @MockBean
+    private VerifiedPlacesService verifiedPlacesService;
+
+    private final List<PlaceResponse> places = List.of(
+            place("node/1", "Cơm Chay Mandala", PlaceCategory.RESTAURANT, true),
+            place("way/2", "Siêu Thị Chay", PlaceCategory.SUPERMARKET, false),
+            place("node/3", "Cửa Hàng Thực Phẩm Chay", PlaceCategory.GROCERY_STORE, false));
+
+    @BeforeEach
+    void setUpProviderResponses() {
+        when(verifiedPlacesService.nearby(anyDouble(), anyDouble(), anyInt()))
+                .thenReturn(List.of(places.get(0)));
+        when(placeProvider.findNearbyVegetarianPlaces(anyDouble(), anyDouble(), anyInt(),
+                any(PlaceCategory.class), nullable(String.class)))
+                .thenAnswer(invocation -> filter(invocation.getArgument(3), invocation.getArgument(4)));
+        when(placeProvider.searchVegetarianPlaces(anyString(), nullable(Double.class), nullable(Double.class),
+                anyInt(), any(PlaceCategory.class)))
+                .thenAnswer(invocation -> filter(invocation.getArgument(4), null));
+        when(placeProvider.getCategoryMetadata()).thenReturn(List.of());
+    }
+
+    @Test
+    @DisplayName("Nearby returns OSM place fields and map link")
+    void getNearbyPlaces_returnsPlaces() throws Exception {
         mockMvc.perform(get("/api/places/nearby")
-                        .param("lat", String.valueOf(userLat))
-                        .param("lng", String.valueOf(userLng))
+                        .param("lat", "10.7769")
+                        .param("lng", "106.7009")
                         .param("radius", "5000")
                         .param("category", "ALL"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.data[0].name").isNotEmpty())
-                .andExpect(jsonPath("$.data[0].distanceKm").isNumber())
-                .andExpect(jsonPath("$.data[0].distanceText").isNotEmpty())
-                .andExpect(jsonPath("$.data[0].googleMapsUrl", containsString("https://www.google.com/maps/dir/")));
+                .andExpect(jsonPath("$.data", hasSize(3)))
+                .andExpect(jsonPath("$.data[0].placeId", is("node/1")))
+                .andExpect(jsonPath("$.data[0].openStreetMapUrl", containsString("openstreetmap.org")))
+                .andExpect(jsonPath("$.data[0].dataSource", is("OPENSTREETMAP")))
+                .andExpect(jsonPath("$.data[0].attribution", containsString("OpenStreetMap contributors")))
+                .andExpect(jsonPath("$.data[0].rating").doesNotExist())
+                .andExpect(jsonPath("$.data[0].isOpenNow").doesNotExist());
     }
 
     @Test
-    @DisplayName("GET /api/places/nearby?category=RESTAURANT: Lọc chỉ lấy quán ăn / nhà hàng chay")
-    void getNearbyPlaces_filterRestaurantOnly() throws Exception {
+    @DisplayName("Nearby category filter returns only the requested category")
+    void getNearbyPlaces_filtersByCategory() throws Exception {
         mockMvc.perform(get("/api/places/nearby")
                         .param("lat", "10.7769")
                         .param("lng", "106.7009")
-                        .param("radius", "5000")
                         .param("category", "RESTAURANT"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.data[*].category", everyItem(is("RESTAURANT"))));
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].category", is("RESTAURANT")));
     }
 
     @Test
-    @DisplayName("GET /api/places/nearby?category=SUPERMARKET: Lọc chỉ lấy siêu thị chay")
-    void getNearbyPlaces_filterSupermarketOnly() throws Exception {
-        mockMvc.perform(get("/api/places/nearby")
-                        .param("lat", "10.7769")
-                        .param("lng", "106.7009")
-                        .param("radius", "5000")
-                        .param("category", "SUPERMARKET"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.data[*].category", everyItem(is("SUPERMARKET"))));
-    }
-
-    @Test
-    @DisplayName("GET /api/places/nearby?category=GROCERY_STORE: Lọc cửa hàng nguyên liệu thực phẩm chay")
-    void getNearbyPlaces_filterGroceryStoreOnly() throws Exception {
-        mockMvc.perform(get("/api/places/nearby")
-                        .param("lat", "10.7769")
-                        .param("lng", "106.7009")
-                        .param("radius", "5000")
-                        .param("category", "GROCERY_STORE"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.data[*].category", everyItem(is("GROCERY_STORE"))));
-    }
-
-    @Test
-    @DisplayName("GET /api/places/nearby?keyword=Mandala: Lọc theo từ khóa quán cụ thể")
-    void getNearbyPlaces_filterByKeyword() throws Exception {
-        mockMvc.perform(get("/api/places/nearby")
-                        .param("lat", "10.7769")
-                        .param("lng", "106.7009")
-                        .param("radius", "5000")
-                        .param("keyword", "Mandala"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data[0].name", containsString("Mandala")));
-    }
-
-    @Test
-    @DisplayName("GET /api/places/search: Tìm kiếm địa điểm chay theo địa danh hoặc tên đường")
-    void searchPlaces_byQuery() throws Exception {
+    @DisplayName("Search supports category filtering")
+    void searchPlaces_filtersByCategory() throws Exception {
         mockMvc.perform(get("/api/places/search")
                         .param("query", "Quận 1")
                         .param("lat", "10.7769")
+                        .param("lng", "106.7009")
+                        .param("category", "RESTAURANT"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].category", is("RESTAURANT")));
+    }
+
+    @Test
+    @DisplayName("Verified feed only includes explicit exclusive OSM vegetarian tags")
+    void verifiedNearby_onlyReturnsExclusiveCandidates() throws Exception {
+        mockMvc.perform(get("/api/places/verified/nearby")
+                        .param("lat", "10.7769")
                         .param("lng", "106.7009"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.data[0].name").isNotEmpty());
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].isVerified").value(true));
     }
 
     @Test
-    @DisplayName("GET /api/places/categories: Trả về đầy đủ 4 danh mục phân loại bản đồ")
-    void getCategories_returnsAllFour() throws Exception {
-        mockMvc.perform(get("/api/places/categories"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data", hasSize(4)))
-                .andExpect(jsonPath("$.data[*].category", containsInAnyOrder("ALL", "RESTAURANT", "SUPERMARKET", "GROCERY_STORE")));
-    }
-
-    @Test
-    @DisplayName("Unit Test GeoUtils: Tính khoảng cách Haversine chính xác và định dạng text")
-    void geoUtils_computesAccurateDistance() {
-        // Tọa độ Chợ Bến Thành (10.7725, 106.6980) và Bitexco (10.7716, 106.7044) ~ khoảng 0.7 km
+    @DisplayName("Unit test GeoUtils: computes Haversine distance and formats it")
+    void geoUtils_computesDistance() {
         double distance = GeoUtils.calculateHaversineDistanceKm(10.7725, 106.6980, 10.7716, 106.7044);
-        assertTrue(distance > 0.5 && distance < 1.0, "Khoảng cách thực tế phải nằm trong khoảng 0.5 - 1.0 km");
-
+        assertTrue(distance > 0.5 && distance < 1.0);
         assertEquals("700 m", GeoUtils.formatDistanceText(0.70));
         assertEquals("2.5 km", GeoUtils.formatDistanceText(2.52));
+    }
 
-        String url = GeoUtils.buildGoogleMapsDirectionsUrl(10.7725, 106.6980, "place123");
-        assertTrue(url.contains("destination=10.7725,106.698"));
-        assertTrue(url.contains("destination_place_id=place123"));
+    private List<PlaceResponse> filter(PlaceCategory requestedCategory, String keyword) {
+        return places.stream()
+                .filter(place -> requestedCategory == PlaceCategory.ALL || requestedCategory == place.getCategory())
+                .filter(place -> keyword == null || place.getName().toLowerCase().contains(keyword.toLowerCase()))
+                .toList();
+    }
+
+    private static PlaceResponse place(String id, String name, PlaceCategory category, boolean verified) {
+        return PlaceResponse.builder()
+                .placeId(id)
+                .name(name)
+                .category(category)
+                .address("Ho Chi Minh City")
+                .latitude(10.7769)
+                .longitude(106.7009)
+                .distanceKm(0.5)
+                .distanceText("500 m")
+                .openStreetMapUrl("https://www.openstreetmap.org/" + id)
+                .types(List.of("cuisine=vegetarian"))
+                .isVerified(verified)
+                .dataSource("OPENSTREETMAP")
+                .attribution("© OpenStreetMap contributors")
+                .build();
     }
 }

@@ -5,6 +5,7 @@ import com.vegeai.backend.common.exception.*;
 import com.vegeai.backend.modules.community.dto.CommunityDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
 import com.vegeai.backend.modules.community.repository.QuestionRepository;
+import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.entity.UserRole;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +18,9 @@ import java.util.UUID;
 
 @Service @RequiredArgsConstructor @Transactional
 public class QuestionService {
-    private final com.vegeai.backend.modules.notification.service.NotificationService notifications;
     private final QuestionRepository questions;
     private final CommunityAccess access;
+    private final NotificationService notificationService;
 
     @PreAuthorize("hasRole('MEMBER')")
     public QuestionResponse create(String principal, QuestionInput input) {
@@ -29,7 +30,11 @@ public class QuestionService {
         CommunityQuestion question = new CommunityQuestion();
         question.setAuthor(user);
         question.setContent(content);
-        return response(questions.saveAndFlush(question), true);
+        CommunityQuestion saved = questions.saveAndFlush(question);
+        // Notify moderators only after the submitted question has been persisted successfully.
+        notificationService.notifyAdministrators("QUESTION_SUBMITTED", "Câu hỏi mới cần được duyệt",
+                "Một thành viên vừa gửi câu hỏi mới lên cộng đồng.", "/admin/questions/" + saved.getId());
+        return response(saved, true);
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +86,12 @@ public class QuestionService {
         question.setReviewedBy(admin);
         question.setReviewedAt(LocalDateTime.now());
         questions.flush();
+        // Let the question owner know the moderation decision; the notice remains private to that owner.
+        notificationService.notifyUser(question.getAuthor(), "QUESTION_REVIEWED", "Câu hỏi đã được xem xét",
+                input.decision() == Decision.APPROVE
+                        ? "Câu hỏi của bạn đã được duyệt và xuất hiện trong cộng đồng."
+                        : "Câu hỏi của bạn chưa được duyệt. Mở trang câu hỏi của bạn để xem thông tin chi tiết.",
+                "/questions/mine/" + question.getId());
         return response(question, true);
     }
 
@@ -92,7 +103,9 @@ public class QuestionService {
         question.setAnsweredBy(admin);
         question.setAnsweredAt(LocalDateTime.now());
         questions.flush();
-        notifications.notify(question.getAuthor().getUserId(), com.vegeai.backend.modules.notification.service.NotificationService.QUESTION_ANSWERED, "Câu hỏi của bạn đã có câu trả lời", "Quản trị viên đã trả lời câu hỏi của bạn.", "/questions/mine/" + question.getId(), "ANSWER:" + question.getId() + ":" + question.getVersion());
+        // An answer is a direct community response, so notify the original question author.
+        notificationService.notifyUser(question.getAuthor(), "QUESTION_ANSWERED", "Câu hỏi của bạn đã được trả lời",
+                "Quản trị viên đã gửi câu trả lời cho câu hỏi của bạn.", "/questions/mine/" + question.getId());
         return response(question, true);
     }
 

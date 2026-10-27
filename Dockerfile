@@ -11,6 +11,7 @@ RUN apk add --no-cache curl tzdata && \
 
 # Run as non-root user for enterprise container security
 RUN addgroup -S vegeai && adduser -S vegeai -G vegeai
+RUN mkdir -p /app/uploads/content-interactions && chown -R vegeai:vegeai /app/uploads
 USER vegeai:vegeai
 
 # Copy compiled JAR
