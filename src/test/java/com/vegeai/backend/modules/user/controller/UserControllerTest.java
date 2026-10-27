@@ -63,7 +63,8 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
-        userRepository.deleteAll();
+        userRepository.findByUsernameIgnoreCase("test_vege")
+                .ifPresent(userRepository::delete);
 
         testUser = User.builder()
                 .username("test_vege")
@@ -298,11 +299,15 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/users/{userId}/public - Guest requires authentication")
-    void getPublicProfile_unauthenticated_rejected() throws Exception {
+    @DisplayName("GET /api/users/{userId}/public - Guest receives only safe public fields")
+    void getPublicProfile_unauthenticated_returnsSafeProfile() throws Exception {
         mockMvc.perform(get("/api/users/" + testUser.getUserId() + "/public"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.success").value(false));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.username").value("test_vege"))
+                .andExpect(jsonPath("$.data.email").doesNotExist())
+                .andExpect(jsonPath("$.data.phoneNumber").doesNotExist())
+                .andExpect(jsonPath("$.data.bmi").doesNotExist());
     }
 
     @Test

@@ -35,6 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class AdminControllerTest {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.vegeai.backend.modules.community.service.CommunityDataInitializer communityDataInitializer;
 
     @Autowired
     private MockMvc mockMvc;

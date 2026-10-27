@@ -33,6 +33,8 @@ import java.util.List;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class AiVisionControllerTest extends GeminiIntegrationTestSupport {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.vegeai.backend.modules.community.service.CommunityDataInitializer communityDataInitializer;
 
     @Autowired
     private MockMvc mockMvc;
