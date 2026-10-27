@@ -64,8 +64,6 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-giflvl123@gmail.com}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-pnpsiwgmapmdhqkr}
-      OTP_DEMO_BYPASS_ENABLED: ${OTP_DEMO_BYPASS_ENABLED:-false}
-      OTP_DEMO_CODE: ${OTP_DEMO_CODE:-123456}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}

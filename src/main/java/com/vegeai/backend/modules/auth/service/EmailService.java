@@ -32,7 +32,7 @@ public class EmailService {
     private String fromName;
 
     /**
-     * Sends the registration OTP. Async — failures log fallback OTP for dev.
+     * Sends the registration OTP asynchronously. OTP values are never written to logs.
      */
     @Async
     public void sendRegistrationOtp(User user, String otp) {
@@ -43,9 +43,6 @@ public class EmailService {
             sendHtml(user.getEmail(), subject, html);
         } catch (Exception ex) {
             log.error("Failed to send registration OTP email to {}: {}", user.getEmail(), ex.getMessage());
-            log.warn("===============================================================================");
-            log.warn(">>> [OTP DEV FALLBACK] REGISTRATION OTP FOR [{}]: [{}] <<<", user.getEmail(), otp);
-            log.warn("===============================================================================");
         }
     }
 
@@ -61,9 +58,6 @@ public class EmailService {
             sendHtml(user.getEmail(), subject, html);
         } catch (Exception ex) {
             log.error("Failed to send forgot-password OTP email to {}: {}", user.getEmail(), ex.getMessage());
-            log.warn("===============================================================================");
-            log.warn(">>> [OTP DEV FALLBACK] FORGOT PASSWORD OTP FOR [{}]: [{}] <<<", user.getEmail(), otp);
-            log.warn("===============================================================================");
         }
     }
 
@@ -79,9 +73,6 @@ public class EmailService {
             sendHtml(user.getEmail(), subject, html);
         } catch (Exception ex) {
             log.error("Failed to send login OTP email to {}: {}", user.getEmail(), ex.getMessage());
-            log.warn("===============================================================================");
-            log.warn(">>> [OTP DEV FALLBACK] LOGIN OTP FOR [{}]: [{}] <<<", user.getEmail(), otp);
-            log.warn("===============================================================================");
         }
     }
 

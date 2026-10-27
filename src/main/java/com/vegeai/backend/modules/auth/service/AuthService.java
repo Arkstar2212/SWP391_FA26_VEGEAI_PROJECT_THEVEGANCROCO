@@ -60,12 +60,6 @@ public class AuthService {
     @Value("${app.otp.resend-cooldown-seconds:30}")
     private long resendCooldownSeconds;
 
-    @Value("${app.otp.demo-bypass-enabled:false}")
-    private boolean demoOtpBypassEnabled;
-
-    @Value("${app.otp.demo-code:123456}")
-    private String demoOtpCode;
-
     @Value("${app.jwt.refresh-expiration-days:1}")
     private long refreshExpirationDays;
 
@@ -142,13 +136,13 @@ public class AuthService {
                 .findLatestUnused(user, TokenPurpose.REGISTRATION)
                 .orElseThrow(() -> new AppException(ErrorCode.OTP_INVALID));
 
-        if (!isDemoOtp(otp) && token.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             token.setUsed(true);
             evtRepository.save(token);
             throw new AppException(ErrorCode.OTP_EXPIRED);
         }
 
-        if (!isDemoOtp(otp) && !token.getOtpCode().equals(otp)) {
+        if (!token.getOtpCode().equals(otp)) {
             throw new AppException(ErrorCode.OTP_INVALID);
         }
 
@@ -289,13 +283,13 @@ public class AuthService {
                 .findLatestUnused(user, TokenPurpose.LOGIN)
                 .orElseThrow(() -> new AppException(ErrorCode.OTP_INVALID, "Mã OTP đăng nhập không tồn tại hoặc đã được sử dụng."));
 
-        if (!isDemoOtp(req.getOtp()) && token.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             token.setUsed(true);
             evtRepository.save(token);
             throw new AppException(ErrorCode.OTP_EXPIRED, "Mã OTP đăng nhập đã hết hạn. Vui lòng bấm gửi lại.");
         }
 
-        if (!isDemoOtp(req.getOtp()) && !token.getOtpCode().equals(req.getOtp().trim())) {
+        if (!token.getOtpCode().equals(req.getOtp().trim())) {
             throw new AppException(ErrorCode.OTP_INVALID, "Mã OTP đăng nhập không chính xác.");
         }
 
@@ -625,13 +619,13 @@ public class AuthService {
                 .findLatestUnused(user, TokenPurpose.FORGOT_PASSWORD)
                 .orElseThrow(() -> new AppException(ErrorCode.OTP_INVALID));
 
-        if (!isDemoOtp(otp) && token.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
             token.setUsed(true);
             evtRepository.save(token);
             throw new AppException(ErrorCode.OTP_EXPIRED);
         }
 
-        if (!isDemoOtp(otp) && !token.getOtpCode().equals(otp)) {
+        if (!token.getOtpCode().equals(otp)) {
             throw new AppException(ErrorCode.OTP_INVALID);
         }
 
@@ -688,12 +682,6 @@ public class AuthService {
     private String generateOtp() {
         int code = 100_000 + SECURE_RANDOM.nextInt(900_000);
         return String.valueOf(code);
-    }
-
-    private boolean isDemoOtp(String otp) {
-        return demoOtpBypassEnabled
-                && otp != null
-                && demoOtpCode.equals(otp.trim());
     }
 
     private String maskEmail(String email) {

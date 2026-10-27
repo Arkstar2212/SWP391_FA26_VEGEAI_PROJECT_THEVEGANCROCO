@@ -16,6 +16,6 @@ public class VerifyEmailRequest {
 
     @NotBlank(message = "OTP is required.")
     @Pattern(regexp = "^\\d{6}$", message = "OTP must be exactly 6 digits.")
-    @Schema(description = "Insert 6-digit OTP received via email", example = "123456")
+    @Schema(description = "Insert 6-digit OTP received via email", example = "482731")
     private String otp;
 }

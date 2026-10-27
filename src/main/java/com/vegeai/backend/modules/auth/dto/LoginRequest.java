@@ -23,6 +23,6 @@ public class LoginRequest {
     @Schema(description = "Remember me flag (keeps session refreshed for 1 day / 24 hours)", example = "true")
     private Boolean rememberMe;
 
-    @Schema(description = "Optional 6-digit login verification OTP", example = "123456")
+    @Schema(description = "Optional 6-digit login verification OTP", example = "482731")
     private String otp;
 }

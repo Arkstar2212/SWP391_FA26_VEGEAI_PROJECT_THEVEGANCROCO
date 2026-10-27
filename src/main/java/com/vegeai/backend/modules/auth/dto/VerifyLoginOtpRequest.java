@@ -20,7 +20,7 @@ public class VerifyLoginOtpRequest {
 
     @NotBlank(message = "OTP code is required.")
     @Pattern(regexp = "^\\d{6}$", message = "OTP must be exactly 6 digits.")
-    @Schema(description = "6-digit OTP code received via email", example = "123456")
+    @Schema(description = "6-digit OTP code received via email", example = "482731")
     private String otp;
 
     @Schema(description = "Remember me flag (keeps session refreshed for 1 day / 24 hours)", example = "true")

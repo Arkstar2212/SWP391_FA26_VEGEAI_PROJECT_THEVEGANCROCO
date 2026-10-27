@@ -212,7 +212,7 @@ public class AuthController {
             
             - `email`: Địa chỉ email tài khoản của bạn.
             - Cơ chế bảo mật chống dò quét tài khoản (Anti-enumeration): Hệ thống luôn trả về thông báo chung thành công dù email có tồn tại hay không.
-            - Nếu email có trong hệ thống, mã OTP 6 số sẽ được gửi về hòm thư (và log console).
+            - Nếu email có trong hệ thống, mã OTP 6 số sẽ chỉ được gửi về hòm thư.
             """)
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
         authService.forgotPassword(req);
