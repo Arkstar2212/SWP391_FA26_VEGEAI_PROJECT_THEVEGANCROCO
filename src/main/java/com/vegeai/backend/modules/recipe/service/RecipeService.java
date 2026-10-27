@@ -395,6 +395,7 @@ public class RecipeService {
                 .imageUrl(recipe.getImageUrl())
                 .cookTimeMinutes(recipe.getCookTimeMinutes())
                 .difficulty(recipe.getDifficulty())
+                .status(recipe.getStatus())
                 .calories(recipe.getCalories())
                 .proteinGrams(recipe.getProteinGrams())
                 .isVerified(recipe.isVerified())
@@ -455,7 +456,9 @@ public class RecipeService {
                         .sorted(Comparator.comparing(com.vegeai.backend.modules.community.entity.CommunityVideo::getTitle))
                         .map(v -> new com.vegeai.backend.modules.community.dto.CommunityDtos.VideoResponse(v.getId(), v.getTitle(),
                                 v.getDescription(), v.getVideoUrl(), v.getThumbnailUrl(), v.getCategory(), v.getDurationSeconds(),
-                                v.getStatus(), v.getCreatedBy().getFullName(), v.getCreatedAt(), v.getUpdatedAt(), v.getVersion())).toList())
+                                v.getStatus(), v.getAiModerationStatus(), v.getAiModerationReason(),
+                                v.getAiModerationAgreedWithAdmin(), v.getCreatedBy().getFullName(),
+                                v.getCreatedAt(), v.getUpdatedAt(), v.getVersion())).toList())
                 .createdAt(recipe.getCreatedAt())
                 .updatedAt(recipe.getUpdatedAt())
                 .build();

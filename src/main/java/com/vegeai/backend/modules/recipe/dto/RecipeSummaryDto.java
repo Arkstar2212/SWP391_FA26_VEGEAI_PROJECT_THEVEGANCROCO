@@ -2,6 +2,7 @@ package com.vegeai.backend.modules.recipe.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vegeai.backend.modules.recipe.entity.DifficultyLevel;
+import com.vegeai.backend.modules.recipe.entity.RecipeStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,6 +36,9 @@ public class RecipeSummaryDto {
 
     @Schema(description = "Độ khó (EASY, MEDIUM, HARD)", example = "EASY")
     private DifficultyLevel difficulty;
+
+    @Schema(description = "Trạng thái công thức")
+    private RecipeStatus status;
 
     @Schema(description = "Năng lượng mỗi khẩu phần (kcal)", example = "240")
     private Integer calories;

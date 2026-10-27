@@ -113,8 +113,6 @@ public class RecipeController {
     public ResponseEntity<ApiResponse<RecipeDetailResponse>> getRecipeById(
             @PathVariable UUID id, Authentication authentication) {
         RecipeDetailResponse response = recipeService.getRecipeById(id);
-        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken)
-            response.setVideos(java.util.List.of());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -126,8 +124,6 @@ public class RecipeController {
     public ResponseEntity<ApiResponse<RecipeDetailResponse>> getRecipeBySlug(
             @PathVariable String slug, Authentication authentication) {
         RecipeDetailResponse response = recipeService.getRecipeBySlug(slug);
-        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken)
-            response.setVideos(java.util.List.of());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

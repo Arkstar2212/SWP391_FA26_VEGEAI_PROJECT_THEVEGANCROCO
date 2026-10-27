@@ -3,6 +3,7 @@ package com.vegeai.backend.modules.user.controller;
 import com.vegeai.backend.common.dto.ApiResponse;
 import com.vegeai.backend.modules.user.dto.ChangePasswordHashedRequest;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
+import com.vegeai.backend.modules.user.dto.ChangeEmailRequest;
 import com.vegeai.backend.modules.user.dto.PublicUserProfileResponse;
 import com.vegeai.backend.modules.user.dto.QuickProfileRequest;
 import com.vegeai.backend.modules.user.dto.UpdateUserProfileRequest;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -64,6 +66,20 @@ public class UserController {
             @Valid @RequestBody UpdateUserProfileRequest req) {
         UserProfileResponse updated = userService.updateMyProfile(userId, req);
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully.", updated));
+    }
+
+    @PostMapping(value = "/me/avatar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateAvatar(
+            @AuthenticationPrincipal String userId, @RequestPart("avatar") MultipartFile avatar) {
+        return ResponseEntity.ok(ApiResponse.success("Avatar updated successfully.", userService.updateAvatar(userId, avatar)));
+    }
+
+    @PutMapping("/me/email")
+    @Operation(summary = "Change the current user's email")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> changeEmail(
+            @AuthenticationPrincipal String userId,
+            @Valid @RequestBody ChangeEmailRequest req) {
+        return ResponseEntity.ok(ApiResponse.success("Email updated successfully.", userService.changeEmail(userId, req)));
     }
 
     @PutMapping("/me/quick-profile")

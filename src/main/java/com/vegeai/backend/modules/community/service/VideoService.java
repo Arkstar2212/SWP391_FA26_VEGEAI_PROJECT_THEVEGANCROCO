@@ -23,6 +23,7 @@ public class VideoService {
     private final VideoFavoriteRepository favorites;
     private final CommunityAccess access;
     private final NotificationService notificationService;
+    private final com.vegeai.backend.modules.ai.service.GeminiAiService geminiAiService;
 
     @Transactional(readOnly = true)
     public PageResponse<VideoResponse> published(String keyword, String category, int page, int size) {
@@ -59,6 +60,38 @@ public class VideoService {
         CommunityVideo video = locked(id);
         access.revision(video.getVersion(), input.version());
         apply(video, input);
+        videos.flush();
+        return response(video);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public VideoResponse reviewAiFlag(String principal, UUID id, ReviewInput input) {
+        access.admin(principal);
+        CommunityVideo video = locked(id);
+        access.revision(video.getVersion(), input.version());
+        boolean approve = input.decision() == Decision.APPROVE;
+        video.setStatus(approve ? VideoStatus.PUBLISHED : VideoStatus.REJECTED);
+        video.setAiModerationAgreedWithAdmin(video.getAiModerationStatus() == AiModerationStatus.FLAGGED ? !approve : approve);
+        videos.flush();
+        return response(video);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public VideoResponse archive(String principal, UUID id, long version) {
+        access.admin(principal);
+        CommunityVideo video = locked(id);
+        access.revision(video.getVersion(), version);
+        video.setStatus(VideoStatus.ARCHIVED);
+        videos.flush();
+        return response(video);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public VideoResponse restore(String principal, UUID id, long version) {
+        access.admin(principal);
+        CommunityVideo video = locked(id);
+        access.revision(video.getVersion(), version);
+        video.setStatus(VideoStatus.PUBLISHED);
         videos.flush();
         return response(video);
     }
@@ -193,12 +226,20 @@ public class VideoService {
         video.setThumbnailUrl(input.thumbnailUrl() == null || input.thumbnailUrl().isBlank() ? null : url(input.thumbnailUrl()));
         video.setCategory(input.category() == null ? null : input.category().strip());
         video.setDurationSeconds(input.durationSeconds());
-        video.setStatus(input.status());
+        var verdict = geminiAiService.moderateContent(input.title(), (input.description() == null ? "" : input.description()) + "\nURL: " + input.videoUrl());
+        video.setAiModerationStatus(verdict.unavailable() ? AiModerationStatus.UNAVAILABLE
+                : verdict.flagged() ? AiModerationStatus.FLAGGED : AiModerationStatus.SAFE);
+        video.setAiModerationReason(verdict.reason());
+        video.setAiModerationAgreedWithAdmin(null);
+        video.setStatus((verdict.flagged() || verdict.unavailable()) && input.status() == VideoStatus.PUBLISHED
+                ? VideoStatus.PENDING_REVIEW : input.status());
     }
 
     private String url(String value) {
+        String normalized = value == null ? "" : value.strip();
+        if (normalized.matches("/api/public/community-media/[a-f0-9-]{36}\\.(jpg|png|webp|mp4|webm)")) return normalized;
         try {
-            URI uri = URI.create(value.strip());
+            URI uri = URI.create(normalized);
             if (!("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
                     || uri.getHost() == null || uri.getUserInfo() != null) throw new IllegalArgumentException();
             return uri.toString();
@@ -207,7 +248,9 @@ public class VideoService {
 
     private VideoResponse response(CommunityVideo v) {
         return new VideoResponse(v.getId(), v.getTitle(), v.getDescription(), v.getVideoUrl(), v.getThumbnailUrl(),
-                v.getCategory(), v.getDurationSeconds(), v.getStatus(), access.name(v.getCreatedBy()), v.getCreatedAt(), v.getUpdatedAt(), v.getVersion());
+                v.getCategory(), v.getDurationSeconds(), v.getStatus(), v.getAiModerationStatus(),
+                v.getAiModerationReason(), v.getAiModerationAgreedWithAdmin(), access.name(v.getCreatedBy()),
+                v.getCreatedAt(), v.getUpdatedAt(), v.getVersion());
     }
 
     private CommentResponse response(VideoComment c) {

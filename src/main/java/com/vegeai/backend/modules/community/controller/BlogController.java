@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 import java.util.UUID;
 
 @RestController @RequestMapping("/api/blog") @RequiredArgsConstructor
@@ -67,19 +66,5 @@ public class BlogController {
     public ApiResponse<Void> delete(@AuthenticationPrincipal String userId, @PathVariable UUID id, @RequestParam(required = false) Long version) {
         service.delete(userId, id, version);
         return ApiResponse.success("Blog post deleted.", null);
-    }
-
-    // ── Comments & Ratings ───────────────────────────────────────────────────
-
-    @GetMapping("/posts/{id}/comments")
-    public ApiResponse<List<BlogCommentResponse>> getComments(@PathVariable UUID id) {
-        return ApiResponse.success(service.getComments(id));
-    }
-
-    @PostMapping("/posts/{id}/comments")
-    public ApiResponse<BlogCommentResponse> addComment(@AuthenticationPrincipal String userId,
-                                                      @PathVariable UUID id,
-                                                      @Valid @RequestBody BlogCommentInput input) {
-        return ApiResponse.success(service.addComment(userId, id, input));
     }
 }

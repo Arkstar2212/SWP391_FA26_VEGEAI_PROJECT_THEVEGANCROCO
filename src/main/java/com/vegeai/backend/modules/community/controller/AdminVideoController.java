@@ -17,6 +17,12 @@ import java.util.UUID;
 @Tag(name = "15. Admin Videos") @SecurityRequirement(name = "bearerAuth")
 public class AdminVideoController {
     private final VideoService service;
+    private final com.vegeai.backend.modules.community.service.CommunityMediaAssetService assets;
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<java.util.Map<String, String>> upload(@RequestPart("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(defaultValue = "false") boolean video) {
+        return ApiResponse.success(java.util.Map.of("url", assets.store(file, video)));
+    }
     @GetMapping
     public ApiResponse<PageResponse<VideoResponse>> list(@AuthenticationPrincipal String userId,
             @RequestParam(required = false) VideoStatus status, @RequestParam(required = false) String keyword,
@@ -35,6 +41,21 @@ public class AdminVideoController {
     @PutMapping("/{id}")
     public ApiResponse<VideoResponse> update(@AuthenticationPrincipal String userId, @PathVariable UUID id, @Valid @RequestBody VideoInput input) {
         return ApiResponse.success(service.update(userId, id, input));
+    }
+    @PostMapping("/{id}/moderation")
+    public ApiResponse<VideoResponse> reviewAiFlag(@AuthenticationPrincipal String userId, @PathVariable UUID id,
+            @Valid @RequestBody ReviewInput input) {
+        return ApiResponse.success(service.reviewAiFlag(userId, id, input));
+    }
+    @PostMapping("/{id}/archive")
+    public ApiResponse<VideoResponse> archive(@AuthenticationPrincipal String userId, @PathVariable UUID id,
+            @Valid @RequestBody Revision input) {
+        return ApiResponse.success(service.archive(userId, id, input.version()));
+    }
+    @PostMapping("/{id}/restore")
+    public ApiResponse<VideoResponse> restore(@AuthenticationPrincipal String userId, @PathVariable UUID id,
+            @Valid @RequestBody Revision input) {
+        return ApiResponse.success(service.restore(userId, id, input.version()));
     }
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@AuthenticationPrincipal String userId, @PathVariable UUID id, @RequestParam long version) {

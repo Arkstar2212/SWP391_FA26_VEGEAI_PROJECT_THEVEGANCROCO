@@ -24,6 +24,12 @@ public class CommunityVideo {
     private Integer durationSeconds;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)
     private VideoStatus status;
+    @Enumerated(EnumType.STRING) @Column(name = "ai_moderation_status", nullable = false, length = 20)
+    private AiModerationStatus aiModerationStatus = AiModerationStatus.NOT_CHECKED;
+    @Column(name = "ai_moderation_reason", length = 1000)
+    private String aiModerationReason;
+    @Column(name = "ai_moderation_agreed_with_admin")
+    private Boolean aiModerationAgreedWithAdmin;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false) private User createdBy;
     @CreationTimestamp @Column(name = "created_at", nullable = false, updatable = false)

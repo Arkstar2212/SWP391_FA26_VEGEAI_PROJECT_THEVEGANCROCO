@@ -7,6 +7,7 @@ import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.nutrition.service.NutritionCalculator;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
+import com.vegeai.backend.modules.user.dto.ChangeEmailRequest;
 import com.vegeai.backend.modules.user.dto.PublicUserProfileResponse;
 import com.vegeai.backend.modules.user.dto.QuickProfileRequest;
 import com.vegeai.backend.modules.user.dto.UpdateUserProfileRequest;
@@ -34,6 +35,41 @@ public class UserService {
     private final NutritionCalculator nutritionCalculator;
     private final NutritionService nutritionService;
     private final NotificationService notificationService;
+    private final com.vegeai.backend.modules.interactions.service.ContentInteractionAssetService assetService;
+
+    @Transactional
+    public UserProfileResponse updateAvatar(String userIdStr, org.springframework.web.multipart.MultipartFile avatar) {
+        User user = findUserById(userIdStr);
+        var stored = assetService.store(java.util.List.of(avatar));
+        String previous = user.getAvatarUrl();
+        user.setAvatarUrl(stored.getFirst());
+        User saved = userRepository.saveAndFlush(user);
+        if (previous != null) assetService.delete(java.util.List.of(previous));
+        return UserProfileResponse.from(saved);
+    }
+
+    @Transactional
+    public UserProfileResponse changeEmail(String userIdStr, ChangeEmailRequest req) {
+        User user = findUserById(userIdStr);
+        if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPasswordHash())) {
+            throw new AppException(ErrorCode.OLD_PASSWORD_INCORRECT);
+        }
+
+        String newEmail = req.getNewEmail().trim().toLowerCase(java.util.Locale.ROOT);
+        if (newEmail.equalsIgnoreCase(user.getEmail())) {
+            return UserProfileResponse.from(user);
+        }
+        if (userRepository.existsByEmailIgnoreCase(newEmail)) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
+        user.setEmail(newEmail);
+        User saved = userRepository.saveAndFlush(user);
+        notificationService.notifyUser(saved, "ACCOUNT_EMAIL_CHANGED", "Email tài khoản đã được thay đổi",
+                "Địa chỉ email đăng nhập của bạn đã được cập nhật thành công.", "/settings?tab=settings");
+        log.info("[USER] Email changed for userId={}", saved.getUserId());
+        return UserProfileResponse.from(saved);
+    }
 
     /**
      * Get the profile of the authenticated user (identified by userId from JWT).

@@ -55,6 +55,9 @@ public class User {
     @Column(name = "address")
     private String address;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     // ── VEGEAI-specific health / dietary fields ──────────────────────────────
     @Column(name = "height_cm")
     private Double heightCm;

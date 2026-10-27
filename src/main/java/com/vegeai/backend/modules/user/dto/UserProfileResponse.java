@@ -25,6 +25,7 @@ public class UserProfileResponse {
     private final LocalDate dateOfBirth;
     private final String gender;
     private final String address;
+    private final String avatarUrl;
     private final String role;
     private final String status;
     private final String dietaryPreferences;
@@ -47,6 +48,7 @@ public class UserProfileResponse {
                 .dateOfBirth(user.getDateOfBirth())
                 .gender(user.getGender())
                 .address(user.getAddress())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .status(user.getStatus().name())
                 .dietaryPreferences(user.getDietaryPreferences())

@@ -20,6 +20,7 @@ public class PublicUserProfileResponse {
     private final UUID userId;
     private final String username;
     private final String fullName;
+    private final String avatarUrl;
     private final String dietaryPreferences;
     private final String role;
     private final LocalDateTime createdAt;
@@ -29,6 +30,7 @@ public class PublicUserProfileResponse {
                 .userId(user.getUserId())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .dietaryPreferences(user.getDietaryPreferences())
                 .role(user.getRole().name())
                 .createdAt(user.getCreatedAt())
