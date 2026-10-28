@@ -97,7 +97,7 @@ public class SecurityConfig {
                         // Public user profile (PII-protected)
                         .requestMatchers("/api/users/*/public").permitAll()
                         // Recipes & Smart Filter (Public browsing, authenticated fridge matching, personal cookbook)
-                        .requestMatchers("/api/recipes/fridge-match").authenticated()
+                        .requestMatchers("/api/recipes/fridge-match", "/api/recipes/*/fridge-match").authenticated()
                         .requestMatchers("/api/recipes/cookbook/**", "/api/recipes/cookbook").authenticated()
                         .requestMatchers("/api/recipes/**").permitAll()
                         // Google Maps & Places (Public nearby search)

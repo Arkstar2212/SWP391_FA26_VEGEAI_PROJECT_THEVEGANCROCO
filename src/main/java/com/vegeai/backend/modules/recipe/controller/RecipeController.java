@@ -105,6 +105,19 @@ public class RecipeController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/{id}/fridge-match")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "So khớp kho tủ lạnh với một công thức cụ thể",
+            description = "Đối chiếu nguyên liệu của món ăn với thực phẩm đang ACTIVE trong tủ lạnh của người dùng để trả về tỷ lệ khớp và danh sách nguyên liệu còn thiếu."
+    )
+    public ResponseEntity<ApiResponse<FridgeRecipeMatchDto>> matchSingleRecipeWithFridge(
+            @AuthenticationPrincipal String userId,
+            @PathVariable UUID id) {
+        FridgeRecipeMatchDto response = recipeService.matchSingleRecipeWithFridge(userId, id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @GetMapping("/{id}")
     @Operation(
             summary = "Xem chi tiết công thức bằng ID",

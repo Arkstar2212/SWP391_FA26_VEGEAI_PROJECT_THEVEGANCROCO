@@ -112,6 +112,91 @@ public class RecipeService {
     }
 
     /**
+     * So khớp nguyên liệu của MỘT công thức cụ thể với kho tủ lạnh người dùng (Single Recipe Feasibility Match).
+     */
+    @Transactional(readOnly = true)
+    public FridgeRecipeMatchDto matchSingleRecipeWithFridge(String userIdStr, UUID recipeId) {
+        User user = resolveUser(userIdStr);
+        UUID userId = user.getUserId();
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new AppException(ErrorCode.RECIPE_NOT_FOUND));
+
+        List<FridgeItem> activeItems = fridgeItemRepository
+                .findByUserIdAndStatusOrderByExpiryDateAsc(userId, FridgeItemStatus.ACTIVE);
+
+        Set<String> fridgeNormNames = activeItems.stream()
+                .map(FridgeItem::getNormalizedName)
+                .filter(s -> s != null && !s.isBlank())
+                .collect(Collectors.toSet());
+
+        List<RecipeIngredient> ingredients = recipe.getIngredients();
+        if (ingredients == null || ingredients.isEmpty()) {
+            return FridgeRecipeMatchDto.builder()
+                    .recipe(mapToSummaryDto(recipe))
+                    .matchPercentage(100)
+                    .matchGroup(MatchGroup.CAN_COOK_NOW)
+                    .totalMandatoryIngredients(0)
+                    .matchedIngredientsCount(0)
+                    .availableInFridge(List.of())
+                    .missingIngredients(List.of())
+                    .recommendation("Món ăn không yêu cầu nguyên liệu cụ thể. Có thể nấu ngay!")
+                    .build();
+        }
+
+        List<RecipeIngredient> mandatoryList = ingredients.stream()
+                .filter(i -> !i.isOptional())
+                .toList();
+        List<RecipeIngredient> targetIngredients = mandatoryList.isEmpty() ? ingredients : mandatoryList;
+        int totalRequired = targetIngredients.size();
+
+        int matchedCount = 0;
+        List<String> available = new ArrayList<>();
+        List<String> missing = new ArrayList<>();
+
+        for (RecipeIngredient ing : targetIngredients) {
+            String ingNorm = ing.getNormalizedName();
+            boolean isFound = ingNorm != null && fridgeNormNames.stream()
+                    .anyMatch(f -> f.equalsIgnoreCase(ingNorm) || f.contains(ingNorm) || ingNorm.contains(f));
+
+            if (isFound) {
+                matchedCount++;
+                available.add(ing.getName());
+            } else {
+                missing.add(ing.getName());
+            }
+        }
+
+        int matchPercent = (totalRequired > 0)
+                ? (int) Math.min(100, Math.round(((double) matchedCount / totalRequired) * 100))
+                : 100;
+
+        MatchGroup group;
+        String recText;
+        if (matchPercent == 100) {
+            group = MatchGroup.CAN_COOK_NOW;
+            recText = "Bạn có đủ " + matchedCount + "/" + totalRequired + " nguyên liệu! Có thể nấu ngay hôm nay.";
+        } else if (matchPercent >= 60) {
+            group = MatchGroup.MISSING_FEW;
+            recText = "Khớp " + matchPercent + "%! Chỉ cần mua thêm: " + String.join(", ", missing);
+        } else {
+            group = MatchGroup.INSUFFICIENT;
+            recText = "Còn thiếu " + missing.size() + " nguyên liệu: " + String.join(", ", missing);
+        }
+
+        return FridgeRecipeMatchDto.builder()
+                .recipe(mapToSummaryDto(recipe))
+                .matchPercentage(matchPercent)
+                .matchGroup(group)
+                .totalMandatoryIngredients(totalRequired)
+                .matchedIngredientsCount(matchedCount)
+                .availableInFridge(available)
+                .missingIngredients(missing)
+                .recommendation(recText)
+                .build();
+    }
+
+    /**
      * Xem chi tiết một công thức món ăn bằng SEO Slug.
      */
     @Transactional(readOnly = true)
