@@ -73,7 +73,7 @@ public abstract class GeminiIntegrationTestSupport {
                 };
                 var linked = dish.apply("Library dish", "Rau cải"); linked.put("recipeId", libraryId);
                 var invented = dish.apply("Invented id dish", "Bí đỏ"); invented.put("recipeId", java.util.UUID.randomUUID().toString());
-                reply = Map.of("climateSummary", "Test climate", "highlightedProduce", List.of("Bí đỏ", "Nấm"),
+                reply = Map.of("climateSummary", "Test climate", "highlightedProduce", List.of("Bí đỏ", "Nấm", "Đậu hũ ky"),
                         "nutritionAdvice", "Test advice",
                         "suggestions", List.of(linked, invented, dish.apply("Plain dish", "Cà rốt"), dish.apply("Soy dish", "Đậu nành SOY")));
             } else if (parts.path(1).has("inlineData")) {

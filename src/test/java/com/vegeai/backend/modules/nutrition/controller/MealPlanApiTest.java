@@ -162,6 +162,11 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
         assertThat(list.path("items").get(1).path("firstVisibleDate").asText()).isEqualTo(today.plusDays(7).toString());
         assertThat(call("GET","/api/meal-plans?page=1&size=1",token,null,200).path("items").get(0).path("id").asText()).isEqualTo(second);
     }
+    /** The prompt JSON SeasonalMealService sent in the last Gemini request. */
+    JsonNode seasonalPrompt()throws Exception {
+        JsonNode contents=lastRequest.path("contents");
+        return mapper.readTree(contents.path(contents.size()-1).path("parts").path(0).path("text").asText());
+    }
     @Test void seasonalSuggestionsComeFromAiWithLibraryLinksAllergyFilterAndLabelledCuratedFallback()throws Exception {
         profile(); String path="/api/meal-plans/seasonal-regional?season=DONG&region=MIEN_BAC";
         JsonNode ai=call("GET",path,token,null,200);
@@ -173,6 +178,14 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
         assertThat(recipes.findById(UUID.fromString(linked))).isPresent();
         assertThat(ai.path("suggestions").get(1).path("recipeId").isNull()).isTrue();
         assertThat(lastRequest.toString()).contains("VEGEAI_SEASONAL_MEALS","SOY","VEGAN").doesNotContain("0912345678",member.getEmail());
+        assertThat(ai.path("highlightedProduce").size()).isEqualTo(2); // year-round "Đậu hũ ky" is dropped
+        JsonNode northPrompt=seasonalPrompt();
+        assertThat(northPrompt.path("months").asText()).isEqualTo("10-12");
+        assertThat(northPrompt.has("month")).isFalse();
+        assertThat(northPrompt.path("climateFrame").asText()).contains("Bốn mùa");
+        call("GET","/api/meal-plans/seasonal-regional?season=DONG&region=MIEN_NAM",token,null,200);
+        JsonNode southPrompt=seasonalPrompt();
+        assertThat(southPrompt.path("climateFrame").asText()).contains("mùa mưa","mùa khô","cuối mùa mưa").doesNotContain("Bốn mùa");
         var failing=profileBody(); failing.put("allergies","fixture:rate-limit"); call("PUT","/api/nutrition/profile",token,failing,200);
         JsonNode curated=call("GET",path,token,null,200);
         assertThat(curated.path("source").asText()).isEqualTo("CURATED");

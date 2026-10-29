@@ -79,9 +79,17 @@ public class SeasonalMealService {
                 .map(r -> Map.<String, Object>of("recipeId", r.getRecipeId(), "title", r.getTitle())).toList());
         Set<UUID> libraryIds = new HashSet<>();
         library.forEach(r -> libraryIds.add((UUID) r.get("recipeId")));
+        Season season = curated.season();
+        boolean southern = isSouthern(curated.region());
+        // Describe the selected season's months (not today's month), and for Nam Bộ in rainy/dry terms.
+        String climateFrame = southern
+                ? "Nam Bộ chỉ có mùa mưa (khoảng tháng 5-11) và mùa khô (tháng 12-4); tháng " + seasonMonths(season)
+                  + " là " + southernClimate(season) + ". Không mô tả bốn mùa, mùa đông hay trời se lạnh."
+                : "Bốn mùa rõ rệt; mô tả đúng thời tiết các tháng " + seasonMonths(season) + " của vùng.";
         String prompt = mapper.writeValueAsString(Map.of(
                 "task", "VEGEAI_SEASONAL_MEALS", "season", curated.seasonNameVi(), "region", curated.regionNameVi(),
-                "month", LocalDate.now().getMonthValue(), "diet", diet, "allergies", allergies.isBlank() ? "NONE" : allergies,
+                "months", seasonMonths(season), "climateFrame", climateFrame,
+                "diet", diet, "allergies", allergies.isBlank() ? "NONE" : allergies,
                 "localProduceHints", curated.highlightedProduce(), "recipes", library));
         JsonNode root = mapper.readTree(ai.suggestSeasonalMeals(prompt));
 
@@ -103,11 +111,42 @@ public class SeasonalMealService {
         if (suggestions.size() < 3) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
 
         List<String> produce = new ArrayList<>();
-        for (JsonNode p : root.path("highlightedProduce")) if (p.isTextual() && !p.asText().isBlank() && produce.size() < 10) produce.add(p.asText().trim());
+        for (JsonNode p : root.path("highlightedProduce")) {
+            if (!p.isTextual() || p.asText().isBlank() || produce.size() >= 10) continue;
+            String item = p.asText().trim(), lower = item.toLowerCase(Locale.ROOT);
+            if (NON_SEASONAL.stream().noneMatch(lower::contains)) produce.add(item); // year-round staples are not "in season"
+        }
         String climate = text(root, "climateSummary", 600), advice = text(root, "nutritionAdvice", 600);
-        return new SeasonalRegionalResponse(curated.season(), curated.seasonNameVi(), curated.region(), curated.regionNameVi(),
+        String seasonLabel = southern
+                ? "Tháng " + seasonMonths(season) + " · " + Character.toUpperCase(southernClimate(season).charAt(0)) + southernClimate(season).substring(1)
+                : curated.seasonNameVi();
+        return new SeasonalRegionalResponse(curated.season(), seasonLabel, curated.region(), curated.regionNameVi(),
                 climate.isBlank() ? curated.climateSummary() : climate, produce.isEmpty() ? curated.highlightedProduce() : produce,
                 advice.isBlank() ? curated.nutritionAdvice() : advice, List.copyOf(suggestions), "AI", null);
+    }
+
+    /** Processed or year-round ingredients the model sometimes lists as "in season". */
+    private static final List<String> NON_SEASONAL = List.of(
+            "đậu phụ", "đậu hũ", "tàu hũ", "tàu hủ", "nấm đùi gà", "nấm bào ngư", "nấm kim châm", "nấm hương khô",
+            "sữa", "nước cốt dừa", "gạo", "bún", "miến", "nước tương", "chao");
+
+    private static boolean isSouthern(Region region) {
+        return region == Region.MIEN_NAM || region == Region.MIEN_TAY;
+    }
+
+    /** Calendar months covered by a season, matching detectCurrentSeason(). */
+    private static String seasonMonths(Season season) {
+        return switch (season) { case XUAN -> "1-3"; case HA -> "4-6"; case THU -> "7-9"; case DONG -> "10-12"; };
+    }
+
+    /** Nam Bộ has a rainy and a dry season rather than four; what the selected months are there. */
+    private static String southernClimate(Season season) {
+        return switch (season) {
+            case XUAN -> "mùa khô";
+            case HA -> "cuối mùa khô, chuyển sang mùa mưa";
+            case THU -> "giữa mùa mưa";
+            case DONG -> "cuối mùa mưa, chuyển sang mùa khô";
+        };
     }
 
     private static String text(JsonNode node, String field, int max) {
