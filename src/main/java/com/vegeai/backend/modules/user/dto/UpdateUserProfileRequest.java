@@ -41,7 +41,7 @@ public class UpdateUserProfileRequest {
     @Schema(description = "Residential address", example = "123 Nguyen Trai, District 1, HCMC")
     private String address;
 
-    @DecimalMin(value = "50.0", message = "Height must be at least 50 cm.")
+    @DecimalMin(value = "100.0", message = "Height must be at least 100 cm.")
     @DecimalMax(value = "280.0", message = "Height must be at most 280 cm.")
     @Schema(description = "Height in centimeters", example = "172.5")
     private Double heightCm;

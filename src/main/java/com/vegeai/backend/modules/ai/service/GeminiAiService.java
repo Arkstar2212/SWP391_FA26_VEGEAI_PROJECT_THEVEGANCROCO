@@ -644,10 +644,8 @@ public class GeminiAiService {
         String userContext = buildUserHealthContext(currentUsername, isGuest);
 
         if (!isKeyConfigured()) {
-            log.info("[GEMINI-VISION] API Key not configured or placeholder. Activating vision analysis fallback engine.");
-            FridgeScanResponse scanResult = buildFallbackFridgeScan(currentUsername);
-            scanResult.setRequiresProfileSetup(requiresProfileSetup);
-            return scanResult;
+            log.warn("[GEMINI-VISION] API key is not configured; refusing to return simulated ingredients as a real scan.");
+            throw new AppException(ErrorCode.AI_NOT_CONFIGURED);
         }
 
         FridgeScanResponse scanResult;
@@ -655,8 +653,8 @@ public class GeminiAiService {
             String mime = contentType.equalsIgnoreCase("image/jpg") ? "image/jpeg" : contentType.toLowerCase(Locale.ROOT);
             scanResult = callGeminiVisionFridgeScan(file.getBytes(), mime, userContext, currentUsername);
         } catch (Exception ex) {
-            log.warn("[GEMINI-VISION] Multimodal vision scan failed ({}), activating simulated fallback engine.", ex.getMessage());
-            scanResult = buildFallbackFridgeScan(currentUsername);
+            log.warn("[GEMINI-VISION] Multimodal vision scan failed ({}); no simulated scan will be returned.", ex.getMessage());
+            throw geminiFailure(ex);
         }
 
         scanResult.setRequiresProfileSetup(requiresProfileSetup);

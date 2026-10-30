@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vegeai.backend.support.GeminiIntegrationTestSupport;
 import com.vegeai.backend.modules.ai.dto.GenerateRecipeAiRequest;
 import com.vegeai.backend.modules.auth.service.JwtService;
+import com.vegeai.backend.modules.auth.repository.EmailVerificationTokenRepository;
 import com.vegeai.backend.modules.recipe.dto.SaveCookbookRecipeRequest;
 import com.vegeai.backend.modules.recipe.dto.UpdateCookbookRecipeRequest;
 import com.vegeai.backend.modules.recipe.entity.CustomRecipe;
@@ -53,6 +54,9 @@ class CookbookControllerTest extends GeminiIntegrationTestSupport {
     private UserRepository userRepository;
 
     @Autowired
+    private EmailVerificationTokenRepository emailVerificationTokenRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -67,6 +71,7 @@ class CookbookControllerTest extends GeminiIntegrationTestSupport {
     @BeforeEach
     void setUp() {
         customRecipeRepository.deleteAll();
+        emailVerificationTokenRepository.deleteAll();
         userRepository.deleteAll();
 
         userA = User.builder()

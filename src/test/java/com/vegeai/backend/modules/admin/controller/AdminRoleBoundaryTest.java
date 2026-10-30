@@ -76,15 +76,16 @@ class AdminRoleBoundaryTest {
         for(String path:List.of("/api/recipes", "/api/recipes/tags", "/api/blog/posts", "/api/questions", "/api/places/categories"))
             call("GET",path,null,null,200);
         call("POST","/api/recipes/filter",null,Map.of("page",0,"size",9),200);
-        for(String path:List.of("/api/videos", "/api/videos/"+UUID.randomUUID(), "/api/videos/"+UUID.randomUUID()+"/comments",
-                "/api/nutrition/profile", "/api/nutrition/options", "/api/meal-plans", "/api/fridge/items",
+        call("GET", "/api/videos", null, null, 200);
+        for(String path:List.of("/api/videos/"+UUID.randomUUID(), "/api/videos/"+UUID.randomUUID()+"/comments"))
+            call("GET",path,null,null,404);
+        for(String path:List.of("/api/nutrition/profile", "/api/meal-plans", "/api/fridge/items",
                 "/api/users/me", "/api/recipes/cookbook", "/api/recipes/fridge-match", "/api/admin/users"))
             call("GET",path,null,null,401);
-        for(String path:List.of("/api/ai/chat", "/api/ai/generate-recipe", "/api/nutrition/calculate", "/api/meal-plans/generate"))
+        call("GET", "/api/nutrition/options", null, null, 200);
+        call("POST", "/api/nutrition/calculate", null, Map.of("message","invalid public payload"), 400);
+        for(String path:List.of("/api/meal-plans/generate"))
             call("POST",path,null,Map.of("message","Guest is not allowed"),401);
-        var image=new org.springframework.mock.web.MockMultipartFile("image","fridge.jpg","image/jpeg",new byte[]{1,2,3});
-        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/ai/fridge-scan").file(image))
-                .andExpect(status().isUnauthorized());
     }
     @Test void managementResponsesDoNotExposePrivateHealthData() throws Exception {
         member.setHeightCm(170.0); member.setWeightKg(65.0);
@@ -121,8 +122,8 @@ class AdminRoleBoundaryTest {
         JsonNode created = call("POST", "/api/admin/recipes", adminToken, recipe(List.of(published.getId(), draft.getId())), 201).path("data");
         String id = created.path("recipeId").asText();
         assertThat(created.path("videos").size()).isEqualTo(2);
-        assertThat(call("GET", "/api/recipes/" + id, null, null, 200).path("data").path("videos").size()).isZero();
-        assertThat(call("GET", "/api/recipes/slug/" + created.path("slug").asText(), null, null, 200).path("data").path("videos").size()).isZero();
+        assertThat(call("GET", "/api/recipes/" + id, null, null, 200).path("data").path("videos").size()).isEqualTo(1);
+        assertThat(call("GET", "/api/recipes/slug/" + created.path("slug").asText(), null, null, 200).path("data").path("videos").size()).isEqualTo(1);
         assertThat(call("GET", "/api/recipes/" + id, memberToken, null, 200).path("data").path("videos").size()).isEqualTo(1);
         assertThat(call("GET", "/api/admin/recipes/" + id, adminToken, null, 200).path("data").path("videos").size()).isEqualTo(2);
         call("PUT", "/api/admin/recipes/" + id, adminToken, Map.of("description", "Keep videos"), 200);

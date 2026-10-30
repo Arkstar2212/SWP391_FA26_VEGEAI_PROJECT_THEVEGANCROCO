@@ -659,8 +659,8 @@ class AuthControllerTest extends GeminiIntegrationTestSupport {
     class AiChatbotQuotaTests {
 
         @Test
-        @DisplayName("Guest is rejected on every request; AI no longer has a guest trial")
-        void guestAiChatbotRequiresAuthentication() throws Exception {
+        @DisplayName("Guest AI trial is public but limited to three requests per IP")
+        void guestAiChatbotIsRateLimited() throws Exception {
             com.vegeai.backend.modules.ai.dto.AiChatRequest chatReq =
                     com.vegeai.backend.modules.ai.dto.AiChatRequest.builder()
                             .message("Can you recommend high-protein vegan breakfast?")
@@ -668,14 +668,21 @@ class AuthControllerTest extends GeminiIntegrationTestSupport {
 
             String uniqueIp = "10.200." + ((System.currentTimeMillis() / 1000) % 200) + "." + ((System.nanoTime() / 1000) % 200);
 
-            for (int i = 1; i <= 4; i++) {
+            for (int i = 1; i <= 3; i++) {
                 mockMvc.perform(post("/api/ai/chat")
                                 .header("X-Forwarded-For", uniqueIp)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(chatReq)))
-                        .andExpect(status().isUnauthorized())
-                        .andExpect(jsonPath("$.success").value(false));
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.success").value(true));
             }
+
+            mockMvc.perform(post("/api/ai/chat")
+                            .header("X-Forwarded-For", uniqueIp)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(chatReq)))
+                    .andExpect(status().isTooManyRequests())
+                    .andExpect(jsonPath("$.success").value(false));
 
         }
     }

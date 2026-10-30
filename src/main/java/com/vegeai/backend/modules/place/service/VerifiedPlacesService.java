@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import lombok.extern.slf4j.Slf4j;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.text.Normalizer;
@@ -23,6 +24,7 @@ import java.time.Duration;
 import java.util.*;
 
 @Service
+@Slf4j
 public class VerifiedPlacesService {
     private final ObjectMapper mapper;
     private final StringRedisTemplate redis;
@@ -33,13 +35,13 @@ public class VerifiedPlacesService {
     private static final Set<String> EATERIES = Set.of("restaurant", "cafe", "fast_food", "food_court");
 
     public VerifiedPlacesService(ObjectMapper mapper, StringRedisTemplate redis,
-            @Value("${app.osm.overpass-urls:https://overpass.private.coffee/api/interpreter,https://overpass-api.de/api/interpreter}") String urls,
+            @Value("${app.osm.overpass-urls:https://overpass-api.de/api/interpreter,https://ethiopia.overpass.openplaceguide.org/api/interpreter,https://overpass.private.coffee/api/interpreter}") String urls,
             @Value("${app.osm.photon-url:https://photon.komoot.io/api/}") String photonUrl,
             @Value("${app.osm.user-agent:VEGEAI/1.0 (+https://github.com/cudatbusua/SWP391_VEGEAI_FRONTEND)}") String userAgent) {
         this.mapper=mapper; this.redis=redis; this.photonUrl=photonUrl;
-        endpoints=Arrays.stream(urls.split(",")).map(String::trim).filter(s -> !s.isEmpty()).limit(2).toList();
+        endpoints=Arrays.stream(urls.split(",")).map(String::trim).filter(s -> !s.isEmpty()).limit(3).toList();
         var factory=new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(3)); factory.setReadTimeout(Duration.ofSeconds(12));
+        factory.setConnectTimeout(Duration.ofSeconds(4)); factory.setReadTimeout(Duration.ofSeconds(20));
         client=RestClient.builder().requestFactory(factory).defaultHeader("User-Agent",userAgent)
                 .defaultHeader("Accept",MediaType.APPLICATION_JSON_VALUE).build();
     }
@@ -64,11 +66,13 @@ public class VerifiedPlacesService {
                 JsonNode candidate=mapper.readTree(client.post().uri(endpoint)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(String.class));
                 if(candidate==null || !candidate.path("elements").isArray() || candidate.hasNonNull("remark")) {
+                    log.warn("[PLACES-OSM] Provider {} returned an invalid or busy response.", endpoint);
                     write(unavailableKey,"1",Duration.ofSeconds(30));
                     continue;
                 }
                 root=candidate; break;
-            } catch(Exception ignored) {
+            } catch(Exception exception) {
+                log.warn("[PLACES-OSM] Provider {} failed: {}", endpoint, exception.getMessage());
                 // Pause an unavailable shared provider across coordinates and backend instances.
                 write(unavailableKey,"1",Duration.ofSeconds(30));
             }

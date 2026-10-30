@@ -38,7 +38,7 @@ public class QuickProfileRequest {
     )
     private String allergies;
 
-    @DecimalMin(value = "50.0", message = "Chiều cao tối thiểu 50 cm.")
+    @DecimalMin(value = "100.0", message = "Chiều cao tối thiểu 100 cm.")
     @DecimalMax(value = "280.0", message = "Chiều cao tối đa 280 cm.")
     @Schema(description = "Chiều cao (cm) tùy chọn để tính BMI", example = "172.5")
     private Double heightCm;

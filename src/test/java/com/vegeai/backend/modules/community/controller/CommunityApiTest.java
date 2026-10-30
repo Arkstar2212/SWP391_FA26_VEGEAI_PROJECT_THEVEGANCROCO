@@ -79,7 +79,14 @@ class CommunityApiTest {
     }
 
     JsonNode video(String title, String status) throws Exception {
-        return call("POST", "/api/admin/videos", adminToken, videoBody(title, status), 201).path("data");
+        JsonNode created = call("POST", "/api/admin/videos", adminToken, videoBody(title, status), 201).path("data");
+        // With no external AI key in the test profile, the two-layer moderation flow
+        // intentionally queues publish requests for an explicit admin decision.
+        if ("PUBLISHED".equals(status) && "PENDING_REVIEW".equals(created.path("status").asText())) {
+            created = call("POST", "/api/admin/videos/" + id(created) + "/moderation", adminToken,
+                    Map.of("decision", "APPROVE", "reason", "Integration fixture", "version", version(created)), 200).path("data");
+        }
+        return created;
     }
 
     String id(JsonNode value) { return value.path("id").asText(); }
@@ -87,7 +94,7 @@ class CommunityApiTest {
 
     @Test void guestCanBrowseButCannotWriteReadPrivateListsOrAdmin() throws Exception {
         call("GET", "/api/questions", null, null, 200);
-        call("GET", "/api/videos", null, null, 401);
+        call("GET", "/api/videos", null, null, 200);
         for (String path : List.of("/api/questions/mine", "/api/videos/favorites", "/api/admin/questions", "/api/admin/videos")) {
             call("GET", path, null, null, 401);
         }
@@ -257,7 +264,7 @@ class CommunityApiTest {
         update.put("version", version(video));
         JsonNode updated = call("PUT", "/api/admin/videos/" + id(video), adminToken, update, 200).path("data");
         assertThat(updated.path("title").asText()).isEqualTo("New title");
-        assertThat(version(updated)).isEqualTo(1);
+        assertThat(version(updated)).isEqualTo(version(video) + 1);
         call("PUT", "/api/admin/videos/" + id(video), adminToken, update, 409);
         for (String url : List.of("javascript:alert(1)", "data:text/html,test", "/relative/video", "https://user:password@example.test/video")) {
             var invalid = videoBody("Invalid url", "PUBLISHED"); invalid.put("videoUrl", url);
@@ -335,7 +342,7 @@ class CommunityApiTest {
             call("PUT", "/api/videos/" + id(video) + "/favorite", memberToken, null, 200);
             call("POST", "/api/videos/" + id(video) + "/comments", memberToken, Map.of("content", "Related comment"), 201);
         }
-        call("DELETE", "/api/admin/videos/" + id(target) + "?version=0", adminToken, null, 200);
+        call("DELETE", "/api/admin/videos/" + id(target) + "?version=" + version(target), adminToken, null, 200);
         assertThat(videos.existsById(UUID.fromString(id(target)))).isFalse();
         assertThat(videos.existsById(UUID.fromString(id(keep)))).isTrue();
         assertThat(comments.count()).isEqualTo(1);
