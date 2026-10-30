@@ -7,7 +7,7 @@ public final class SeasonalMealDtos {
     private SeasonalMealDtos() {}
 
     public enum Season { XUAN, HA, THU, DONG }
-    public enum Region { MIEN_BAC, MIEN_TRUNG, MIEN_NAM, MIEN_TAY }
+    public enum Region { MIEN_BAC, MIEN_TRUNG, MIEN_NAM }
 
     public record SeasonalMealSuggestion(
             String mealType,

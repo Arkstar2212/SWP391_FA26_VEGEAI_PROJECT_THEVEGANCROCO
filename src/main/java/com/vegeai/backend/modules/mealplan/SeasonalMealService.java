@@ -131,7 +131,7 @@ public class SeasonalMealService {
             "sữa", "nước cốt dừa", "gạo", "bún", "miến", "nước tương", "chao");
 
     private static boolean isSouthern(Region region) {
-        return region == Region.MIEN_NAM || region == Region.MIEN_TAY;
+        return region == Region.MIEN_NAM;
     }
 
     /** Calendar months covered by a season, matching detectCurrentSeason(). */
@@ -195,7 +195,6 @@ public class SeasonalMealService {
             case MIEN_BAC -> "Miền Bắc (Hương vị thanh tao, cân bằng âm dương)";
             case MIEN_TRUNG -> "Miền Trung (Đậm đà nồng ấm, chống phong hàn)";
             case MIEN_NAM -> "Miền Nam (Thanh mát, tươi ngọt từ rau củ quả nhiệt đới)";
-            case MIEN_TAY -> "Miền Tây sông nước (Đặc sản hoa đồng cỏ nội, mùa nước nổi)";
         };
 
         String climateSummary = buildClimateSummary(season, region);
@@ -242,10 +241,6 @@ public class SeasonalMealService {
                 case HA, XUAN -> "Mùa khô nắng ấm quanh năm; thích hợp các loại rau trái thanh mát, canh chua bông súng, canh mướp mồng tơi.";
                 case THU, DONG -> "Mùa mưa rải rác; các món kho quẹt nấm đông cô, canh củ quả hầm đậm vị đem lại cảm giác ấm cúng gia đình.";
             };
-            case MIEN_TAY -> switch (season) {
-                case THU, DONG -> "Mùa nước nổi đem lại nguồn sản vật tự nhiên trù phú: bông điên điển, bông so đũa, ngó sen, nấm rơm đồng rộ nhất.";
-                case XUAN, HA -> "Mùa khô trù phú trái cây và rau thơm miệt vườn; chuộng các món cuốn, canh chua thanh nhẹ.";
-            };
         };
     }
 
@@ -264,9 +259,6 @@ public class SeasonalMealService {
             }
             case MIEN_NAM -> {
                 list.addAll(List.of("Khổ qua non", "Bông súng", "Nấm đùi gà", "Đậu hũ ky", "Rau bina", "Cà tím", "Nước dừa tươi"));
-            }
-            case MIEN_TAY -> {
-                list.addAll(List.of("Bông điên điển", "Bông so đũa", "Ngó sen", "Nấm rơm phù sa", "Rau đắng đất", "Củ hũ dừa", "Mắm đậu chay"));
             }
         }
         return list;
@@ -321,46 +313,6 @@ public class SeasonalMealService {
                     "Phong vị trà chiều xứ Bắc ngày chớm lạnh.",
                     75,
                     "Hãm nước sôi 90 độ C trong 10 phút, uống khi còn ấm."
-            ));
-            return list;
-        }
-
-        if (region == Region.MIEN_TAY) {
-            list.add(new SeasonalMealSuggestion(
-                    "Bữa sáng",
-                    "Hủ tiếu chay Sa Đéc nấm rơm hoa chuối",
-                    "Sợi hủ tiếu dai, nấm rơm đồng, hoa chuối bào sợi, tàu hũ ky chiên giòn, hẹ lá",
-                    "Có rau, nấm và đạm thực vật từ tàu hũ ky.",
-                    "Đặc trưng nước súp ngọt đậm từ củ cải trắng và bắp non Nam Bộ.",
-                    390,
-                    "Trần sợi hủ tiếu vừa tới để giữ độ dai giòn trứ danh Sa Đéc."
-            ));
-            list.add(new SeasonalMealSuggestion(
-                    "Bữa trưa",
-                    "Lẩu mắm chay hoa điên điển & Cơm tấm sườn nấm chay",
-                    "Mắm đậu nành lên men gia truyền, hoa điên điển, bông súng, cà tím, nấm đông cô",
-                    "Món lẩu đậm vị, nhiều rau và hoa theo mùa.",
-                    "Sản vật mùa nước nổi miền Tây Nam Bộ không đâu sánh bằng.",
-                    560,
-                    "Hoa điên điển nhúng tái vừa chín tới để giữ độ ngọt bùi và giòn sần sật."
-            ));
-            list.add(new SeasonalMealSuggestion(
-                    "Bữa tối",
-                    "Canh chua bông so đũa đậu hũ & Nấm mối/nấm bào ngư kho tiêu",
-                    "Bông so đũa tươi, đậu hũ non, me quả chín, nấm bào ngư, ớt sừng, ngò gai",
-                    "Vị chua thanh, nhẹ nhàng cho bữa tối.",
-                    "Bông so đũa đầu mùa bùi ngọt thanh dịu.",
-                    410,
-                    "Tách bỏ nhụy hoa so đũa trước khi nấu để canh không bị đắng nhẫn."
-            ));
-            list.add(new SeasonalMealSuggestion(
-                    "Thức uống / Tráng miệng",
-                    "Chè hạt sen long nhãn nước cốt dừa",
-                    "Hạt sen tươi Đồng Tháp, long nhãn Hưng Yên, đường phèn, lá dứa thơm",
-                    "Món ngọt thanh; nên dùng lượng vừa phải vì có đường.",
-                    "Món chè cung đình dân dã phổ biến khắp miệt vườn miền Tây.",
-                    160,
-                    "Hấp chín hạt sen trước khi sên đường để hạt bùi bở mà không bị sượng."
             ));
             return list;
         }
