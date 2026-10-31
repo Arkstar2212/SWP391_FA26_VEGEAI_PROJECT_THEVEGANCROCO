@@ -2,7 +2,7 @@
 
 > **Tài liệu bàn giao kiến trúc, chức năng mới và hướng dẫn thiết lập cho Dev Tài.**  
 > **Dự án:** SWP391 - VEGEAI (Nền tảng Hỗ trợ Dinh dưỡng & Mua sắm Chay Thông minh)  
-> **Tên nhánh thống nhất (Frontend & Backend):** `feature/vegeai-redesign-smart-market-and-ai`  
+> **Tên nhánh thống nhất (Frontend & Backend):** `google-fitness-tracking-v3`  
 > **Trạng thái:** Toàn bộ chức năng đã được hoàn thiện, kiểm thử tự động `npm run build` và backend test suite pass, không xung đột.
 
 ---
@@ -11,7 +11,7 @@
 
 Để đảm bảo đồng bộ tuyệt đối giữa Frontend và Backend, **cả hai repository đều sử dụng chung một tên nhánh duy nhất**:
 
-$$\text{Tên nhánh: } \mathbf{feature/vegeai-redesign-smart-market-and-ai}$$
+$$\text{Tên nhánh: } \mathbf{google-fitness-tracking-v3}$$
 
 ### Lệnh Git cho Dev Tài:
 
@@ -19,8 +19,8 @@ $$\text{Tên nhánh: } \mathbf{feature/vegeai-redesign-smart-market-and-ai}$$
 ```bash
 cd BACKEND
 git fetch origin
-git checkout feature/vegeai-redesign-smart-market-and-ai
-git pull origin feature/vegeai-redesign-smart-market-and-ai
+git checkout google-fitness-tracking-v3
+git pull origin google-fitness-tracking-v3
 ./mvnw clean compile
 ./mvnw spring-boot:run
 ```
@@ -29,8 +29,8 @@ git pull origin feature/vegeai-redesign-smart-market-and-ai
 ```bash
 cd FRONTEND
 git fetch origin
-git checkout feature/vegeai-redesign-smart-market-and-ai
-git pull origin feature/vegeai-redesign-smart-market-and-ai
+git checkout google-fitness-tracking-v3
+git pull origin google-fitness-tracking-v3
 npm install
 npm run dev
 ```

@@ -135,6 +135,29 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Login successful.", result.authResponse()));
     }
 
+    // ── 2.3 Google OAuth2 Login ──────────────────────────────────────────────
+
+    @PostMapping("/google")
+    @Operation(summary = "Login using Google OAuth2 ID Token", description = """
+            **Đăng nhập bằng Google OAuth2 ID Token.**
+            - Nhận `idToken` từ Google Identity Services.
+            - Xác thực chữ ký và thông tin tài khoản qua Google API.
+            - Trả về Access Token và lưu Refresh Token vào HttpOnly Cookie.
+            """)
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogle(
+            @Valid @RequestBody GoogleLoginRequest req,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        String clientIp = extractClientIp(request);
+        AuthService.LoginResult result = authService.loginWithGoogle(req, clientIp);
+
+        ResponseCookie refreshCookie = buildRefreshCookie(result.refreshTokenValue());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        return ResponseEntity.ok(ApiResponse.success("Google login successful.", result.authResponse()));
+    }
+
     // ── 2.4 Refresh ──────────────────────────────────────────────────────────
 
     @PostMapping("/refresh")
