@@ -42,6 +42,10 @@ build/
 *.log
 logs/
 
+### Runtime data and local backups ###
+uploads/
+backups/
+
 ### Backup files ###
 *.bak
 *.bak.*

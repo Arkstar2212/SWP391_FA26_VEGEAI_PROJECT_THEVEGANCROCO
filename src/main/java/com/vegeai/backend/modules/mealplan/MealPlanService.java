@@ -91,7 +91,10 @@ public class MealPlanService {
         if (ranked.stream().anyMatch(id -> !byId.containsKey(id))) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
         List<Recipe> ordered = new ArrayList<>(); new LinkedHashSet<>(ranked).forEach(id -> ordered.add(byId.get(id)));
         available.stream().filter(r -> !ranked.contains(r.getRecipeId())).forEach(ordered::add);
-        LocalDate end = "WEEK".equals(request.period()) ? request.startDate().plusDays(7) : request.startDate().plusMonths(1);
+        int requestedDays = "CUSTOM".equals(request.period())
+                ? Objects.requireNonNullElse(request.days(), 7)
+                : "WEEK".equals(request.period()) ? 7 : (int) java.time.temporal.ChronoUnit.DAYS.between(request.startDate(), request.startDate().plusMonths(1));
+        LocalDate end = request.startDate().plusDays(requestedDays);
         List<Day> days = new ArrayList<>(); Map<UUID,Integer> usage = new HashMap<>();
         for (LocalDate date = request.startDate(); date.isBefore(end); date = date.plusDays(1)) {
             List<Meal> meals = new ArrayList<>();
@@ -147,18 +150,52 @@ public class MealPlanService {
         return messages;
     }
     @Transactional(readOnly=true) public View get(String principal, UUID id) { return view(owned(id, member(principal), false)); }
+    private record Effective(MealPlan plan, Snapshot snapshot, TreeSet<LocalDate> visible) {}
+    /** Saved plans newest first, each with the dates no later-saved plan overrides (the latest save wins a date). */
+    private List<Effective> effectivePlans(User user) {
+        List<MealPlan> saved = plans.findByUserIdAndStatusOrderBySavedAtAscIdAsc(user.getUserId(), "SAVED");
+        Set<LocalDate> covered = new HashSet<>(); List<Effective> result = new ArrayList<>();
+        for (int i = saved.size() - 1; i >= 0; i--) {
+            Snapshot s = snapshot(saved.get(i)); TreeSet<LocalDate> visible = new TreeSet<>();
+            for (Day d : s.days()) if (covered.add(d.date())) visible.add(d.date());
+            result.add(new Effective(saved.get(i), s, visible));
+        }
+        return result;
+    }
+    /** Saved plans that still own at least one calendar day; plans fully overridden by later saves are hidden. */
     @Transactional(readOnly=true) public PageResponse<Summary> list(String principal, int page, int size) {
         User user = member(principal);
         if (page < 0 || size < 1 || size > 20) throw new AppException(ErrorCode.VALIDATION_ERROR);
-        var result = plans.findByUserIdAndStatus(user.getUserId(), "SAVED", PageRequest.of(page,size, Sort.by(Sort.Direction.DESC,"savedAt","id")));
-        return PageResponse.from(result,result.stream().map(p->{var s=snapshot(p);return new Summary(p.getId(),s.period(),s.startDate(),s.endDate(),s.mealsPerDay(),p.getSavedAt());}).toList());
+        List<Effective> shown = effectivePlans(user).stream().filter(e -> !e.visible().isEmpty()).toList();
+        int from = (int) Math.min((long) page * size, shown.size());
+        List<Effective> slice = shown.subList(from, Math.min(from + size, shown.size()));
+        Page<Effective> result = new PageImpl<>(slice, PageRequest.of(page, size), shown.size());
+        return PageResponse.from(result, slice.stream().map(e -> { var s = e.snapshot(); var p = e.plan();
+            return new Summary(p.getId(), s.period(), s.startDate(), s.endDate(), s.mealsPerDay(), p.getSavedAt(),
+                    s.days().size(), e.visible().size(), e.visible().first(), e.visible().last()); }).toList());
+    }
+    /** Saved plans merged onto one calendar; where plans overlap, the most recently saved plan wins. */
+    @Transactional(readOnly=true) public List<CalendarDay> calendar(String principal, LocalDate from, LocalDate to) {
+        User user = member(principal);
+        if (from.isAfter(to) || java.time.temporal.ChronoUnit.DAYS.between(from, to) > 62)
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Khoảng ngày của lịch không hợp lệ (tối đa 62 ngày).");
+        Map<LocalDate, CalendarDay> byDate = new TreeMap<>();
+        for (Effective e : effectivePlans(user)) {
+            Snapshot s = e.snapshot();
+            if (s.endDate().isBefore(from) || s.startDate().isAfter(to)) continue;
+            for (Day d : s.days())
+                if (e.visible().contains(d.date()) && !d.date().isBefore(from) && !d.date().isAfter(to))
+                    byDate.put(d.date(), new CalendarDay(d.date(), e.plan().getId(), s.period(), s.targets(), d.meals(), d.totals()));
+        }
+        return List.copyOf(byDate.values());
     }
     @Transactional(readOnly=true) public List<RecipeSummaryDto> options(String principal, UUID id) {
-        User user = member(principal); MealPlan plan = owned(id,user,false); editable(plan,profile(principal,user));
+        User user = member(principal); owned(id,user,false);
         return eligible(user).stream().limit(60).map(recipeService::mapToSummaryDto).toList();
     }
     @Transactional public View swap(String principal, UUID id, int day, int slot, UUID recipeId) {
-        User user = member(principal); MealPlan plan = owned(id,user,true); var p=profile(principal,user); editable(plan,p);
+        User user = member(principal); MealPlan plan = owned(id,user,true); var p=profile(principal,user);
+        if ("DRAFT".equals(plan.getStatus())) editable(plan,p);
         Snapshot s=snapshot(plan);
         if(day<0||day>=s.days().size()||slot<0||slot>=s.mealsPerDay()) throw new AppException(ErrorCode.VALIDATION_ERROR);
         Recipe r=eligible(user).stream().filter(v->v.getRecipeId().equals(recipeId)).findFirst().orElseThrow(()->new AppException(ErrorCode.VALIDATION_ERROR,"Món không còn phù hợp hoặc thiếu dữ liệu dinh dưỡng."));

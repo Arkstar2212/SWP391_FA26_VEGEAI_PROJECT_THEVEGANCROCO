@@ -74,8 +74,8 @@ class AiVisionControllerTest extends GeminiIntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("Guest fridge scan requires authentication")
-    void scanFridge_Unauthorized_Guest() throws Exception {
+    @DisplayName("Guest fridge scan uses the public vision trial")
+    void scanFridge_GuestTrial() throws Exception {
         byte[] dummyImageBytes = "mock-jpeg-binary-image-data-for-fridge-scanning".getBytes();
         MockMultipartFile imageFile = new MockMultipartFile(
                 "image",
@@ -86,8 +86,9 @@ class AiVisionControllerTest extends GeminiIntegrationTestSupport {
 
         mockMvc.perform(multipart("/api/ai/fridge-scan")
                         .file(imageFile))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.success", is(false)));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.totalItemsDetected", is(1)));
     }
 
     @Test

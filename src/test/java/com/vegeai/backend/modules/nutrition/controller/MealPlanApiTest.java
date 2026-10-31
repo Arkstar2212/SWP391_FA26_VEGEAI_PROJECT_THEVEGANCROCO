@@ -103,7 +103,7 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
         assertThat(call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),200).path("status").asText()).isEqualTo("SAVED");
         assertThat(call("GET","/api/meal-plans",token,null,200).path("totalElements").asInt()).isEqualTo(1);
         call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),200);
-        call("PUT","/api/meal-plans/"+id+"/days/0/meals/0",token,Map.of("recipeId",replacement),409);
+        call("PUT","/api/meal-plans/"+id+"/days/0/meals/0",token,Map.of("recipeId",replacement),200);
         for(String suffix:List.of("","/options"))call("GET","/api/meal-plans/"+id+suffix,otherToken,null,404);
         call("POST","/api/meal-plans/"+id+"/save",otherToken,Map.of(),404);
         assertThat(call("GET","/api/meal-plans",otherToken,null,200).path("totalElements").asInt()).isZero();
@@ -113,6 +113,86 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
         assertThat(draft.path("plan").path("days").size()).isEqualTo((int)java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(),LocalDate.now().plusMonths(1)));
         var body=profileBody();body.put("weightKg",60);call("PUT","/api/nutrition/profile",token,body,200);
         call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),409);
+    }
+    @Test void calendarMergesSavedPlansWithLatestSaveWinningAndHidesDraftsAndOtherOwners()throws Exception {
+        profile(); LocalDate today=LocalDate.now();
+        String first=generate("WEEK").path("id").asText(); call("POST","/api/meal-plans/"+first+"/save",token,Map.of(),200);
+        var later=new HashMap<>(generateBody("WEEK")); later.put("startDate",today.plusDays(3).toString());
+        String second=call("POST","/api/meal-plans/generate",token,later,200).path("id").asText();
+        String calendar="/api/meal-plans/calendar?from="+today+"&to="+today.plusDays(13);
+        assertThat(call("GET",calendar,token,null,200).size()).isEqualTo(7);
+        call("POST","/api/meal-plans/"+second+"/save",token,Map.of(),200);
+        call("POST","/api/meal-plans/generate",token,generateBody("WEEK"),200);
+        JsonNode days=call("GET",calendar,token,null,200);
+        assertThat(days.size()).isEqualTo(10);
+        for(int i=0;i<days.size();i++) {
+            assertThat(days.get(i).path("date").asText()).isEqualTo(today.plusDays(i).toString());
+            assertThat(days.get(i).path("planId").asText()).isEqualTo(i<3?first:second);
+            assertThat(days.get(i).path("meals").size()).isEqualTo(3);
+            assertThat(days.get(i).path("targets").path("proteinTargetG").asDouble()).isPositive();
+        }
+        assertThat(call("GET","/api/meal-plans/calendar?from="+today.plusDays(5)+"&to="+today.plusDays(5),token,null,200).get(0).path("planId").asText()).isEqualTo(second);
+        assertThat(call("GET",calendar,otherToken,null,200).size()).isZero();
+        call("GET","/api/meal-plans/calendar?from="+today.plusDays(1)+"&to="+today,token,null,400);
+        call("GET","/api/meal-plans/calendar?from="+today+"&to="+today.plusDays(63),token,null,400);
+        call("GET",calendar,adminToken,null,403);
+        call("GET",calendar,null,null,401);
+    }
+    @Test void savedListReportsVisibleDaysAndHidesPlansFullyOverriddenByLaterSaves()throws Exception {
+        profile(); LocalDate today=LocalDate.now();
+        String first=generate("WEEK").path("id").asText(); call("POST","/api/meal-plans/"+first+"/save",token,Map.of(),200);
+        var later=new HashMap<>(generateBody("WEEK")); later.put("startDate",today.plusDays(3).toString());
+        String second=call("POST","/api/meal-plans/generate",token,later,200).path("id").asText();
+        call("POST","/api/meal-plans/"+second+"/save",token,Map.of(),200);
+        JsonNode list=call("GET","/api/meal-plans",token,null,200);
+        assertThat(list.path("totalElements").asInt()).isEqualTo(2);
+        JsonNode newest=list.path("items").get(0), older=list.path("items").get(1);
+        assertThat(newest.path("id").asText()).isEqualTo(second);
+        assertThat(newest.path("visibleDays").asInt()).isEqualTo(7);
+        assertThat(older.path("id").asText()).isEqualTo(first);
+        assertThat(older.path("totalDays").asInt()).isEqualTo(7);
+        assertThat(older.path("visibleDays").asInt()).isEqualTo(3);
+        assertThat(older.path("firstVisibleDate").asText()).isEqualTo(today.toString());
+        assertThat(older.path("lastVisibleDate").asText()).isEqualTo(today.plusDays(2).toString());
+        String third=generate("WEEK").path("id").asText(); call("POST","/api/meal-plans/"+third+"/save",token,Map.of(),200);
+        list=call("GET","/api/meal-plans",token,null,200);
+        assertThat(list.path("totalElements").asInt()).isEqualTo(2);
+        assertThat(list.path("items").findValuesAsText("id")).containsExactly(third,second);
+        assertThat(list.path("items").get(1).path("visibleDays").asInt()).isEqualTo(3);
+        assertThat(list.path("items").get(1).path("firstVisibleDate").asText()).isEqualTo(today.plusDays(7).toString());
+        assertThat(call("GET","/api/meal-plans?page=1&size=1",token,null,200).path("items").get(0).path("id").asText()).isEqualTo(second);
+    }
+    /** The prompt JSON SeasonalMealService sent in the last Gemini request. */
+    JsonNode seasonalPrompt()throws Exception {
+        JsonNode contents=lastRequest.path("contents");
+        return mapper.readTree(contents.path(contents.size()-1).path("parts").path(0).path("text").asText());
+    }
+    @Test void seasonalSuggestionsComeFromAiWithLibraryLinksAllergyFilterAndLabelledCuratedFallback()throws Exception {
+        profile(); String path="/api/meal-plans/seasonal-regional?season=DONG&region=MIEN_BAC";
+        JsonNode ai=call("GET",path,token,null,200);
+        assertThat(ai.path("source").asText()).isEqualTo("AI");
+        assertThat(ai.path("notice").isNull()).isTrue();
+        assertThat(ai.path("climateSummary").asText()).isEqualTo("Test climate");
+        assertThat(ai.path("suggestions").findValuesAsText("dishName")).containsExactly("Library dish","Invented id dish","Plain dish");
+        String linked=ai.path("suggestions").get(0).path("recipeId").asText();
+        assertThat(recipes.findById(UUID.fromString(linked))).isPresent();
+        assertThat(ai.path("suggestions").get(1).path("recipeId").isNull()).isTrue();
+        assertThat(lastRequest.toString()).contains("VEGEAI_SEASONAL_MEALS","SOY","VEGAN").doesNotContain("0912345678",member.getEmail());
+        assertThat(ai.path("highlightedProduce").size()).isEqualTo(2); // year-round "Đậu hũ ky" is dropped
+        JsonNode northPrompt=seasonalPrompt();
+        assertThat(northPrompt.path("months").asText()).isEqualTo("10-12");
+        assertThat(northPrompt.has("month")).isFalse();
+        assertThat(northPrompt.path("climateFrame").asText()).contains("Bốn mùa");
+        call("GET","/api/meal-plans/seasonal-regional?season=DONG&region=MIEN_NAM",token,null,200);
+        JsonNode southPrompt=seasonalPrompt();
+        assertThat(southPrompt.path("climateFrame").asText()).contains("mùa mưa","mùa khô","cuối mùa mưa").doesNotContain("Bốn mùa");
+        var failing=profileBody(); failing.put("allergies","fixture:rate-limit"); call("PUT","/api/nutrition/profile",token,failing,200);
+        JsonNode curated=call("GET",path,token,null,200);
+        assertThat(curated.path("source").asText()).isEqualTo("CURATED");
+        assertThat(curated.path("notice").asText()).startsWith("AI ").hasSizeGreaterThan(20); // call() decodes MockMvc's default charset, so avoid matching Vietnamese
+        assertThat(curated.path("suggestions").size()).isPositive();
+        call("GET",path,adminToken,null,403);
+        call("GET",path,null,null,401);
     }
     @Test void missingProfilesGuestAdminInvalidRangesAndHallucinatedIdsAreRejected()throws Exception {
         call("POST","/api/meal-plans/generate",null,generateBody("WEEK"),401);

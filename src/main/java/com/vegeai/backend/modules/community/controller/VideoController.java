@@ -16,6 +16,29 @@ import java.util.UUID;
 @Tag(name = "14. Community Videos", description = "Database-backed public videos, member comments and private favorites.")
 public class VideoController {
     private final VideoService service;
+    private final com.vegeai.backend.modules.community.service.CommunityMediaAssetService assets;
+    @GetMapping("/mine")
+    public ApiResponse<PageResponse<VideoResponse>> mine(@AuthenticationPrincipal String userId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "12") int size) {
+        return ApiResponse.success(service.mine(userId, page, size));
+    }
+    @GetMapping("/mine/{id}")
+    public ApiResponse<VideoResponse> mineDetail(@AuthenticationPrincipal String userId, @PathVariable UUID id) {
+        return ApiResponse.success(service.mineDetail(userId, id));
+    }
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<java.util.Map<String, String>> upload(@RequestPart("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(defaultValue = "false") boolean video) {
+        return ApiResponse.success(java.util.Map.of("url", assets.store(file, video)));
+    }
+    @PostMapping
+    public ResponseEntity<ApiResponse<VideoResponse>> create(@AuthenticationPrincipal String userId, @Valid @RequestBody VideoInput input) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(service.createMember(userId, input)));
+    }
+    @PutMapping("/mine/{id}")
+    public ApiResponse<VideoResponse> updateMine(@AuthenticationPrincipal String userId, @PathVariable UUID id, @Valid @RequestBody VideoInput input) {
+        return ApiResponse.success(service.updateMember(userId, id, input));
+    }
     @GetMapping @Operation(summary = "Search published videos by keyword/category with pagination")
     public ApiResponse<PageResponse<VideoResponse>> list(@RequestParam(required = false) String keyword,
             @RequestParam(required = false) String category, @RequestParam(defaultValue = "0") int page,

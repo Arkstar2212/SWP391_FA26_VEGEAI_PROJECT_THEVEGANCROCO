@@ -33,6 +33,41 @@ public class VideoService {
     @Transactional(readOnly = true)
     public VideoResponse published(UUID id) { return response(visible(id)); }
 
+    @Transactional(readOnly = true)
+    public PageResponse<VideoResponse> mine(String principal, int page, int size) {
+        User user = access.user(principal);
+        Specification<CommunityVideo> specification = (root, query, cb) -> cb.equal(root.get("createdBy").get("userId"), user.getUserId());
+        return PageResponse.from(videos.findAll(specification, access.page(page, size)).map(this::response));
+    }
+
+    @Transactional(readOnly = true)
+    public VideoResponse mineDetail(String principal, UUID id) {
+        User user = access.user(principal);
+        CommunityVideo video = videos.findById(id).orElseThrow(() -> new AppException(ErrorCode.VIDEO_NOT_FOUND));
+        if (!video.getCreatedBy().getUserId().equals(user.getUserId())) throw new AppException(ErrorCode.VIDEO_NOT_FOUND);
+        return response(video);
+    }
+
+    public VideoResponse createMember(String principal, VideoInput input) {
+        User user = access.user(principal);
+        CommunityVideo video = new CommunityVideo();
+        video.setCreatedBy(user);
+        apply(video, input);
+        if (video.getStatus() != VideoStatus.DRAFT) video.setStatus(VideoStatus.PENDING_REVIEW);
+        return response(videos.saveAndFlush(video));
+    }
+
+    public VideoResponse updateMember(String principal, UUID id, VideoInput input) {
+        User user = access.user(principal);
+        CommunityVideo video = locked(id);
+        if (!video.getCreatedBy().getUserId().equals(user.getUserId())) throw new AppException(ErrorCode.VIDEO_NOT_FOUND);
+        access.revision(video.getVersion(), input.version());
+        apply(video, input);
+        if (video.getStatus() != VideoStatus.DRAFT) video.setStatus(VideoStatus.PENDING_REVIEW);
+        videos.flush();
+        return response(video);
+    }
+
     @PreAuthorize("hasRole('ADMIN')") @Transactional(readOnly = true)
     public PageResponse<VideoResponse> adminList(String principal, VideoStatus status, String keyword, String category, int page, int size) {
         access.admin(principal);

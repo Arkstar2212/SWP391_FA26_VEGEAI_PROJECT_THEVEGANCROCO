@@ -53,7 +53,7 @@ public class UserController {
             **Quy tắc điền thông tin:**
             - `fullName`: Họ và tên (không chứa số, tối đa 100 ký tự).
             - `phoneNumber`: Đúng 10 chữ số bắt đầu bằng `0` (hoặc để trống `""`).
-            - `heightCm`: Chiều cao tính bằng cm (50.0 - 280.0 cm, ví dụ: `172.5`).
+            - `heightCm`: Chiều cao tính bằng cm (100.0 - 280.0 cm, ví dụ: `172.5`).
             - `weightKg`: Cân nặng tính bằng kg (20.0 - 350.0 kg, ví dụ: `65.0`).
             - `dietaryPreferences`: `VEGAN`, `VEGETARIAN`, `LACTO_OVO`, `LACTO`, `OVO`, `PESCATARIAN`, `FLEXITARIAN`, `RAW_VEGAN`.
             - `allergies`: `NONE` hoặc phân tách bằng dấu phẩy (ví dụ: `PEANUTS, GLUTEN, SOY`).

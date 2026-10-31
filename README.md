@@ -179,6 +179,24 @@ docker compose up -d --build
 .\mvnw.cmd test
 ```
 
+### Data persistence and backup
+
+Docker Compose keeps PostgreSQL, Redis and uploaded community media in named volumes. Rebuilding the backend image does not remove them. Do not run `docker compose down -v` unless you intentionally want to delete all local data.
+
+Before the first restart after enabling the upload volume, or before any database migration, create a backup:
+
+```powershell
+.\scripts\Backup-VegeaiData.ps1
+```
+
+Backups are written to `backups/<timestamp>` and are excluded from Git. They contain the PostgreSQL dump and `/app/uploads` files. To restore an inspected backup deliberately:
+
+```powershell
+.\scripts\Restore-VegeaiData.ps1 -BackupDirectory .\backups\<timestamp> -ConfirmRestore
+```
+
+Restore replaces the current database and uploaded files. User-created blog posts, videos, profiles and other runtime data are never stored in Git.
+
 ### 5. Interactive Documentation
 - **Swagger UI:** `http://localhost:8081/swagger-ui.html`
 - **OpenAPI 3 JSON:** `http://localhost:8081/api-docs`

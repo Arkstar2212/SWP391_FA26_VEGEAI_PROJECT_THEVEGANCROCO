@@ -61,6 +61,21 @@ public abstract class GeminiIntegrationTestSupport {
                 for (JsonNode recipe : data.path("recipes")) ids.add(recipe.path("recipeId").asText());
                 if (prompt.contains("fixture:rank-invalid")) ids = List.of(java.util.UUID.randomUUID().toString());
                 reply = Map.of("recipeIds", ids);
+            } else if (prompt.contains("\"task\":\"VEGEAI_SEASONAL_MEALS\"")) {
+                JsonNode data = MAPPER.readTree(prompt);
+                String libraryId = data.path("recipes").path(0).path("recipeId").asText(null);
+                java.util.function.BiFunction<String, String, Map<String, Object>> dish = (name, ingredients) -> {
+                    Map<String, Object> m = new java.util.HashMap<>(Map.of("mealType", "Bữa trưa", "dishName", name,
+                            "seasonalIngredients", ingredients, "healthBenefits", "Test benefit", "regionalHighlights", "Test region",
+                            "estimatedCalories", 420, "cookingTip", "Test tip"));
+                    m.put("recipeId", null);
+                    return m;
+                };
+                var linked = dish.apply("Library dish", "Rau cải"); linked.put("recipeId", libraryId);
+                var invented = dish.apply("Invented id dish", "Bí đỏ"); invented.put("recipeId", java.util.UUID.randomUUID().toString());
+                reply = Map.of("climateSummary", "Test climate", "highlightedProduce", List.of("Bí đỏ", "Nấm", "Đậu hũ ky"),
+                        "nutritionAdvice", "Test advice",
+                        "suggestions", List.of(linked, invented, dish.apply("Plain dish", "Cà rốt"), dish.apply("Soy dish", "Đậu nành SOY")));
             } else if (parts.path(1).has("inlineData")) {
                 reply = Map.of("summary", "Test vegetables", "totalItemsDetected", 1,
                         "hasNonVegetarianItem", false,

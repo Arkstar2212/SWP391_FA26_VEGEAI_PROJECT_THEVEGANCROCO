@@ -28,7 +28,7 @@ public class NutritionCalculateRequest {
     private Integer age;
 
     @NotNull(message = "Height is required.")
-    @DecimalMin(value = "50.0", message = "Height must be at least 50 cm.")
+    @DecimalMin(value = "100.0", message = "Height must be at least 100 cm.")
     @DecimalMax(value = "280.0", message = "Height must be at most 280 cm.")
     @Schema(example = "158")
     private Double heightCm;
