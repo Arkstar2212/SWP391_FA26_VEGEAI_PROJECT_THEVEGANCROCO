@@ -23,4 +23,6 @@ public interface PlaceProvider {
             PlaceCategory category);
 
     List<CategoryMetadataDto> getCategoryMetadata();
+
+    String reverseGeocode(double latitude, double longitude);
 }

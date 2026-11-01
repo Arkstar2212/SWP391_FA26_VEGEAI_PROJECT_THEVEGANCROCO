@@ -68,6 +68,35 @@ public class VideoService {
         return response(video);
     }
 
+    public VideoResponse archiveMember(String principal, UUID id, long version) {
+        CommunityVideo video = owned(principal, id);
+        access.revision(video.getVersion(), version);
+        video.setStatus(VideoStatus.ARCHIVED);
+        videos.flush();
+        return response(video);
+    }
+
+    public VideoResponse restoreMember(String principal, UUID id, long version) {
+        CommunityVideo video = owned(principal, id);
+        access.revision(video.getVersion(), version);
+        video.setStatus(VideoStatus.PENDING_REVIEW);
+        videos.flush();
+        return response(video);
+    }
+
+    public void deleteMember(String principal, UUID id, long version) {
+        CommunityVideo video = owned(principal, id);
+        access.revision(video.getVersion(), version);
+        deleteVideoGraph(video);
+    }
+
+    private CommunityVideo owned(String principal, UUID id) {
+        User user = access.user(principal);
+        CommunityVideo video = locked(id);
+        if (!video.getCreatedBy().getUserId().equals(user.getUserId())) throw new AppException(ErrorCode.VIDEO_NOT_FOUND);
+        return video;
+    }
+
     @PreAuthorize("hasRole('ADMIN')") @Transactional(readOnly = true)
     public PageResponse<VideoResponse> adminList(String principal, VideoStatus status, String keyword, String category, int page, int size) {
         access.admin(principal);
@@ -136,6 +165,11 @@ public class VideoService {
         access.admin(principal);
         CommunityVideo video = locked(id);
         access.revision(video.getVersion(), version);
+        deleteVideoGraph(video);
+    }
+
+    private void deleteVideoGraph(CommunityVideo video) {
+        UUID id = video.getId();
         comments.deleteAllForVideo(id);
         favorites.deleteAllForVideo(id);
         videos.unlinkRecipes(id);

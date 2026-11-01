@@ -39,6 +39,22 @@ public class VideoController {
     public ApiResponse<VideoResponse> updateMine(@AuthenticationPrincipal String userId, @PathVariable UUID id, @Valid @RequestBody VideoInput input) {
         return ApiResponse.success(service.updateMember(userId, id, input));
     }
+    @PostMapping("/mine/{id}/archive")
+    public ApiResponse<VideoResponse> archiveMine(@AuthenticationPrincipal String userId, @PathVariable UUID id,
+            @Valid @RequestBody Revision input) {
+        return ApiResponse.success(service.archiveMember(userId, id, input.version()));
+    }
+    @PostMapping("/mine/{id}/restore")
+    public ApiResponse<VideoResponse> restoreMine(@AuthenticationPrincipal String userId, @PathVariable UUID id,
+            @Valid @RequestBody Revision input) {
+        return ApiResponse.success(service.restoreMember(userId, id, input.version()));
+    }
+    @DeleteMapping("/mine/{id}")
+    public ApiResponse<Void> deleteMine(@AuthenticationPrincipal String userId, @PathVariable UUID id,
+            @RequestParam long version) {
+        service.deleteMember(userId, id, version);
+        return ApiResponse.success("Video deleted.", null);
+    }
     @GetMapping @Operation(summary = "Search published videos by keyword/category with pagination")
     public ApiResponse<PageResponse<VideoResponse>> list(@RequestParam(required = false) String keyword,
             @RequestParam(required = false) String category, @RequestParam(defaultValue = "0") int page,

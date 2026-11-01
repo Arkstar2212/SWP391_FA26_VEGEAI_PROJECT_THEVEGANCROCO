@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/places")
@@ -25,6 +26,11 @@ public class PlaceController {
 
     private final PlaceProvider placeProvider;
     private final VerifiedPlacesService verifiedPlacesService;
+
+    @GetMapping("/reverse-geocode")
+    public ApiResponse<Map<String, String>> reverseGeocode(@RequestParam double lat, @RequestParam double lng) {
+        return ApiResponse.success(Map.of("address", placeProvider.reverseGeocode(lat, lng)));
+    }
 
     @GetMapping("/verified/nearby")
     @Operation(summary = "Find nearby restaurants with explicit vegetarian-only or vegan-only OSM tags")

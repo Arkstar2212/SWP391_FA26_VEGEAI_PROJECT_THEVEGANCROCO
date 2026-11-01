@@ -1226,8 +1226,22 @@ public class GeminiAiService {
                     description != null ? description : "",
                     videoUrl != null ? videoUrl : "");
 
-            Map<String, Object> textPart = Map.of("text", prompt);
-            Map<String, Object> contentObj = Map.of("role", "user", "parts", List.of(textPart));
+            boolean hasRemoteVideoEvidence = isRemoteVideoSource(videoUrl);
+            prompt += """
+
+                    QUY TẮC BẰNG CHỨNG VIDEO:
+                    - Nghe lời thoại và quan sát video trước khi trích xuất; không suy diễn chỉ từ tiêu đề nếu video truy cập được.
+                    - Mỗi bước nên bắt đầu bằng mốc [mm:ss] nếu xác định được từ video.
+                    - Nếu không đọc được video, ghi rõ 'Chỉ phân tích metadata' trong safetyNotes và không bịa transcript.
+                    """;
+            List<Map<String, Object>> videoParts = new ArrayList<>();
+            videoParts.add(Map.of("text", prompt));
+            if (hasRemoteVideoEvidence) {
+                videoParts.add(Map.of("fileData", Map.of(
+                        "mimeType", remoteVideoMimeType(videoUrl),
+                        "fileUri", videoUrl.trim())));
+            }
+            Map<String, Object> contentObj = Map.of("role", "user", "parts", videoParts);
             Map<String, Object> systemPart = Map.of("text", RECIPE_SYSTEM_INSTRUCTION);
             Map<String, Object> systemInstructionObj = Map.of("parts", List.of(systemPart));
 
@@ -1256,11 +1270,32 @@ public class GeminiAiService {
                     
                     .build();
 
-            return parseStructuredRecipeOutput(extractText(responseJson), dummyReq, user);
+            GeneratedRecipeAiResponse result = parseStructuredRecipeOutput(extractText(responseJson), dummyReq, user);
+            List<String> evidenceNotes = new ArrayList<>(result.getSafetyNotes() == null ? List.of() : result.getSafetyNotes());
+            evidenceNotes.add(hasRemoteVideoEvidence
+                    ? "Nguồn phân tích: âm thanh và hình ảnh từ video công khai; hãy đối chiếu các mốc thời gian trước khi nấu."
+                    : "Nguồn phân tích: chỉ metadata vì nhà cung cấp không thể truy cập trực tiếp video nội bộ.");
+            result.setSafetyNotes(evidenceNotes);
+            return result;
         } catch (Exception ex) {
             log.warn("[AI-VIDEO-RECIPE] Video recipe extraction failed ({}), using fallback recipe extractor.", ex.getMessage());
             return buildFallbackVideoRecipe(title, description, videoUrl, user);
         }
+    }
+
+    private boolean isRemoteVideoSource(String videoUrl) {
+        if (videoUrl == null || videoUrl.isBlank()) return false;
+        String value = videoUrl.trim().toLowerCase(Locale.ROOT);
+        return value.startsWith("https://www.youtube.com/watch?")
+                || value.startsWith("https://youtu.be/")
+                || (value.startsWith("https://") && (value.endsWith(".mp4") || value.endsWith(".webm") || value.endsWith(".mov")));
+    }
+
+    private String remoteVideoMimeType(String videoUrl) {
+        String value = videoUrl.toLowerCase(Locale.ROOT);
+        if (value.endsWith(".webm")) return "video/webm";
+        if (value.endsWith(".mov")) return "video/quicktime";
+        return "video/mp4";
     }
 
     private GeneratedRecipeAiResponse buildFallbackVideoRecipe(String title, String description, String videoUrl, User user) {

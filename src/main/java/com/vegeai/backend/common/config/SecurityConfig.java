@@ -104,7 +104,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/places/**").permitAll()
                         // Admin only
                         .requestMatchers("/api/questions/mine", "/api/questions/mine/**", "/api/videos/mine", "/api/videos/mine/**", "/api/videos/upload", "/api/videos/favorites", "/api/videos/*/favorite").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/questions", "/api/questions/*", "/api/videos", "/api/videos/*", "/api/videos/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/questions", "/api/questions/*").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/videos", "/api/videos/*", "/api/videos/*/comments").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Everything else requires authentication
                         .anyRequest().authenticated()
