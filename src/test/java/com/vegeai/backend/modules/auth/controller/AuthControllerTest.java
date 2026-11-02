@@ -659,7 +659,7 @@ class AuthControllerTest extends GeminiIntegrationTestSupport {
     class AiChatbotQuotaTests {
 
         @Test
-        @DisplayName("Guest AI trial is public but limited to three requests per IP")
+        @DisplayName("Guest AI trial allows three successful answers then asks to log in")
         void guestAiChatbotIsRateLimited() throws Exception {
             com.vegeai.backend.modules.ai.dto.AiChatRequest chatReq =
                     com.vegeai.backend.modules.ai.dto.AiChatRequest.builder()
@@ -667,10 +667,12 @@ class AuthControllerTest extends GeminiIntegrationTestSupport {
                             .build();
 
             String uniqueIp = "10.200." + ((System.currentTimeMillis() / 1000) % 200) + "." + ((System.nanoTime() / 1000) % 200);
+            jakarta.servlet.http.Cookie guest = new jakarta.servlet.http.Cookie("vegeai_guest_id", java.util.UUID.randomUUID().toString());
 
             for (int i = 1; i <= 3; i++) {
                 mockMvc.perform(post("/api/ai/chat")
                                 .header("X-Forwarded-For", uniqueIp)
+                                .cookie(guest)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(chatReq)))
                         .andExpect(status().isOk())
@@ -679,10 +681,12 @@ class AuthControllerTest extends GeminiIntegrationTestSupport {
 
             mockMvc.perform(post("/api/ai/chat")
                             .header("X-Forwarded-For", uniqueIp)
+                            .cookie(guest)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(chatReq)))
                     .andExpect(status().isTooManyRequests())
-                    .andExpect(jsonPath("$.success").value(false));
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.code").value(1402));
 
         }
     }
