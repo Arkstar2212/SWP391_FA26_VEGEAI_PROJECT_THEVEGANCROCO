@@ -92,8 +92,10 @@ class CommunityApiTest {
     String id(JsonNode value) { return value.path("id").asText(); }
     long version(JsonNode value) { return value.path("version").asLong(); }
 
-    @Test void guestCanBrowseButCannotWriteReadPrivateListsOrAdmin() throws Exception {
-        call("GET", "/api/questions", null, null, 200);
+    @Test void guestCanBrowseVideosButNotQuestionsOrWriteReadPrivateListsOrAdmin() throws Exception {
+        call("GET", "/api/questions", null, null, 401);
+        call("GET", "/api/questions/" + UUID.randomUUID(), null, null, 401);
+        call("GET", "/api/questions", memberToken, null, 200);
         call("GET", "/api/videos", null, null, 200);
         for (String path : List.of("/api/questions/mine", "/api/videos/favorites", "/api/admin/questions", "/api/admin/videos")) {
             call("GET", path, null, null, 401);
@@ -163,8 +165,8 @@ class CommunityApiTest {
                 "authorId", other.getUserId(), "answer", "forged"), 201).path("data");
         assertThat(q.path("status").asText()).isEqualTo("PENDING");
         assertThat(questions.findById(UUID.fromString(id(q))).orElseThrow().getAuthor().getUserId()).isEqualTo(member.getUserId());
-        assertThat(call("GET", "/api/questions", null, null, 200).path("data").path("totalElements").asInt()).isZero();
-        call("GET", "/api/questions/" + id(q), null, null, 404);
+        assertThat(call("GET", "/api/questions", otherToken, null, 200).path("data").path("totalElements").asInt()).isZero();
+        call("GET", "/api/questions/" + id(q), otherToken, null, 404);
         call("GET", "/api/questions/mine/" + id(q), otherToken, null, 404);
         assertThat(call("GET", "/api/questions/mine", memberToken, null, 200).path("data").path("totalElements").asInt()).isEqualTo(1);
     }
@@ -174,13 +176,13 @@ class CommunityApiTest {
         q = call("PUT", "/api/admin/questions/" + id(q) + "/answer", adminToken,
                 Map.of("content", "Soak first and cook until tender.", "version", version(q)), 200).path("data");
         assertThat(version(q)).isEqualTo(1);
-        call("GET", "/api/questions/" + id(q), null, null, 404);
+        call("GET", "/api/questions/" + id(q), otherToken, null, 404);
         q = approve(q);
-        JsonNode publicQuestion = call("GET", "/api/questions/" + id(q), null, null, 200).path("data");
+        JsonNode publicQuestion = call("GET", "/api/questions/" + id(q), otherToken, null, 200).path("data");
         assertThat(publicQuestion.path("answer").asText()).contains("Soak first");
         for (String field : List.of("email", "passwordHash", "moderationReason", "reviewedBy", "reviewedAt")) assertThat(publicQuestion.has(field)).isFalse();
-        assertThat(call("GET", "/api/questions?answered=true", null, null, 200).path("data").path("totalElements").asInt()).isEqualTo(1);
-        assertThat(call("GET", "/api/questions?answered=false", null, null, 200).path("data").path("totalElements").asInt()).isZero();
+        assertThat(call("GET", "/api/questions?answered=true", otherToken, null, 200).path("data").path("totalElements").asInt()).isEqualTo(1);
+        assertThat(call("GET", "/api/questions?answered=false", otherToken, null, 200).path("data").path("totalElements").asInt()).isZero();
     }
 
     @Test void rejectionRequiresReasonAndOnlyAuthorAndAdminCanReadIt() throws Exception {
@@ -191,7 +193,7 @@ class CommunityApiTest {
         assertThat(rejected.path("status").asText()).isEqualTo("REJECTED");
         assertThat(call("GET", "/api/questions/mine/" + id(q), memberToken, null, 200).path("data").path("moderationReason").asText()).contains("Private moderation");
         call("GET", "/api/questions/mine/" + id(q), otherToken, null, 404);
-        call("GET", "/api/questions/" + id(q), null, null, 404);
+        call("GET", "/api/questions/" + id(q), otherToken, null, 404);
         assertThat(call("GET", "/api/admin/questions?status=REJECTED", adminToken, null, 200).path("data").path("totalElements").asInt()).isEqualTo(1);
     }
 
@@ -213,15 +215,15 @@ class CommunityApiTest {
         call("DELETE", path + "?version=" + version(initial), adminToken, null, 409);
         call("DELETE", path + "?version=" + version(approved), adminToken, null, 200);
         assertThat(questions.existsById(UUID.fromString(id(initial)))).isFalse();
-        call("GET", "/api/questions/" + id(initial), null, null, 404);
+        call("GET", "/api/questions/" + id(initial), otherToken, null, 404);
     }
 
     @Test void questionSearchEscapesWildcardsAndPaginates() throws Exception {
         approve(question("Question about 100% plant food"));
         approve(question("Question about 100 plant food"));
-        JsonNode filtered = call("GET", "/api/questions?keyword=100%25", null, null, 200).path("data");
+        JsonNode filtered = call("GET", "/api/questions?keyword=100%25", otherToken, null, 200).path("data");
         assertThat(filtered.path("totalElements").asInt()).isEqualTo(1);
-        JsonNode paged = call("GET", "/api/questions?page=1&size=1", null, null, 200).path("data");
+        JsonNode paged = call("GET", "/api/questions?page=1&size=1", otherToken, null, 200).path("data");
         assertThat(paged.path("items").size()).isEqualTo(1);
         assertThat(paged.path("totalElements").asInt()).isEqualTo(2);
         assertThat(paged.path("last").asBoolean()).isTrue();
@@ -390,8 +392,8 @@ class CommunityApiTest {
         JsonNode q = approve(question("Initially approved question"));
         call("PUT", "/api/admin/questions/" + id(q) + "/moderation", adminToken,
                 Map.of("decision", "REJECT", "reason", "Needs correction", "version", version(q)), 200);
-        call("GET", "/api/questions/" + id(q), null, null, 404);
-        assertThat(call("GET", "/api/questions", null, null, 200).path("data").path("totalElements").asInt()).isZero();
+        call("GET", "/api/questions/" + id(q), otherToken, null, 404);
+        assertThat(call("GET", "/api/questions", otherToken, null, 200).path("data").path("totalElements").asInt()).isZero();
     }
 
     @Test void favoritesPaginationNeverIncludesAnotherMembersSavedVideo() throws Exception {

@@ -72,9 +72,10 @@ class AdminRoleBoundaryTest {
         member.setRole(UserRole.ADMIN); users.saveAndFlush(member);
         call("GET", "/api/recipes/fridge-match", memberToken, null, 403);
     }
-    @Test void guestHasOnlyRecipeBlogQuestionAndPlaceBusinessAccess() throws Exception {
-        for(String path:List.of("/api/recipes", "/api/recipes/tags", "/api/blog/posts", "/api/questions", "/api/places/categories"))
+    @Test void guestHasOnlyRecipeBlogAndPlaceBusinessAccess() throws Exception {
+        for(String path:List.of("/api/recipes", "/api/recipes/tags", "/api/blog/posts", "/api/places/categories"))
             call("GET",path,null,null,200);
+        call("GET", "/api/questions", null, null, 401);
         call("POST","/api/recipes/filter",null,Map.of("page",0,"size",9),200);
         call("GET", "/api/videos", null, null, 200);
         for(String path:List.of("/api/videos/"+UUID.randomUUID(), "/api/videos/"+UUID.randomUUID()+"/comments"))
