@@ -14,6 +14,7 @@ import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ public class NutritionService {
     private final UserRepository userRepository;
     private final NutritionCalculator calculator;
     private final NotificationService notificationService;
+    private final ApplicationEventPublisher events;
 
     // ── Queries ──────────────────────────────────────────────────────────────
 
@@ -92,6 +94,7 @@ public class NutritionService {
 
         NutritionProfile saved = profileRepository.save(profile);
         userRepository.save(user);
+        events.publishEvent(new NutritionTargetsChangedEvent(user, NutritionTargetsResponse.from(calc)));
 
         log.info("[NUTRITION] Profile {} for userId={} — target={} kcal",
                 isNew ? "created" : "updated", user.getUserId(), calc.dailyCaloriesTarget());
@@ -139,6 +142,7 @@ public class NutritionService {
         user.setBmi(calc.bmi());
         user.setDailyCalorieTarget(calc.dailyCaloriesTarget());
         profileRepository.save(profile);
+        events.publishEvent(new NutritionTargetsChangedEvent(user, NutritionTargetsResponse.from(calc)));
         return true;
     }
 

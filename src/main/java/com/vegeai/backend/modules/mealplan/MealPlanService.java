@@ -7,6 +7,7 @@ import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import com.vegeai.backend.modules.community.service.CommunityAccess;
 import com.vegeai.backend.modules.nutrition.dto.*;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
+import com.vegeai.backend.modules.nutrition.service.NutritionTargetsChangedEvent;
 import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.recipe.entity.*;
 import com.vegeai.backend.modules.recipe.dto.RecipeSummaryDto;
@@ -14,6 +15,7 @@ import com.vegeai.backend.modules.recipe.repository.RecipeRepository;
 import com.vegeai.backend.modules.recipe.service.RecipeService;
 import com.vegeai.backend.modules.user.entity.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -225,5 +227,28 @@ public class MealPlanService {
         notificationService.notifyUser(user, "MEAL_PLAN_SAVED", "Thực đơn đã được lưu",
                 "Thực đơn của bạn đã được lưu vào danh sách kế hoạch cá nhân.", "/meal-plans/" + saved.getId());
         return view(saved);
+    }
+    /** Re-portions today and upcoming days of saved plans to the new targets; past days stay as they were eaten. */
+    @EventListener
+    public void onTargetsChanged(NutritionTargetsChangedEvent event) {
+        User user = event.user(); NutritionTargetsResponse targets = event.targets(); LocalDate today = LocalDate.now();
+        Map<UUID,Recipe> current = null;
+        for (MealPlan plan : plans.findByUserIdAndStatusOrderBySavedAtAscIdAsc(user.getUserId(), "SAVED")) {
+            Snapshot s = snapshot(plan);
+            if (s.endDate().isBefore(today) || json(s.targets()).equals(json(targets))) continue;
+            if (current == null) { current = new HashMap<>(); for (Recipe r : eligible(user)) current.put(r.getRecipeId(), r); }
+            List<Day> days = new ArrayList<>();
+            for (Day day : s.days()) {
+                if (day.date().isBefore(today)) { days.add(day); continue; }
+                List<Meal> meals = new ArrayList<>();
+                for (Meal old : day.meals()) {
+                    Recipe r = current.get(old.recipeId());
+                    meals.add(r == null ? old : meal(old.slot(), r, targets, s.mealsPerDay()));
+                }
+                days.add(new Day(day.date(), meals, sum(meals)));
+            }
+            plan.setSnapshot(json(new Snapshot(s.period(), s.startDate(), s.endDate(), s.mealsPerDay(), targets, days, warnings(days, targets, current.size()))));
+            plans.save(plan);
+        }
     }
 }
