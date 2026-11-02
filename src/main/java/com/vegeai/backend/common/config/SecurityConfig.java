@@ -83,8 +83,12 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**"
                         ).permitAll()
-                        // AI endpoints (Chatbot, Multimodal Fridge Scanner Vision & Custom Recipe Generator)
-                        .requestMatchers("/api/ai/chat", "/api/ai/fridge-scan", "/api/ai/generate-recipe", "/api/ai/video-recipe").permitAll()
+                        // AI Chatbot: the only AI endpoint guests may try (3 trial turns per 24h, see GuestAiChatRateLimitFilter).
+                        .requestMatchers("/api/ai/chat").permitAll()
+                        // Public video pages keep the video-to-recipe copilot available for everyone.
+                        .requestMatchers("/api/ai/video-recipe").permitAll()
+                        // Fridge scanning and the cook-now generator are account features.
+                        .requestMatchers("/api/ai/fridge-scan", "/api/ai/generate-recipe").authenticated()
                         // Swagger / OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                          "/api-docs/**", "/v3/api-docs/**").permitAll()
@@ -104,6 +108,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/places/**").permitAll()
                         // Admin only
                         .requestMatchers("/api/questions/mine", "/api/questions/mine/**", "/api/videos/mine", "/api/videos/mine/**", "/api/videos/upload", "/api/videos/favorites", "/api/videos/*/favorite").authenticated()
+                        // Q&A requires an account; published videos stay public
                         .requestMatchers(HttpMethod.GET, "/api/questions", "/api/questions/*").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/videos", "/api/videos/*", "/api/videos/*/comments").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -122,12 +127,23 @@ public class SecurityConfig {
 
     // ── CORS ─────────────────────────────────────────────────────────────────
 
+    /**
+     * Local development can run the Vite dev server on any port (5173, 5174 after a restart) and can be
+     * opened from another device through the machine LAN IP (e.g. http://192.168.1.112:5173). Browsers
+     * attach that origin to POST requests, so a fixed allow-list would reject login/recipe calls with 403.
+     * Private-network patterns keep this open for the group demo without allowing public origins.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",   // Vite dev server
-                "http://localhost:3000"    // Alternative dev port
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://[::1]:*",
+                "http://192.168.*:*",
+                "http://10.*:*",
+                "http://172.*:*",
+                "https://localhost:*"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
