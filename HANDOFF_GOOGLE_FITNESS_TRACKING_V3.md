@@ -47,12 +47,22 @@ git pull origin google-fitness-tracking-v3
   - Tích hợp chuẩn **Google Identity Services (GIS) Token Client** (`google.accounts.oauth2.initTokenClient`).
   - Xác thực popup in-place thông qua kênh trao đổi thông điệp an toàn `postMessage`, không phụ thuộc Redirect URI callback URL.
   - Tự động fallback sang popup chuẩn nếu SDK đang khởi tạo.
-  - Phân quyền Scope an toàn: `https://www.googleapis.com/auth/fitness.activity.read` và `https://www.googleapis.com/auth/fitness.body.read`.
-  - Hỗ trợ giải nén và trích xuất dữ liệu đa nguồn từ Google Fitness REST API v1 (`dataset:aggregate`):
+  - Phân quyền Scope đầy đủ:
+    - `https://www.googleapis.com/auth/fitness.activity.read`
+    - `https://www.googleapis.com/auth/fitness.body.read`
+    - `https://www.googleapis.com/auth/fitness.heart_rate.read`
+    - `https://www.googleapis.com/auth/fitness.sleep.read`
+    - `https://www.googleapis.com/auth/fitness.location.read`
+    - `https://www.googleapis.com/auth/fitness.oxygen_saturation.read`
+  - Hỗ trợ giải nén và trích xuất dữ liệu đa nguồn từ Google Fitness REST API v1 (`dataset:aggregate`, `sessions`, `dataSources`):
     - Bước chân (`com.google.step_count.delta`)
-    - Calo năng lượng tiêu hao (`com.google.calories.expended`)
-    - Nhịp tim trung bình (`com.google.heart_rate.bpm`)
-    - Thiết bị nguồn (`Xiaomi Mi Fitness`, `Samsung Health Connect`, `Apple Watch`, `Pixel Watch`).
+    - Calo tiêu hao tổng & tách calo vận động tích cực theo BMR / METs (`com.google.calories.expended`)
+    - Quãng đường di chuyển & phút vận động (`com.google.distance.delta`, `com.google.active_minutes`)
+    - Điểm nhịp tim vận động (`com.google.heart_minutes` / Heart Points)
+    - Độ bão hòa oxy trong máu SpO₂ (`com.google.oxygen_saturation`)
+    - Thời lượng giấc ngủ từ phiên ngủ & các pha ngủ sâu/nông/REM (`com.google.sleep.segment`, Activity 72)
+    - Nhịp tim (`com.google.heart_rate.bpm`) kèm chế độ nhập tay khi Mi Fitness không xuất bpm liên tục sang Google Fit
+    - Tự động nhận diện thiết bị nguồn (`Xiaomi Smart Band / Mi Fitness`, `Samsung Health Connect`, `Apple Watch`, `Pixel Watch`).
 
 ### 2. Bộ Mô Phỏng Vận Động (Simulator Presets) & Chế Độ Làm Trắng (Reset Empty State)
 - Để phục vụ kiểm thử, demo đồ án và hỗ trợ người dùng chưa có đồng hồ thông minh:
