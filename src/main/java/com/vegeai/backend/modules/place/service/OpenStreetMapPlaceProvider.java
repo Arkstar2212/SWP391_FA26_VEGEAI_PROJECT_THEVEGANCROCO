@@ -30,7 +30,10 @@ import java.util.*;
 public class OpenStreetMapPlaceProvider implements PlaceProvider {
 
     private static final Duration CACHE_TTL = Duration.ofHours(1);
+    private static final Duration STALE_CACHE_TTL = Duration.ofDays(7);
     private static final Duration GEOCODE_CACHE_TTL = Duration.ofDays(1);
+    private static final String STALE_PREFIX = "places:osm:nearby:stale:";
+    private static final long FAST_FAILURE_RETRY_MS = 5_000;
     private static final String OSM_ATTRIBUTION = "© OpenStreetMap contributors";
     private static final RestClient REST_CLIENT = createRestClient();
     private static long lastNominatimRequestAt;
@@ -38,7 +41,8 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
     private static RestClient createRestClient() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(5));
-        requestFactory.setReadTimeout(Duration.ofSeconds(20));
+        // Overpass regularly needs 25-35s for a city-sized query; 20s made every call fail.
+        requestFactory.setReadTimeout(Duration.ofSeconds(15));
         return RestClient.builder()
             .requestFactory(requestFactory)
             .defaultHeader("User-Agent", "VEGEAI-Backend/1.0 (OpenStreetMap place search)")
@@ -71,12 +75,35 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
         List<PlaceResponse> cached = getFromCache(cacheKey);
         if (cached != null) return cached;
 
-        List<PlaceResponse> results = queryNearby(latitude, longitude, radius).stream()
-                .filter(place -> requestedCategory == PlaceCategory.ALL || requestedCategory == place.getCategory())
-                .filter(place -> keyword == null || keyword.isBlank() || matchesKeyword(place, keyword))
-                .sorted(Comparator.comparing(PlaceResponse::getDistanceKm))
-                .toList();
+        List<PlaceResponse> results;
+        try {
+            results = queryNearby(latitude, longitude, radius).stream()
+                    .filter(place -> requestedCategory == PlaceCategory.ALL || requestedCategory == place.getCategory())
+                    .filter(place -> keyword == null || keyword.isBlank() || matchesKeyword(place, keyword))
+                    .sorted(Comparator.comparing(PlaceResponse::getDistanceKm))
+                    .toList();
+        } catch (AppException exception) {
+            List<PlaceResponse> stale = getFromCache(STALE_PREFIX + cacheKey);
+            if (stale != null && !stale.isEmpty()) {
+                log.warn("[PLACES-OSM] Serving {} cached places after provider failure.", stale.size());
+                return stale;
+            }
+            try {
+                List<PlaceResponse> nominatimFallback = queryNominatimNearby(
+                        latitude, longitude, radius, requestedCategory, keyword);
+                if (!nominatimFallback.isEmpty()) {
+                    log.warn("[PLACES-OSM] Overpass unavailable, served {} places from Nominatim.", nominatimFallback.size());
+                    saveToCache(cacheKey, nominatimFallback, Duration.ofMinutes(30));
+                    saveToCache(STALE_PREFIX + cacheKey, nominatimFallback, STALE_CACHE_TTL);
+                    return nominatimFallback;
+                }
+            } catch (Exception nominatimError) {
+                log.warn("[PLACES-OSM] Nominatim fallback failed: {}", nominatimError.getMessage());
+            }
+            throw exception;
+        }
         saveToCache(cacheKey, results);
+        saveToCache(STALE_PREFIX + cacheKey, results, STALE_CACHE_TTL);
         return results;
     }
 
@@ -188,27 +215,42 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
     }
 
     private List<PlaceResponse> queryNearby(double latitude, double longitude, int radiusMeters) {
-        try {
-            String query = buildOverpassQuery(latitude, longitude, radiusMeters);
-            String form = "data=" + URLEncoder.encode(query, StandardCharsets.UTF_8);
-            byte[] response = REST_CLIENT.post()
-                    .uri(overpassUrl)
-                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                    .body(form)
-                    .exchange((request, clientResponse) -> {
-                        if (clientResponse.getStatusCode().isError()) {
-                            throw new IllegalStateException("Overpass returned HTTP " + clientResponse.getStatusCode().value());
-                        }
-                        return clientResponse.getBody().readAllBytes();
-                    });
-            if (response == null) throw new IllegalStateException("Overpass returned an empty response.");
-            return parseOverpassResponse(new String(response, StandardCharsets.UTF_8), latitude, longitude, objectMapper);
-        } catch (AppException exception) {
-            throw exception;
-        } catch (Exception exception) {
-            log.warn("[PLACES-OSM] Overpass request failed: {}", exception.getMessage());
-            throw new AppException(ErrorCode.PLACES_PROVIDER_UNAVAILABLE);
+        long startedAt = System.currentTimeMillis();
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            try {
+                String query = buildOverpassQuery(latitude, longitude, radiusMeters);
+                String form = "data=" + URLEncoder.encode(query, StandardCharsets.UTF_8);
+                byte[] response = REST_CLIENT.post()
+                        .uri(overpassUrl)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .body(form)
+                        .exchange((request, clientResponse) -> {
+                            if (clientResponse.getStatusCode().isError()) {
+                                throw new IllegalStateException("Overpass returned HTTP " + clientResponse.getStatusCode().value());
+                            }
+                            return clientResponse.getBody().readAllBytes();
+                        });
+                if (response == null) throw new IllegalStateException("Overpass returned an empty response.");
+                return parseOverpassResponse(new String(response, StandardCharsets.UTF_8), latitude, longitude, objectMapper);
+            } catch (AppException exception) {
+                throw exception;
+            } catch (Exception exception) {
+                long elapsed = System.currentTimeMillis() - startedAt;
+                log.warn("[PLACES-OSM] Overpass attempt {}/2 failed after {} ms: {}", attempt, elapsed, exception.getMessage());
+                // A read timeout already burned the full budget; retrying would only double the wait.
+                if (attempt == 1 && elapsed < FAST_FAILURE_RETRY_MS) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                    continue;
+                }
+                throw new AppException(ErrorCode.PLACES_PROVIDER_UNAVAILABLE);
+            }
         }
+        throw new AppException(ErrorCode.PLACES_PROVIDER_UNAVAILABLE);
     }
 
     private double[] geocode(String query) {
@@ -335,6 +377,163 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
         return places;
     }
 
+    /**
+     * Nominatim fallback used when the Overpass API is slow or unreachable. It is fast (1-3s) and
+     * respects the public usage policy by waiting at least one second between searches.
+     */
+    private List<PlaceResponse> queryNominatimNearby(
+            double latitude, double longitude, int radiusMeters, PlaceCategory category, String keyword) {
+        List<String> terms = new ArrayList<>();
+        if (keyword != null && !keyword.isBlank()) {
+            terms.add(keyword.trim());
+        } else if (category == PlaceCategory.RESTAURANT) {
+            terms.add("quán chay");
+        } else if (category == PlaceCategory.SUPERMARKET || category == PlaceCategory.GROCERY_STORE) {
+            terms.add("cửa hàng thực phẩm");
+        } else {
+            terms.add("nhà hàng chay");
+            terms.add("quán cơm chay");
+            terms.add("cửa hàng thực phẩm");
+        }
+
+        Map<String, PlaceResponse> unique = new LinkedHashMap<>();
+        for (String term : terms) {
+            try {
+                for (PlaceResponse place : searchNominatim(term, latitude, longitude, radiusMeters, category)) {
+                    unique.putIfAbsent(place.getPlaceId(), place);
+                }
+            } catch (Exception exception) {
+                log.warn("[PLACES-NOMINATIM] Search '{}' failed: {}", term, exception.getMessage());
+            }
+        }
+        return unique.values().stream()
+                .sorted(Comparator.comparing(PlaceResponse::getDistanceKm))
+                .limit(30)
+                .toList();
+    }
+
+    private List<PlaceResponse> searchNominatim(
+            String term, double latitude, double longitude, int radiusMeters, PlaceCategory requestedCategory) throws Exception {
+        double deltaLat = radiusMeters / 111_320.0;
+        double deltaLon = radiusMeters / (111_320.0 * Math.max(0.2, Math.cos(Math.toRadians(latitude))));
+        String viewbox = String.format(Locale.ROOT, "%f,%f,%f,%f",
+                longitude - deltaLon, latitude + deltaLat, longitude + deltaLon, latitude - deltaLat);
+        waitForNominatim();
+        URI uri = UriComponentsBuilder.fromUriString(nominatimUrl)
+                .path("/search")
+                .queryParam("format", "jsonv2")
+                .queryParam("q", term)
+                .queryParam("viewbox", viewbox)
+                .queryParam("bounded", "1")
+                .queryParam("limit", "15")
+                .queryParam("extratags", "1")
+                .queryParam("addressdetails", "1")
+                .queryParam("accept-language", "vi")
+                .build().encode().toUri();
+        JsonNode payload = null;
+        Exception lastError = null;
+        for (int attempt = 1; attempt <= 2 && payload == null; attempt++) {
+            try {
+                payload = objectMapper.readTree(REST_CLIENT.get().uri(uri).retrieve().body(byte[].class));
+            } catch (Exception exception) {
+                lastError = exception;
+                log.warn("[PLACES-NOMINATIM] Search '{}' attempt {}/2 failed: {}", term, attempt, exception.getMessage());
+                if (attempt == 1) {
+                    try {
+                        Thread.sleep(700);
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+        if (payload == null) throw lastError == null ? new IllegalStateException("Nominatim returned no payload.") : lastError;
+        if (!payload.isArray()) return List.of();
+        List<PlaceResponse> places = new ArrayList<>();
+        for (JsonNode item : payload) {
+            PlaceResponse place = toNominatimPlace(item, latitude, longitude);
+            if (place == null) continue;
+            if (requestedCategory != PlaceCategory.ALL && place.getCategory() != requestedCategory) continue;
+            places.add(place);
+        }
+        return places;
+    }
+
+    private void waitForNominatim() {
+        synchronized (OpenStreetMapPlaceProvider.class) {
+            long waitMillis = 1100 - (System.currentTimeMillis() - lastNominatimRequestAt);
+            if (lastNominatimRequestAt > 0 && waitMillis > 0) {
+                try {
+                    Thread.sleep(waitMillis);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            lastNominatimRequestAt = System.currentTimeMillis();
+        }
+    }
+
+    private PlaceResponse toNominatimPlace(JsonNode item, double userLat, double userLon) {
+        String placeClass = item.path("class").asText(item.path("category").asText(""));
+        PlaceCategory category = classifyNominatim(placeClass, item.path("type").asText(""));
+        if (category == null) return null;
+        double latitude = item.path("lat").asDouble();
+        double longitude = item.path("lon").asDouble();
+        if (latitude == 0 || longitude == 0) return null;
+        String displayName = item.path("display_name").asText("");
+        String name = item.path("name").asText("");
+        if (name.isBlank() && !displayName.isBlank()) name = displayName.split(",")[0].trim();
+        if (name.isBlank()) return null;
+
+        String osmType = item.path("osm_type").asText("node");
+        String osmId = item.path("osm_id").asText("");
+        JsonNode extraTags = item.path("extratags");
+        Map<String, String> tags = new LinkedHashMap<>();
+        extraTags.fields().forEachRemaining(entry -> tags.put(entry.getKey(), entry.getValue().asText()));
+        List<String> types = tags.entrySet().stream()
+                .limit(8)
+                .map(entry -> entry.getKey() + "=" + entry.getValue())
+                .toList();
+        double distanceKm = Math.round(GeoUtils.calculateExactHaversineDistanceKm(userLat, userLon, latitude, longitude) * 100.0) / 100.0;
+
+        return PlaceResponse.builder()
+                .placeId(osmType + "/" + osmId)
+                .name(name)
+                .category(category)
+                .address(displayName)
+                .latitude(latitude)
+                .longitude(longitude)
+                .distanceKm(distanceKm)
+                .distanceText(GeoUtils.formatDistanceText(distanceKm))
+                .phoneNumber(tags.get("phone"))
+                .types(types)
+                .isVerified(hasVegetarianTag(tags))
+                .verificationSource(hasVegetarianTag(tags) ? "OPENSTREETMAP_TAGS" : null)
+                .dataSource("OPENSTREETMAP_NOMINATIM")
+                .openStreetMapUrl("https://www.openstreetmap.org/" + osmType + "/" + osmId)
+                .attribution(OSM_ATTRIBUTION)
+                .build();
+    }
+
+    private static PlaceCategory classifyNominatim(String placeClass, String type) {
+        String normalizedClass = normalize(placeClass);
+        String normalizedType = normalize(type);
+        if (Set.of("restaurant", "cafe", "fast_food", "food_court", "pub", "bar").contains(normalizedType)) {
+            return PlaceCategory.RESTAURANT;
+        }
+        if ("supermarket".equals(normalizedType)) {
+            return PlaceCategory.SUPERMARKET;
+        }
+        if (Set.of("convenience", "greengrocer", "health_food", "organic", "farm", "deli", "general").contains(normalizedType)) {
+            return PlaceCategory.GROCERY_STORE;
+        }
+        if ("amenity".equals(normalizedClass) && normalizedType.isBlank()) {
+            return PlaceCategory.RESTAURANT;
+        }
+        return null;
+    }
+
     private String buildOverpassQuery(double latitude, double longitude, int radiusMeters) {
         String around = "(around:" + radiusMeters + "," + latitude + "," + longitude + ")";
         return "[out:json][timeout:20];("
@@ -435,8 +634,12 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
     }
 
     private void saveToCache(String key, List<PlaceResponse> data) {
+        saveToCache(key, data, CACHE_TTL);
+    }
+
+    private void saveToCache(String key, List<PlaceResponse> data, Duration ttl) {
         try {
-            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(data), CACHE_TTL);
+            redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(data), ttl);
         } catch (Exception exception) {
             log.debug("[PLACES-OSM-CACHE] Cache write skipped: {}", exception.getMessage());
         }
