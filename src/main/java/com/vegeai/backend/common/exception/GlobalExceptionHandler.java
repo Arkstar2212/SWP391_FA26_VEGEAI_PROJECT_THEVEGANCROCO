@@ -120,6 +120,16 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ErrorCode.VALIDATION_ERROR.getCode(), msg));
     }
 
+    // ── Misinput: Missing required multipart part (e.g. avatar/file field) ───
+    @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingPart(
+            org.springframework.web.multipart.support.MissingServletRequestPartException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ErrorCode.VALIDATION_ERROR.getCode(),
+                        String.format("Required upload part '%s' is missing.", ex.getRequestPartName())));
+    }
+
     // ── Constraint Violation (@Validated on params) ─────────────────────────
     @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Map<String, String>>> handleConstraintViolation(

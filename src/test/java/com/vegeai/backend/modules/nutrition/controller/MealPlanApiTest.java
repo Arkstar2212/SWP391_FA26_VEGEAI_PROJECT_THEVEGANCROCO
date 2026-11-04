@@ -103,7 +103,7 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
         assertThat(call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),200).path("status").asText()).isEqualTo("SAVED");
         assertThat(call("GET","/api/meal-plans",token,null,200).path("totalElements").asInt()).isEqualTo(1);
         call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),200);
-        call("PUT","/api/meal-plans/"+id+"/days/0/meals/0",token,Map.of("recipeId",replacement),409);
+        call("PUT","/api/meal-plans/"+id+"/days/0/meals/0",token,Map.of("recipeId",replacement),200);
         for(String suffix:List.of("","/options"))call("GET","/api/meal-plans/"+id+suffix,otherToken,null,404);
         call("POST","/api/meal-plans/"+id+"/save",otherToken,Map.of(),404);
         assertThat(call("GET","/api/meal-plans",otherToken,null,200).path("totalElements").asInt()).isZero();
@@ -113,6 +113,19 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
         assertThat(draft.path("plan").path("days").size()).isEqualTo((int)java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(),LocalDate.now().plusMonths(1)));
         var body=profileBody();body.put("weightKg",60);call("PUT","/api/nutrition/profile",token,body,200);
         call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),409);
+    }
+    @Test void profileChangesRecalculateUpcomingDaysOfSavedPlansButKeepPastDays()throws Exception {
+        profile(); LocalDate today=LocalDate.now();
+        var body=new HashMap<>(generateBody("WEEK")); body.put("startDate",today.minusDays(1).toString());
+        String id=call("POST","/api/meal-plans/generate",token,body,200).path("id").asText();
+        JsonNode before=call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),200).path("plan").path("days");
+        var active=profileBody(); active.put("activityLevel","VERY_ACTIVE");
+        int newTarget=call("PUT","/api/nutrition/profile",token,active,200).path("targets").path("dailyCaloriesTarget").asInt();
+        JsonNode after=call("GET","/api/meal-plans/"+id,token,null,200).path("plan");
+        assertThat(after.path("targets").path("dailyCaloriesTarget").asInt()).isEqualTo(newTarget);
+        assertThat(after.path("days").get(0).path("totals")).isEqualTo(before.get(0).path("totals"));
+        assertThat(after.path("days").get(1).path("totals").path("calories").asDouble())
+                .isGreaterThan(before.get(1).path("totals").path("calories").asDouble());
     }
     @Test void calendarMergesSavedPlansWithLatestSaveWinningAndHidesDraftsAndOtherOwners()throws Exception {
         profile(); LocalDate today=LocalDate.now();

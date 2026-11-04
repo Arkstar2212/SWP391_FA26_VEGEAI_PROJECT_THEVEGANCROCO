@@ -96,19 +96,117 @@ class AiChatbotControllerTest extends GeminiIntegrationTestSupport {
         org.assertj.core.api.Assertions.assertThat(lastRequest.path("systemInstruction").toString()).contains("inScope=false", "VEGEAI");
     }
 
+    private static jakarta.servlet.http.Cookie guestCookie() {
+        return new jakarta.servlet.http.Cookie("vegeai_guest_id", java.util.UUID.randomUUID().toString());
+    }
+
     @Test
-    @DisplayName("Guest chat requires customer authentication")
-    void chatAsGuest_unauthorized() throws Exception {
+    @DisplayName("Guest chat uses the limited guest trial")
+    void chatAsGuest_usesGuestTrial() throws Exception {
         AiChatRequest request = AiChatRequest.builder()
                 .message("Tư vấn cho tôi các món chay giàu protein")
                 .build();
 
         mockMvc.perform(post("/api/ai/chat")
                         .header("X-Forwarded-For", "10.150.1." + (System.currentTimeMillis() % 250))
+                        .cookie(guestCookie())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.success").value(false));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.isGuestTrial").value(true));
+    }
+
+    @Test
+    @DisplayName("Provider failures never consume one of the guest's three answers")
+    void failedGuestCallDoesNotConsumeQuota() throws Exception {
+        jakarta.servlet.http.Cookie guest = guestCookie();
+        String ip = "quota-refund-" + java.util.UUID.randomUUID();
+        AiChatRequest failing = AiChatRequest.builder().message("fixture:rate-limit").build();
+        AiChatRequest normal = AiChatRequest.builder().message("Gợi ý bữa tối chay").build();
+
+        mockMvc.perform(post("/api/ai/chat")
+                        .header("X-Forwarded-For", ip).cookie(guest)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(failing)))
+                .andExpect(status().isServiceUnavailable());
+
+        for (int turn = 0; turn < 3; turn++) {
+            mockMvc.perform(post("/api/ai/chat")
+                            .header("X-Forwarded-For", ip).cookie(guest)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(normal)))
+                    .andExpect(status().isOk());
+        }
+        mockMvc.perform(post("/api/ai/chat")
+                        .header("X-Forwarded-For", ip).cookie(guest)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(normal)))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value(1402));
+    }
+
+    @Test
+    @DisplayName("Guests behind one shared IP keep separate quotas per browser")
+    void guestQuotaIsPerBrowserNotPerIp() throws Exception {
+        String ip = "quota-nat-" + java.util.UUID.randomUUID();
+        jakarta.servlet.http.Cookie first = guestCookie();
+        jakarta.servlet.http.Cookie second = guestCookie();
+        AiChatRequest request = AiChatRequest.builder().message("Món chay nhanh gọn").build();
+
+        for (int turn = 0; turn < 3; turn++) {
+            mockMvc.perform(post("/api/ai/chat")
+                            .header("X-Forwarded-For", ip).cookie(first)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk());
+        }
+        mockMvc.perform(post("/api/ai/chat")
+                        .header("X-Forwarded-For", ip).cookie(first)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isTooManyRequests());
+
+        mockMvc.perform(post("/api/ai/chat")
+                        .header("X-Forwarded-For", ip).cookie(second)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Exhausted guest quota never blocks a signed-in member on the same network")
+    void memberIsNotSubjectToGuestQuota() throws Exception {
+        AiChatRequest request = AiChatRequest.builder()
+                .message("Tư vấn bữa tối chay giàu đạm")
+                .build();
+        // Unique client key: the quota lives in Redis for 24h, so a random IP could already be exhausted
+        // by an earlier run on the same machine. The filter treats the forwarded value as an opaque key.
+        String sharedIp = "quota-test-" + java.util.UUID.randomUUID();
+        jakarta.servlet.http.Cookie guest = guestCookie();
+
+        for (int turn = 0; turn < 3; turn++) {
+            mockMvc.perform(post("/api/ai/chat")
+                            .header("X-Forwarded-For", sharedIp).cookie(guest)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk());
+        }
+        mockMvc.perform(post("/api/ai/chat")
+                        .header("X-Forwarded-For", sharedIp).cookie(guest)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value(1402));
+
+        mockMvc.perform(post("/api/ai/chat")
+                        .header("X-Forwarded-For", sharedIp)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.isGuestTrial").value(false));
     }
 
     @Test

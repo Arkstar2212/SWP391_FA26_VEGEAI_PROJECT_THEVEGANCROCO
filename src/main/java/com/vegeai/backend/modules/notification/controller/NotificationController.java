@@ -4,12 +4,15 @@ import com.vegeai.backend.common.dto.ApiResponse;
 import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.modules.notification.dto.NotificationResponse;
 import com.vegeai.backend.modules.notification.service.NotificationService;
+import com.vegeai.backend.modules.notification.service.NotificationStreamService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
 import java.util.UUID;
@@ -24,6 +27,14 @@ import java.util.UUID;
 @SecurityRequirement(name = "bearerAuth")
 public class NotificationController {
     private final NotificationService notificationService;
+    private final NotificationStreamService notificationStreamService;
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "Realtime notification stream (Server-Sent Events)",
+            description = "Keeps one SSE connection per tab; emits `notification` events right after they are stored.")
+    public SseEmitter stream(@AuthenticationPrincipal String userId) {
+        return notificationStreamService.register(UUID.fromString(userId));
+    }
 
     @GetMapping
     @Operation(summary = "List my notifications", description = "Pagination starts at page 0; size is limited to 50.")

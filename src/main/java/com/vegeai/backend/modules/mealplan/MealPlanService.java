@@ -7,6 +7,7 @@ import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import com.vegeai.backend.modules.community.service.CommunityAccess;
 import com.vegeai.backend.modules.nutrition.dto.*;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
+import com.vegeai.backend.modules.nutrition.service.NutritionTargetsChangedEvent;
 import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.recipe.entity.*;
 import com.vegeai.backend.modules.recipe.dto.RecipeSummaryDto;
@@ -14,6 +15,7 @@ import com.vegeai.backend.modules.recipe.repository.RecipeRepository;
 import com.vegeai.backend.modules.recipe.service.RecipeService;
 import com.vegeai.backend.modules.user.entity.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,7 +93,10 @@ public class MealPlanService {
         if (ranked.stream().anyMatch(id -> !byId.containsKey(id))) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
         List<Recipe> ordered = new ArrayList<>(); new LinkedHashSet<>(ranked).forEach(id -> ordered.add(byId.get(id)));
         available.stream().filter(r -> !ranked.contains(r.getRecipeId())).forEach(ordered::add);
-        LocalDate end = "WEEK".equals(request.period()) ? request.startDate().plusDays(7) : request.startDate().plusMonths(1);
+        int requestedDays = "CUSTOM".equals(request.period())
+                ? Objects.requireNonNullElse(request.days(), 7)
+                : "WEEK".equals(request.period()) ? 7 : (int) java.time.temporal.ChronoUnit.DAYS.between(request.startDate(), request.startDate().plusMonths(1));
+        LocalDate end = request.startDate().plusDays(requestedDays);
         List<Day> days = new ArrayList<>(); Map<UUID,Integer> usage = new HashMap<>();
         for (LocalDate date = request.startDate(); date.isBefore(end); date = date.plusDays(1)) {
             List<Meal> meals = new ArrayList<>();
@@ -187,11 +192,12 @@ public class MealPlanService {
         return List.copyOf(byDate.values());
     }
     @Transactional(readOnly=true) public List<RecipeSummaryDto> options(String principal, UUID id) {
-        User user = member(principal); MealPlan plan = owned(id,user,false); editable(plan,profile(principal,user));
+        User user = member(principal); owned(id,user,false);
         return eligible(user).stream().limit(60).map(recipeService::mapToSummaryDto).toList();
     }
     @Transactional public View swap(String principal, UUID id, int day, int slot, UUID recipeId) {
-        User user = member(principal); MealPlan plan = owned(id,user,true); var p=profile(principal,user); editable(plan,p);
+        User user = member(principal); MealPlan plan = owned(id,user,true); var p=profile(principal,user);
+        if ("DRAFT".equals(plan.getStatus())) editable(plan,p);
         Snapshot s=snapshot(plan);
         if(day<0||day>=s.days().size()||slot<0||slot>=s.mealsPerDay()) throw new AppException(ErrorCode.VALIDATION_ERROR);
         Recipe r=eligible(user).stream().filter(v->v.getRecipeId().equals(recipeId)).findFirst().orElseThrow(()->new AppException(ErrorCode.VALIDATION_ERROR,"Món không còn phù hợp hoặc thiếu dữ liệu dinh dưỡng."));
@@ -221,5 +227,28 @@ public class MealPlanService {
         notificationService.notifyUser(user, "MEAL_PLAN_SAVED", "Thực đơn đã được lưu",
                 "Thực đơn của bạn đã được lưu vào danh sách kế hoạch cá nhân.", "/meal-plans/" + saved.getId());
         return view(saved);
+    }
+    /** Re-portions today and upcoming days of saved plans to the new targets; past days stay as they were eaten. */
+    @EventListener
+    public void onTargetsChanged(NutritionTargetsChangedEvent event) {
+        User user = event.user(); NutritionTargetsResponse targets = event.targets(); LocalDate today = LocalDate.now();
+        Map<UUID,Recipe> current = null;
+        for (MealPlan plan : plans.findByUserIdAndStatusOrderBySavedAtAscIdAsc(user.getUserId(), "SAVED")) {
+            Snapshot s = snapshot(plan);
+            if (s.endDate().isBefore(today) || json(s.targets()).equals(json(targets))) continue;
+            if (current == null) { current = new HashMap<>(); for (Recipe r : eligible(user)) current.put(r.getRecipeId(), r); }
+            List<Day> days = new ArrayList<>();
+            for (Day day : s.days()) {
+                if (day.date().isBefore(today)) { days.add(day); continue; }
+                List<Meal> meals = new ArrayList<>();
+                for (Meal old : day.meals()) {
+                    Recipe r = current.get(old.recipeId());
+                    meals.add(r == null ? old : meal(old.slot(), r, targets, s.mealsPerDay()));
+                }
+                days.add(new Day(day.date(), meals, sum(meals)));
+            }
+            plan.setSnapshot(json(new Snapshot(s.period(), s.startDate(), s.endDate(), s.mealsPerDay(), targets, days, warnings(days, targets, current.size()))));
+            plans.save(plan);
+        }
     }
 }

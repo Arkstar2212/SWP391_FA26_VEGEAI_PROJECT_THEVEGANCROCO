@@ -150,6 +150,43 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
         );
     }
 
+    @Override
+    public String reverseGeocode(double latitude, double longitude) {
+        String cacheKey = String.format(Locale.ROOT, "places:osm:reverse:%d:%d",
+                Math.round(latitude * 10000), Math.round(longitude * 10000));
+        try {
+            String cached = redisTemplate.opsForValue().get(cacheKey);
+            if (cached != null && !cached.isBlank()) return cached;
+        } catch (Exception exception) {
+            log.debug("[PLACES-OSM] Reverse cache unavailable: {}", exception.getMessage());
+        }
+        synchronized (OpenStreetMapPlaceProvider.class) {
+            try {
+                long waitMillis = 1000 - (System.currentTimeMillis() - lastNominatimRequestAt);
+                if (lastNominatimRequestAt > 0 && waitMillis > 0) Thread.sleep(waitMillis);
+                lastNominatimRequestAt = System.currentTimeMillis();
+                URI uri = UriComponentsBuilder.fromUriString(nominatimUrl)
+                        .path("/reverse")
+                        .queryParam("format", "jsonv2")
+                        .queryParam("lat", latitude)
+                        .queryParam("lon", longitude)
+                        .queryParam("zoom", 18)
+                        .build().encode().toUri();
+                JsonNode result = objectMapper.readTree(REST_CLIENT.get().uri(uri).retrieve().body(byte[].class));
+                String address = result.path("display_name").asText();
+                if (address.isBlank()) address = String.format(Locale.ROOT, "Vị trí GPS (%.4f, %.4f)", latitude, longitude);
+                try { redisTemplate.opsForValue().set(cacheKey, address, GEOCODE_CACHE_TTL); } catch (Exception ignored) {}
+                return address;
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new AppException(ErrorCode.PLACES_PROVIDER_UNAVAILABLE);
+            } catch (Exception exception) {
+                log.warn("[PLACES-OSM] Reverse geocoding failed: {}", exception.getMessage());
+                throw new AppException(ErrorCode.PLACES_PROVIDER_UNAVAILABLE);
+            }
+        }
+    }
+
     private List<PlaceResponse> queryNearby(double latitude, double longitude, int radiusMeters) {
         try {
             String query = buildOverpassQuery(latitude, longitude, radiusMeters);

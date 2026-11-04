@@ -351,4 +351,23 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
     }
+
+    @Test
+    @DisplayName("POST /api/users/me/avatar - Missing multipart part returns 400 instead of a server error")
+    void updateAvatar_missingPart_badRequest() throws Exception {
+        mockMvc.perform(multipart("/api/users/me/avatar")
+                        .header(HttpHeaders.AUTHORIZATION, userToken)
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value(ErrorCode.VALIDATION_ERROR.getCode()));
+    }
+
+    @Test
+    @DisplayName("POST /api/users/me/avatar - Anonymous upload returns 401")
+    void updateAvatar_anonymous_unauthorized() throws Exception {
+        mockMvc.perform(multipart("/api/users/me/avatar")
+                        .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isUnauthorized());
+    }
 }

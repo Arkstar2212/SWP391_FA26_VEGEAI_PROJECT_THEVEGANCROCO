@@ -28,6 +28,7 @@ import java.util.UUID;
 public class NotificationService {
     private final UserNotificationRepository notifications;
     private final UserRepository users;
+    private final NotificationStreamService stream;
 
     @Transactional(readOnly = true)
     public PageResponse<NotificationResponse> list(String principal, int page, int size) {
@@ -72,7 +73,20 @@ public class NotificationService {
         notification.setTitle(title);
         notification.setContent(content);
         notification.setRedirectUrl(redirectUrl);
-        notifications.save(notification);
+        UserNotification saved = notifications.saveAndFlush(notification);
+        NotificationResponse payload = NotificationResponse.from(saved);
+        UUID recipientId = recipient.getUserId();
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            stream.publish(recipientId, payload);
+                        }
+                    });
+        } else {
+            stream.publish(recipientId, payload);
+        }
     }
 
     /**
