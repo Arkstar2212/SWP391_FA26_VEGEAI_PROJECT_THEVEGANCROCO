@@ -22,5 +22,6 @@ public class MealPlanController {
     @GetMapping("/{id}/options") public ApiResponse<List<RecipeSummaryDto>> options(@AuthenticationPrincipal String user,@PathVariable UUID id) { return ApiResponse.success(service.options(user,id)); }
     @PutMapping("/{id}/days/{day}/meals/{slot}") public ApiResponse<View> swap(@AuthenticationPrincipal String user,@PathVariable UUID id,@PathVariable int day,@PathVariable int slot,@Valid @RequestBody Swap body) { return ApiResponse.success(service.swap(user,id,day,slot,body.recipeId())); }
     @PostMapping("/{id}/save") public ApiResponse<View> save(@AuthenticationPrincipal String user,@PathVariable UUID id) { return ApiResponse.success(service.save(user,id)); }
+    @DeleteMapping("/{id}") public ApiResponse<Void> delete(@AuthenticationPrincipal String user,@PathVariable UUID id) { service.delete(user,id); return ApiResponse.success(null); }
     @GetMapping("/seasonal-regional") public ApiResponse<SeasonalMealDtos.SeasonalRegionalResponse> seasonalRegional(@AuthenticationPrincipal String user,@RequestParam(required=false) SeasonalMealDtos.Season season,@RequestParam(required=false) SeasonalMealDtos.Region region,@RequestParam(defaultValue="false") boolean refresh) { return ApiResponse.success(seasonalMealService.getRecommendations(user,season,region,refresh)); }
 }

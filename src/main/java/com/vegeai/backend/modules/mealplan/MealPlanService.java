@@ -228,6 +228,11 @@ public class MealPlanService {
                 "Thực đơn của bạn đã được lưu vào danh sách kế hoạch cá nhân.", "/meal-plans/" + saved.getId());
         return view(saved);
     }
+    /** Deletes one of the member's plans; days it covered fall back to the next most recently saved plan, if any. */
+    @Transactional public void delete(String principal, UUID id) {
+        User user = member(principal);
+        plans.delete(owned(id, user, true));
+    }
     /** Re-portions today and upcoming days of saved plans to the new targets; past days stay as they were eaten. */
     @EventListener
     public void onTargetsChanged(NutritionTargetsChangedEvent event) {
