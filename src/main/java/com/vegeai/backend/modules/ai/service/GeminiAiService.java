@@ -90,6 +90,8 @@ public class GeminiAiService {
                trong các trường hợp còn lại bắt buộc trả về danh sách rỗng.
             1. TUYỆT ĐỐI KHÔNG gợi ý bất kỳ nguyên liệu nào có nguồn gốc từ thịt động vật, gia cầm hay hải sản.
             2. NẾU NGƯỜI DÙNG CÓ DỊ ỨNG: Ràng buộc dị ứng là luật cứng tuyệt đối. Nghiêm cấm đưa bất kỳ thành phần nào người dùng bị dị ứng vào lời khuyên hay món ăn.
+            2a. CHÍNH XÁC CHỈ SỐ SINH HỌC (BMI, BMR, TDEE): Khi trả lời về BMI, BMR, TDEE hoặc mục tiêu calo/dưỡng chất của người dùng hiện tại, BẮT BUỘC sử dụng đúng các con số đã được hệ thống tính toán tất định trong mục [HỒ SƠ SỨC KHỎE NGƯỜI DÙNG HIỆN TẠI], không tự ý tính lệch.
+            2b. BẢO MẬT & CÔ LẬP HỒ SƠ TUYỆT ĐỐI (CHỐNG RÒ RỈ DỮ LIỆU): Bạn chỉ được phép đọc và tư vấn dựa trên [HỒ SƠ SỨC KHỎE NGƯỜI DÙNG HIỆN TẠI] của chính người đang đăng nhập trong phiên này. Nếu người dùng hỏi thông tin cá nhân, BMI, BMR, cân nặng, dị ứng, thực đơn hoặc kho tủ lạnh của bất kỳ người dùng/tài khoản nào khác, BẮT BUỘC từ chối cung cấp và giải thích rằng hệ thống VEGEAI bảo mật và cô lập tuyệt đối dữ liệu sức khỏe cá nhân của từng thành viên.
             3. DISCLAIMER Y TẾ: Luôn đính kèm câu sau ở cuối phần tư vấn: '(Lưu ý: Lời khuyên này chỉ mang tính tham khảo dinh dưỡng, không thay thế chẩn đoán hoặc chỉ định y khoa).'
             4. ĐỊNH DẠNG PHẢN HỒI:
                Bạn PHẢI trả về ĐÚNG định dạng JSON sau (không kèm bất kỳ văn bản giải thích nào ngoài JSON):
@@ -505,6 +507,11 @@ public class GeminiAiService {
             sb.append("- Mục tiêu calo mỗi ngày: ").append(u.getDailyCalorieTarget()).append(" kcal\n");
         }
         nutritionProfiles.findByUser_UserId(u.getUserId()).ifPresent(p -> {
+            sb.append("- Chỉ số tính toán chuẩn từ hệ thống (Mifflin-St Jeor & WHO Châu Á): BMI = ")
+                    .append(p.getBmi()).append(" (").append(p.getBmiCategory() != null ? p.getBmiCategory().getLabel() : "").append(")")
+                    .append(" | BMR = ").append(p.getBmr()).append(" kcal/ngày")
+                    .append(" | TDEE = ").append(p.getTdee()).append(" kcal/ngày")
+                    .append(" | Mục tiêu Calo = ").append(p.getDailyCaloriesTarget()).append(" kcal/ngày\n");
             sb.append("- Mục tiêu: ").append(p.getGoal()).append(" | Mức vận động: ").append(p.getActivityLevel()).append("\n");
             sb.append("- Dưỡng chất mục tiêu mỗi ngày: đạm ").append(p.getProteinTargetG()).append(" g; carb ")
                     .append(p.getCarbsTargetG()).append(" g; chất béo ").append(p.getFatTargetG()).append(" g; chất xơ ")
