@@ -25,9 +25,13 @@ public class MealIntakeService {
                          double portions, Nutrients nutrition, LocalDateTime recordedAt) {}
     public record DailyIntake(LocalDate date, List<Intake> meals, Nutrients totals) {}
 
+    private static final java.time.ZoneId VN_ZONE = java.time.ZoneId.of("Asia/Ho_Chi_Minh");
     private User owner(String principal) { return access.user(principal); }
     private void validDate(LocalDate date) {
-        if (date == null || date.isAfter(LocalDate.now()) || date.isBefore(LocalDate.now().minusYears(1)))
+        LocalDate todayVn = LocalDate.now(VN_ZONE);
+        // Allow up to +1 day to comfortably accommodate client local timezone differences (e.g. past midnight in UTC+7)
+        LocalDate maxDate = todayVn.plusDays(1);
+        if (date == null || date.isAfter(maxDate) || date.isBefore(todayVn.minusYears(1)))
             throw new AppException(ErrorCode.VALIDATION_ERROR, "Chỉ ghi lại bữa ăn từ hôm nay đến một năm trước.");
     }
     private double round(double value) { return Math.round(value * 10) / 10.0; }

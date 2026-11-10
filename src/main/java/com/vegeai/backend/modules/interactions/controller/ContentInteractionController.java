@@ -29,14 +29,6 @@ public class ContentInteractionController {
         return ApiResponse.success(service.publicContent(type,id,userId,page,size));
     }
 
-    /** Backward-compatible public route used by older blog clients. */
-    @GetMapping("/blog/posts/{id}/comments")
-    public ApiResponse<PageResponse<CommentView>> blogComments(@PathVariable UUID id,
-            @AuthenticationPrincipal String userId, @RequestParam(defaultValue="0") int page,
-            @RequestParam(defaultValue="20") int size) {
-        return ApiResponse.success(service.publicContent(InteractionTarget.BLOG, id, userId, page, size).comments());
-    }
-
     @GetMapping("/public/content-interactions/{type}/ratings")
     public ApiResponse<List<RatingSummary>> publicRatings(@PathVariable InteractionTarget type,
             @RequestParam List<UUID> ids) {
