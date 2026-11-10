@@ -25,6 +25,7 @@ import java.util.UUID;
 @Service @RequiredArgsConstructor @Transactional
 public class BlogService {
     private final BlogPostRepository posts;
+    private final BlogCommentRepository blogComments;
     private final CommunityAccess access;
     private final NotificationService notificationService;
     private final ContentCommentRepository comments;
@@ -263,6 +264,44 @@ public class BlogService {
         ratings.deleteByTargetTypeAndTargetId(InteractionTarget.BLOG, id);
         posts.delete(post);
         posts.flush();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BlogCommentResponse> getComments(UUID postId) {
+        BlogPost post = find(postId);
+        if (post.getStatus() != BlogStatus.PUBLISHED) throw missing();
+        return blogComments.findByPostIdOrderByCreatedAtDesc(postId).stream()
+                .map(c -> new BlogCommentResponse(c.getId(), c.getPost().getId(),
+                        c.getAuthor().getUserId(), access.name(c.getAuthor()),
+                        c.getContent(), c.getRating() == null ? 5 : c.getRating(), c.getCreatedAt()))
+                .toList();
+    }
+
+    public BlogCommentResponse addComment(String principal, UUID postId, BlogCommentInput input) {
+        BlogPost post = locked(postId);
+        if (post.getStatus() != BlogStatus.PUBLISHED) {
+            throw new AppException(ErrorCode.BLOG_STATE_CONFLICT, "Only published posts can receive comments.");
+        }
+        User author = access.user(principal);
+
+        BlogComment comment = new BlogComment();
+        comment.setPost(post);
+        comment.setAuthor(author);
+        comment.setContent(input.content().strip());
+        int rating = input.rating() == null ? 5 : Math.max(1, Math.min(5, input.rating()));
+        comment.setRating(rating);
+
+        BlogComment saved = blogComments.saveAndFlush(comment);
+
+        List<BlogComment> allComments = blogComments.findByPostIdOrderByCreatedAtDesc(postId);
+        double sum = allComments.stream().mapToInt(c -> c.getRating() == null ? 5 : c.getRating()).sum();
+        double avg = allComments.isEmpty() ? 5.0 : Math.round((sum / allComments.size()) * 10.0) / 10.0;
+        post.setRatingAverage(avg);
+        post.setRatingCount(allComments.size());
+        posts.flush();
+
+        return new BlogCommentResponse(saved.getId(), post.getId(), author.getUserId(),
+                access.name(author), saved.getContent(), saved.getRating(), saved.getCreatedAt());
     }
 
     private PageResponse<PostResponse> list(UUID author, BlogStatus status, String keyword,

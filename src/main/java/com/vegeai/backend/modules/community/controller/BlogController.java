@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.UUID;
 
 @RestController @RequestMapping("/api/blog") @RequiredArgsConstructor
@@ -69,7 +70,7 @@ public class BlogController {
     }
 
     @GetMapping("/posts/{id}/comments")
-    public ApiResponse<java.util.List<BlogCommentResponse>> getComments(@PathVariable UUID id) {
+    public ApiResponse<List<BlogCommentResponse>> getComments(@PathVariable UUID id) {
         return ApiResponse.success(service.getComments(id));
     }
 
