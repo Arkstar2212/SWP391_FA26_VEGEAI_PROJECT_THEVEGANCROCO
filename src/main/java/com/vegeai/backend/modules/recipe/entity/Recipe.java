@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.text.Normalizer;
 import java.util.*;
 
 @Entity
@@ -40,6 +41,9 @@ public class Recipe {
 
     @Column(name = "description", length = 1000)
     private String description;
+
+    @Column(name = "search_text", length = 1200)
+    private String searchText;
 
     @Column(name = "cook_time_minutes")
     private Integer cookTimeMinutes;
@@ -116,6 +120,18 @@ public class Recipe {
     public void addIngredient(RecipeIngredient ingredient) {
         ingredients.add(ingredient);
         ingredient.setRecipe(this);
+    }
+
+    @PrePersist
+    @PreUpdate
+    public void refreshSearchText() {
+        searchText = normalizeSearchText((title == null ? "" : title) + " " + (description == null ? "" : description));
+    }
+
+    public static String normalizeSearchText(String value) {
+        if (value == null) return "";
+        return Normalizer.normalize(value.toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").replace('đ', 'd').replaceAll("\\s+", " ").trim();
     }
 
     public void clearIngredients() {

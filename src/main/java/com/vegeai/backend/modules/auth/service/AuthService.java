@@ -459,26 +459,28 @@ public class AuthService {
 
     private record GoogleTokenPayload(String email, String name, String sub, String aud) {}
 
-    private GoogleTokenPayload verifyGoogleIdToken(String idToken) {
+    private GoogleTokenPayload verifyGoogleIdToken(String rawToken) {
         try {
             RestClient restClient = RestClient.builder()
                     .baseUrl("https://oauth2.googleapis.com")
                     .build();
 
+            boolean isIdToken = rawToken.split("\\.").length == 3;
+            String tokenParameter = isIdToken ? "id_token" : "access_token";
             @SuppressWarnings("unchecked")
             java.util.Map<String, Object> map = restClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/tokeninfo")
-                            .queryParam("id_token", idToken)
+                            .queryParam(tokenParameter, rawToken)
                             .build())
                     .retrieve()
                     .body(java.util.Map.class);
 
-            if (map == null || !map.containsKey("email")) {
+            if (map == null) {
                 throw new AppException(ErrorCode.TOKEN_INVALID, "Mã xác thực Google không hợp lệ hoặc đã hết hạn.");
             }
 
-            String aud = (String) map.get("aud");
+            String aud = (String) map.getOrDefault("aud", map.get("azp"));
             if (googleClientId != null && !googleClientId.isBlank()) {
                 if (!googleClientId.trim().equals(aud)) {
                     log.warn("[AUTH] Google token audience mismatch: expected {}, got {}", googleClientId, aud);
@@ -486,12 +488,26 @@ public class AuthService {
                 }
             }
 
-            return new GoogleTokenPayload(
-                    (String) map.get("email"),
-                    (String) map.get("name"),
-                    (String) map.get("sub"),
-                    aud
-            );
+            String email = (String) map.get("email");
+            String name = (String) map.get("name");
+            String sub = (String) map.get("sub");
+            if (!isIdToken && (email == null || name == null || sub == null)) {
+                @SuppressWarnings("unchecked")
+                java.util.Map<String, Object> userInfo = RestClient.builder()
+                        .baseUrl("https://www.googleapis.com").build().get()
+                        .uri("/oauth2/v3/userinfo")
+                        .header("Authorization", "Bearer " + rawToken)
+                        .retrieve().body(java.util.Map.class);
+                if (userInfo != null) {
+                    if (email == null) email = (String) userInfo.get("email");
+                    if (name == null) name = (String) userInfo.get("name");
+                    if (sub == null) sub = (String) userInfo.get("sub");
+                }
+            }
+            if (email == null || email.isBlank()) {
+                throw new AppException(ErrorCode.TOKEN_INVALID, "Google token does not contain an email address.");
+            }
+            return new GoogleTokenPayload(email, name, sub, aud);
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {

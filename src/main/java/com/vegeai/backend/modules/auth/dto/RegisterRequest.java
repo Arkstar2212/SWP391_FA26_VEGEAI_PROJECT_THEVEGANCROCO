@@ -14,6 +14,7 @@ import lombok.Data;
  */
 @Data
 public class RegisterRequest {
+    // TODO(security): validate password strength server-side after migrating the auth contract to raw passwords over TLS + BCrypt.
 
     @NotBlank(message = "Username is required.")
     @Size(min = 4, max = 50, message = "Username must be between 4 and 50 characters.")
