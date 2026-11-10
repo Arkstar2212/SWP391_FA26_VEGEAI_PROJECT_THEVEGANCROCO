@@ -114,18 +114,44 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
         var body=profileBody();body.put("weightKg",60);call("PUT","/api/nutrition/profile",token,body,200);
         call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),409);
     }
-    @Test void profileChangesRecalculateUpcomingDaysOfSavedPlansButKeepPastDays()throws Exception {
+    @Test void profileChangesFlagSavedPlansWithoutSilentlyChangingTheirNutrition()throws Exception {
         profile(); LocalDate today=LocalDate.now();
         var body=new HashMap<>(generateBody("WEEK")); body.put("startDate",today.minusDays(1).toString());
         String id=call("POST","/api/meal-plans/generate",token,body,200).path("id").asText();
         JsonNode before=call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),200).path("plan").path("days");
         var active=profileBody(); active.put("activityLevel","VERY_ACTIVE");
+        int oldTarget=call("GET","/api/meal-plans/"+id,token,null,200).path("plan").path("targets").path("dailyCaloriesTarget").asInt();
         int newTarget=call("PUT","/api/nutrition/profile",token,active,200).path("targets").path("dailyCaloriesTarget").asInt();
-        JsonNode after=call("GET","/api/meal-plans/"+id,token,null,200).path("plan");
-        assertThat(after.path("targets").path("dailyCaloriesTarget").asInt()).isEqualTo(newTarget);
+        JsonNode updated=call("GET","/api/meal-plans/"+id,token,null,200);
+        JsonNode after=updated.path("plan");
+        assertThat(updated.path("needsReview").asBoolean()).isTrue();
+        assertThat(newTarget).isNotEqualTo(oldTarget);
+        assertThat(after.path("targets").path("dailyCaloriesTarget").asInt()).isEqualTo(oldTarget);
         assertThat(after.path("days").get(0).path("totals")).isEqualTo(before.get(0).path("totals"));
-        assertThat(after.path("days").get(1).path("totals").path("calories").asDouble())
-                .isGreaterThan(before.get(1).path("totals").path("calories").asDouble());
+        assertThat(after.path("days").get(1).path("totals")).isEqualTo(before.get(1).path("totals"));
+        assertThat(call("GET","/api/meal-plans/calendar?from="+today+"&to="+today,token,null,200).get(0).path("needsReview").asBoolean()).isTrue();
+        call("PUT","/api/meal-plans/"+id+"/days/1/meals/0",token,Map.of("recipeId",before.get(1).path("meals").get(0).path("recipeId").asText()),409);
+    }
+    @Test void customerRecordsActualPortionsAndOnlyTheirOwnDailyTotals()throws Exception {
+        profile(); LocalDate today=LocalDate.now();
+        String id=generate("WEEK").path("id").asText();
+        JsonNode plan=call("POST","/api/meal-plans/"+id+"/save",token,Map.of(),200);
+        JsonNode planned=plan.path("plan").path("days").get(0).path("meals").get(0);
+        String endpoint="/api/meal-plans/intake/"+today+"/0";
+        call("PUT",endpoint,otherToken,Map.of("portions",1),400);
+        call("PUT",endpoint,null,Map.of("portions",1),401);
+        call("PUT",endpoint,token,Map.of("portions",0),400);
+        double actual=planned.path("portions").asDouble()*2;
+        JsonNode recorded=call("PUT",endpoint,token,Map.of("portions",actual),200);
+        assertThat(recorded.path("meals").size()).isEqualTo(1);
+        assertThat(recorded.path("meals").get(0).path("recipeId").asText()).isEqualTo(planned.path("recipeId").asText());
+        assertThat(recorded.path("totals").path("calories").asDouble()).isEqualTo(planned.path("nutrition").path("calories").asDouble()*2);
+        assertThat(call("GET","/api/meal-plans/intake?date="+today,otherToken,null,200).path("meals").size()).isZero();
+        assertThat(call("GET","/api/meal-plans/intake?date="+today,token,null,200).path("meals").size()).isEqualTo(1);
+        assertThat(call("DELETE",endpoint,token,null,200).path("meals").size()).isZero();
+        var changed=profileBody(); changed.put("allergies","MUSHROOMS");
+        call("PUT","/api/nutrition/profile",token,changed,200);
+        call("PUT",endpoint,token,Map.of("portions",1),409);
     }
     @Test void calendarMergesSavedPlansWithLatestSaveWinningAndHidesDraftsAndOtherOwners()throws Exception {
         profile(); LocalDate today=LocalDate.now();

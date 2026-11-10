@@ -7,7 +7,6 @@ import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import com.vegeai.backend.modules.community.service.CommunityAccess;
 import com.vegeai.backend.modules.nutrition.dto.*;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
-import com.vegeai.backend.modules.nutrition.service.NutritionTargetsChangedEvent;
 import com.vegeai.backend.modules.notification.service.NotificationService;
 import com.vegeai.backend.modules.recipe.entity.*;
 import com.vegeai.backend.modules.recipe.dto.RecipeSummaryDto;
@@ -15,7 +14,6 @@ import com.vegeai.backend.modules.recipe.repository.RecipeRepository;
 import com.vegeai.backend.modules.recipe.service.RecipeService;
 import com.vegeai.backend.modules.user.entity.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,7 +66,17 @@ public class MealPlanService {
         try { return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8))); }
         catch (java.security.NoSuchAlgorithmException ex) { throw new IllegalStateException(ex); }
     }
-    private View view(MealPlan plan) { return new View(plan.getId(), plan.getStatus(), plan.getCreatedAt(), plan.getSavedAt(), snapshot(plan)); }
+    private boolean needsReview(MealPlan plan, String currentSignature) {
+        return "SAVED".equals(plan.getStatus()) && !plan.getProfileSignature().equals(currentSignature);
+    }
+    private String currentSignature(User user) {
+        try { return signature(nutrition.getMyProfile(user.getUserId().toString())); }
+        catch (AppException ex) { return "PROFILE_MISSING"; }
+    }
+    private View view(MealPlan plan, User user) {
+        return new View(plan.getId(), plan.getStatus(), plan.getCreatedAt(), plan.getSavedAt(), snapshot(plan),
+                needsReview(plan, currentSignature(user)));
+    }
     private MealPlan owned(UUID id, User user, boolean lock) {
         return (lock ? plans.lockOwned(id, user.getUserId()) : plans.findByIdAndUserId(id, user.getUserId()))
                 .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
@@ -121,7 +129,7 @@ public class MealPlanService {
         // Generation is a user-requested activity and is confirmed in the in-app notification center.
         notificationService.notifyUser(user, "MEAL_PLAN_GENERATED", "Thực đơn cá nhân đã được tạo",
                 "Thực đơn nháp của bạn đã sẵn sàng để xem và chỉnh sửa.", "/meal-plans/" + created.getId());
-        return view(created);
+        return view(created, user);
     }
     private double portions(Recipe recipe, double calories) { return Math.max(0.5, Math.min(3, Math.round(calories / recipe.getCalories() * 4) / 4.0)); }
     private double cost(Recipe r, double portions, NutritionTargetsResponse t, int meals) {
@@ -151,7 +159,10 @@ public class MealPlanService {
         if (days.stream().flatMap(d->d.meals().stream()).anyMatch(m->m.recipe().getVideos().isEmpty())) messages.add("Một số công thức chưa có video liên kết; hướng dẫn nấu bằng chữ vẫn có sẵn.");
         return messages;
     }
-    @Transactional(readOnly=true) public View get(String principal, UUID id) { return view(owned(id, member(principal), false)); }
+    @Transactional(readOnly=true) public View get(String principal, UUID id) {
+        User user = member(principal);
+        return view(owned(id, user, false), user);
+    }
     private record Effective(MealPlan plan, Snapshot snapshot, TreeSet<LocalDate> visible) {}
     /** Saved plans newest first, each with the dates no later-saved plan overrides (the latest save wins a date). */
     private List<Effective> effectivePlans(User user) {
@@ -169,12 +180,13 @@ public class MealPlanService {
         User user = member(principal);
         if (page < 0 || size < 1 || size > 20) throw new AppException(ErrorCode.VALIDATION_ERROR);
         List<Effective> shown = effectivePlans(user).stream().filter(e -> !e.visible().isEmpty()).toList();
+        String current = currentSignature(user);
         int from = (int) Math.min((long) page * size, shown.size());
         List<Effective> slice = shown.subList(from, Math.min(from + size, shown.size()));
         Page<Effective> result = new PageImpl<>(slice, PageRequest.of(page, size), shown.size());
         return PageResponse.from(result, slice.stream().map(e -> { var s = e.snapshot(); var p = e.plan();
             return new Summary(p.getId(), s.period(), s.startDate(), s.endDate(), s.mealsPerDay(), p.getSavedAt(),
-                    s.days().size(), e.visible().size(), e.visible().first(), e.visible().last()); }).toList());
+                    s.days().size(), e.visible().size(), e.visible().first(), e.visible().last(), needsReview(p, current)); }).toList());
     }
     /** Saved plans merged onto one calendar; where plans overlap, the most recently saved plan wins. */
     @Transactional(readOnly=true) public List<CalendarDay> calendar(String principal, LocalDate from, LocalDate to) {
@@ -182,12 +194,13 @@ public class MealPlanService {
         if (from.isAfter(to) || java.time.temporal.ChronoUnit.DAYS.between(from, to) > 62)
             throw new AppException(ErrorCode.VALIDATION_ERROR, "Khoảng ngày của lịch không hợp lệ (tối đa 62 ngày).");
         Map<LocalDate, CalendarDay> byDate = new TreeMap<>();
+        String current = currentSignature(user);
         for (Effective e : effectivePlans(user)) {
             Snapshot s = e.snapshot();
             if (s.endDate().isBefore(from) || s.startDate().isAfter(to)) continue;
             for (Day d : s.days())
                 if (e.visible().contains(d.date()) && !d.date().isBefore(from) && !d.date().isAfter(to))
-                    byDate.put(d.date(), new CalendarDay(d.date(), e.plan().getId(), s.period(), s.targets(), d.meals(), d.totals()));
+                    byDate.put(d.date(), new CalendarDay(d.date(), e.plan().getId(), s.period(), s.targets(), d.meals(), d.totals(), needsReview(e.plan(), current)));
         }
         return List.copyOf(byDate.values());
     }
@@ -197,6 +210,7 @@ public class MealPlanService {
     }
     @Transactional public View swap(String principal, UUID id, int day, int slot, UUID recipeId) {
         User user = member(principal); MealPlan plan = owned(id,user,true); var p=profile(principal,user);
+        if (needsReview(plan, signature(p))) throw new AppException(ErrorCode.COMMUNITY_CONFLICT, "Hồ sơ dinh dưỡng đã thay đổi. Hãy tạo kế hoạch mới.");
         if ("DRAFT".equals(plan.getStatus())) editable(plan,p);
         Snapshot s=snapshot(plan);
         if(day<0||day>=s.days().size()||slot<0||slot>=s.mealsPerDay()) throw new AppException(ErrorCode.VALIDATION_ERROR);
@@ -204,11 +218,11 @@ public class MealPlanService {
         List<Day> days=new ArrayList<>(s.days()); List<Meal> meals=new ArrayList<>(days.get(day).meals()); meals.set(slot,meal(slot,r,p.getTargets(),s.mealsPerDay()));
         days.set(day,new Day(days.get(day).date(),meals,sum(meals)));
         plan.setSnapshot(json(new Snapshot(s.period(),s.startDate(),s.endDate(),s.mealsPerDay(),s.targets(),days,warnings(days,s.targets(),eligible(user).size()))));
-        return view(plans.saveAndFlush(plan));
+        return view(plans.saveAndFlush(plan), user);
     }
     @Transactional public View save(String principal, UUID id) {
         User user=member(principal); MealPlan plan=owned(id,user,true);
-        if("SAVED".equals(plan.getStatus())) return view(plan);
+        if("SAVED".equals(plan.getStatus())) return view(plan, user);
         var p=profile(principal,user); editable(plan,p); Snapshot s=snapshot(plan);
         Map<UUID,Recipe> current=new HashMap<>(); eligible(user).forEach(r->current.put(r.getRecipeId(),r));
         List<Day> days=new ArrayList<>();
@@ -226,34 +240,11 @@ public class MealPlanService {
         // Saving a draft is a distinct activity; already-saved plans return above without duplicate notices.
         notificationService.notifyUser(user, "MEAL_PLAN_SAVED", "Thực đơn đã được lưu",
                 "Thực đơn của bạn đã được lưu vào danh sách kế hoạch cá nhân.", "/meal-plans/" + saved.getId());
-        return view(saved);
+        return view(saved, user);
     }
     /** Deletes one of the member's plans; days it covered fall back to the next most recently saved plan, if any. */
     @Transactional public void delete(String principal, UUID id) {
         User user = member(principal);
         plans.delete(owned(id, user, true));
-    }
-    /** Re-portions today and upcoming days of saved plans to the new targets; past days stay as they were eaten. */
-    @EventListener
-    public void onTargetsChanged(NutritionTargetsChangedEvent event) {
-        User user = event.user(); NutritionTargetsResponse targets = event.targets(); LocalDate today = LocalDate.now();
-        Map<UUID,Recipe> current = null;
-        for (MealPlan plan : plans.findByUserIdAndStatusOrderBySavedAtAscIdAsc(user.getUserId(), "SAVED")) {
-            Snapshot s = snapshot(plan);
-            if (s.endDate().isBefore(today) || json(s.targets()).equals(json(targets))) continue;
-            if (current == null) { current = new HashMap<>(); for (Recipe r : eligible(user)) current.put(r.getRecipeId(), r); }
-            List<Day> days = new ArrayList<>();
-            for (Day day : s.days()) {
-                if (day.date().isBefore(today)) { days.add(day); continue; }
-                List<Meal> meals = new ArrayList<>();
-                for (Meal old : day.meals()) {
-                    Recipe r = current.get(old.recipeId());
-                    meals.add(r == null ? old : meal(old.slot(), r, targets, s.mealsPerDay()));
-                }
-                days.add(new Day(day.date(), meals, sum(meals)));
-            }
-            plan.setSnapshot(json(new Snapshot(s.period(), s.startDate(), s.endDate(), s.mealsPerDay(), targets, days, warnings(days, targets, current.size()))));
-            plans.save(plan);
-        }
     }
 }
