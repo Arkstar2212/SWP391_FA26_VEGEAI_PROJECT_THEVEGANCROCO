@@ -169,6 +169,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(ApiResponse.error(ErrorCode.RESOURCE_NOT_FOUND.getCode(),
                         "Endpoint not found: " + ex.getResourcePath()));
     }
