@@ -42,6 +42,7 @@ public class PersonalBlogActionsService {
         post.setContent(input.content() == null ? "" : input.content().strip());
         post.setCategory(input.category());
         post.setCoverImage(validateCover(input.coverImage()));
+        post.setVideoUrl(validateVideoUrl(input.videoUrl()));
         if (post.getTitle().length() < 5 || post.getContent().length() < 80) {
             throw new AppException(ErrorCode.VALIDATION_ERROR, "Title must contain at least 5 characters and content at least 80 characters before review.");
         }
@@ -73,7 +74,10 @@ public class PersonalBlogActionsService {
     private PostResponse response(BlogPost p, User author) {
         int words = p.getContent().isBlank() ? 0 : p.getContent().strip().split("\\s+").length;
         return new PostResponse(p.getId(), author.getUserId(), access.name(author), p.getTitle(), p.getExcerpt(),
-                p.getContent(), p.getCoverImage(), p.getCategory(), p.getStatus(), p.getVersion(),
+                p.getContent(), p.getCoverImage(), p.getVideoUrl(),
+                p.getRatingAverage() == null ? 5.0 : p.getRatingAverage(),
+                p.getRatingCount() == null ? 0 : p.getRatingCount(),
+                p.getCategory(), p.getStatus(), p.getVersion(),
                 Math.max(1, (int) Math.ceil(words / 200.0)), p.getCreatedAt(), p.getUpdatedAt(),
                 p.getSubmittedAt(), p.getReviewedAt(), p.getPublishedAt(),
                 p.getAiModerationStatus() == null ? AiModerationStatus.NOT_CHECKED : p.getAiModerationStatus(),
@@ -84,12 +88,25 @@ public class PersonalBlogActionsService {
         if (value == null || value.isBlank()) return null;
         String trimmed = value.strip();
         if (trimmed.matches("/images/[A-Za-z0-9._-]+")) return trimmed;
+        if (trimmed.matches("/api/public/community-media/[a-f0-9-]{36}\\.(jpg|png|webp)")) return trimmed;
         try {
             URI uri = URI.create(trimmed);
             if (("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
                     && uri.getHost() != null && uri.getUserInfo() == null) return uri.toString();
         } catch (IllegalArgumentException ignored) { }
-        throw new AppException(ErrorCode.VALIDATION_ERROR, "Cover image must be an HTTP(S) URL or local /images/ path.");
+        throw new AppException(ErrorCode.VALIDATION_ERROR, "Cover image must be an HTTP(S) URL, local /images/ path, or uploaded community media asset.");
+    }
+
+    private String validateVideoUrl(String value) {
+        if (value == null || value.isBlank()) return null;
+        String trimmed = value.strip();
+        if (trimmed.matches("/api/public/community-media/[a-f0-9-]{36}\\.(mp4|webm)")) return trimmed;
+        try {
+            URI uri = URI.create(trimmed);
+            if (("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                    && uri.getHost() != null && uri.getUserInfo() == null) return uri.toString();
+        } catch (IllegalArgumentException ignored) { }
+        throw new AppException(ErrorCode.VALIDATION_ERROR, "Video URL must be an HTTP(S) URL or uploaded community video asset.");
     }
 
     private void requireOwner(BlogPost post, User user) {

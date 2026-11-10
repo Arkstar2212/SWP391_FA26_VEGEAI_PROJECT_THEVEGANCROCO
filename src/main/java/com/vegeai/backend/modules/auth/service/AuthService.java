@@ -459,26 +459,29 @@ public class AuthService {
 
     private record GoogleTokenPayload(String email, String name, String sub, String aud) {}
 
-    private GoogleTokenPayload verifyGoogleIdToken(String idToken) {
+    private GoogleTokenPayload verifyGoogleIdToken(String rawToken) {
         try {
-            RestClient restClient = RestClient.builder()
+            RestClient oauth2Client = RestClient.builder()
                     .baseUrl("https://oauth2.googleapis.com")
                     .build();
 
+            boolean isJwtIdToken = rawToken.split("\\.").length == 3;
+            String tokenParamName = isJwtIdToken ? "id_token" : "access_token";
+
             @SuppressWarnings("unchecked")
-            java.util.Map<String, Object> map = restClient.get()
+            java.util.Map<String, Object> map = oauth2Client.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/tokeninfo")
-                            .queryParam("id_token", idToken)
+                            .queryParam(tokenParamName, rawToken)
                             .build())
                     .retrieve()
                     .body(java.util.Map.class);
 
-            if (map == null || !map.containsKey("email")) {
+            if (map == null) {
                 throw new AppException(ErrorCode.TOKEN_INVALID, "Mã xác thực Google không hợp lệ hoặc đã hết hạn.");
             }
 
-            String aud = (String) map.get("aud");
+            String aud = (String) map.getOrDefault("aud", map.get("azp"));
             if (googleClientId != null && !googleClientId.isBlank()) {
                 if (!googleClientId.trim().equals(aud)) {
                     log.warn("[AUTH] Google token audience mismatch: expected {}, got {}", googleClientId, aud);
@@ -486,12 +489,37 @@ public class AuthService {
                 }
             }
 
-            return new GoogleTokenPayload(
-                    (String) map.get("email"),
-                    (String) map.get("name"),
-                    (String) map.get("sub"),
-                    aud
-            );
+            String email = (String) map.get("email");
+            String name = (String) map.get("name");
+            String sub = (String) map.get("sub");
+
+            // When using GIS OAuth2 initTokenClient (access_token), fetch full profile from userinfo endpoint
+            if (!isJwtIdToken && (email == null || name == null)) {
+                try {
+                    RestClient userInfoClient = RestClient.builder()
+                            .baseUrl("https://www.googleapis.com")
+                            .build();
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<String, Object> userInfo = userInfoClient.get()
+                            .uri("/oauth2/v3/userinfo")
+                            .header("Authorization", "Bearer " + rawToken)
+                            .retrieve()
+                            .body(java.util.Map.class);
+                    if (userInfo != null) {
+                        if (email == null) email = (String) userInfo.get("email");
+                        if (name == null) name = (String) userInfo.get("name");
+                        if (sub == null) sub = (String) userInfo.get("sub");
+                    }
+                } catch (Exception ex) {
+                    log.warn("[AUTH] Could not fetch additional Google userinfo: {}", ex.getMessage());
+                }
+            }
+
+            if (email == null || email.isBlank()) {
+                throw new AppException(ErrorCode.TOKEN_INVALID, "Mã xác thực Google không hợp lệ hoặc đã hết hạn.");
+            }
+
+            return new GoogleTokenPayload(email, name, sub, aud);
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {

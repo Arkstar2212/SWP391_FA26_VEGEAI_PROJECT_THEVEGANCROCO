@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 1800" width="2400" height="1800" style="background:#0B0F17;font-family:'Inter',system-ui,sans-serif;">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .state-box { transition: all 0.2s ease; cursor: default; }
+  .state-box:hover rect:first-child { filter: brightness(1.2); }
+  .trans-line { stroke-linecap: round; stroke-linejoin: round; }
+  .badge-pill:hover rect { filter: brightness(1.3); }
+</style>
+
+<defs>
+  <!-- Card Shadow -->
+  <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+    <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.6"/>
+  </filter>
+  <filter id="glow-green" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#10B981" flood-opacity="0.5"/>
+  </filter>
+  <filter id="glow-amber" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#F59E0B" flood-opacity="0.5"/>
+  </filter>
+  <filter id="glow-rose" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#F43F5E" flood-opacity="0.5"/>
+  </filter>
+
+  <!-- Arrow Markers -->
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#94A3B8" />
+  </marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10B981" />
+  </marker>
+  <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F59E0B" />
+  </marker>
+  <marker id="arrow-rose" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F43F5E" />
+  </marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38BDF8" />
+  </marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#C084FC" />
+  </marker>
+
+  <!-- Grid Pattern -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1E293B" stroke-width="0.5" stroke-opacity="0.4"/>
+  </pattern>
+</defs>
+
+<!-- Background -->
+<rect width="100%" height="100%" fill="#0B0F17" />
+<rect width="100%" height="100%" fill="url(#grid)" />
+
+<!-- ================= BANNER TITLE ================= -->
+<g id="main-title">
+  <rect x="40" y="30" width="1380" height="90" rx="16" ry="16" fill="#0F172A" stroke="#38BDF8" stroke-width="2" filter="url(#shadow)" />
+  <circle cx="88" cy="75" r="26" fill="#0284C7" />
+  <text x="88" y="84" font-size="26" text-anchor="middle">🥑</text>
+  <text x="130" y="65" font-size="22" font-weight="800" fill="#F8FAFC" letter-spacing="0.5">VEGEAI MASTER STATE MACHINE DIAGRAM v2.0</text>
+  <text x="130" y="92" font-size="13" font-weight="500" fill="#94A3B8">SWP391 — The Vegan Crocodile | Biểu đồ trạng thái UML chuẩn: AI Moderation, Thực đơn dinh dưỡng &amp; Tủ lạnh thông minh</text>
+</g>
+
+<!-- ================= LEGEND ================= -->
+<g id="legend">
+  <rect x="1450" y="30" width="910" height="90" rx="16" ry="16" fill="#0F172A" stroke="#334155" stroke-width="1.5" filter="url(#shadow)" />
+  <text x="1475" y="56" font-size="12" font-weight="700" fill="#94A3B8">KÝ HIỆU TRẠNG THÁI UML:</text>
+  
+  <circle cx="1490" cy="85" r="10" fill="#38BDF8" />
+  <text x="1510" y="90" font-size="12" font-weight="600" fill="#E2E8F0">Bắt đầu [*]</text>
+
+  <circle cx="1620" cy="85" r="11" fill="none" stroke="#94A3B8" stroke-width="2" />
+  <circle cx="1620" cy="85" r="6" fill="#94A3B8" />
+  <text x="1640" y="90" font-size="12" font-weight="600" fill="#E2E8F0">Kết thúc [*]</text>
+
+  <rect x="1750" y="72" width="22" height="22" rx="6" fill="#064E3B" stroke="#10B981" stroke-width="1.5" />
+  <text x="1780" y="88" font-size="12" font-weight="600" fill="#34D399">Đã duyệt (Pass)</text>
+
+  <rect x="1905" y="72" width="22" height="22" rx="6" fill="#78350F" stroke="#F59E0B" stroke-width="1.5" />
+  <text x="1935" y="88" font-size="12" font-weight="600" fill="#FBBF24">Nghi vấn (Flag)</text>
+
+  <rect x="2060" y="72" width="22" height="22" rx="6" fill="#881337" stroke="#F43F5E" stroke-width="1.5" />
+  <text x="2090" y="88" font-size="12" font-weight="600" fill="#FB7185">Từ chối (Reject)</text>
+
+  <rect x="2210" y="72" width="22" height="22" rx="6" fill="#1E293B" stroke="#64748B" stroke-width="1.5" />
+  <text x="2240" y="88" font-size="12" font-weight="600" fill="#94A3B8">Nháp / Lưu trữ</text>
+</g>
+
+<!-- ========================================================================= -->
+<!-- ZONE 1: QUY TRÌNH KIỂM DUYỆT CÔNG THỨC & BÀI ĐĂNG CHAY BẰNG AI (TRỌNG TÂM) -->
+<!-- ========================================================================= -->
+<g id="zone-moderation">
+  <rect x="40" y="150" width="1380" height="1610" rx="20" ry="20" fill="rgba(244, 114, 182, 0.03)" stroke="#DB2777" stroke-width="1.5" stroke-dasharray="8,6" />
+  <rect x="70" y="136" width="600" height="30" rx="15" ry="15" fill="#0F172A" stroke="#DB2777" stroke-width="1.5" />
+  <circle cx="88" cy="151" r="5" fill="#F472B6" />
+  <text x="105" y="156" font-size="13" font-weight="700" fill="#F472B6">PHÂN HỆ TRỌNG TÂM: VÒNG ĐỜI KIỂM DUYỆT CÔNG THỨC &amp; BÀI ĐĂNG CHAY AI</text>
+
+  <!-- Start state -->
+  <g id="node-start-mod">
+    <circle cx="120" cy="330" r="16" fill="#38BDF8" filter="url(#shadow)" />
+    <text x="120" y="370" font-size="12" font-weight="700" fill="#38BDF8" text-anchor="middle">Khởi tạo</text>
+  </g>
+
+  <!-- Line Start -> DRAFT -->
+  <path d="M 136 330 L 220 330" fill="none" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-blue)" />
+  <g transform="translate(145, 305)">
+    <rect width="65" height="20" rx="10" fill="#0F172A" stroke="#38BDF8" stroke-width="1" />
+    <text x="32" y="14" font-size="10" font-weight="700" fill="#38BDF8" text-anchor="middle">Tạo bài</text>
+  </g>
+
+  <!-- State 1: DRAFT -->
+  <g class="state-box" id="state-draft" transform="translate(230, 270)">
+    <rect width="250" height="120" rx="14" ry="14" fill="#1E293B" stroke="#64748B" stroke-width="2" filter="url(#shadow)" />
+    <rect width="250" height="36" rx="14" ry="14" fill="#334155" />
+    <rect y="22" width="250" height="14" fill="#334155" />
+    <text x="18" y="24" font-size="14" font-weight="800" fill="#F8FAFC">DRAFT (Bản Nháp)</text>
+    <text x="18" y="58" font-size="11" fill="#94A3B8">• Người dùng đang soạn công thức</text>
+    <text x="18" y="78" font-size="11" fill="#94A3B8">• Nhập nguyên liệu, định lượng, gia vị</text>
+    <text x="18" y="98" font-size="11" fill="#94A3B8">• Viết các bước nấu &amp; tải ảnh bìa</text>
+  </g>
+
+  <!-- Line DRAFT -> PENDING_AI_CHECK -->
+  <path d="M 480 330 L 590 330" fill="none" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-blue)" />
+  <g transform="translate(490, 290)">
+    <rect width="90" height="32" rx="8" fill="#0F172A" stroke="#38BDF8" stroke-width="1.2" />
+    <text x="45" y="14" font-size="10" font-weight="700" fill="#38BDF8" text-anchor="middle">Submit duyệt</text>
+    <text x="45" y="26" font-size="9" fill="#94A3B8" text-anchor="middle">[Đủ dữ liệu]</text>
+  </g>
+
+  <!-- State 2: PENDING_AI_CHECK -->
+  <g class="state-box" id="state-pending-ai" transform="translate(600, 270)">
+    <rect width="290" height="120" rx="14" ry="14" fill="#082F49" stroke="#38BDF8" stroke-width="2" filter="url(#shadow)" />
+    <rect width="290" height="36" rx="14" ry="14" fill="#0369A1" />
+    <rect y="22" width="290" height="14" fill="#0369A1" />
+    <text x="18" y="24" font-size="14" font-weight="800" fill="#F0F9FF">PENDING_AI_CHECK</text>
+    <text x="18" y="58" font-size="11" fill="#BAE6FD">• Gemini Flash quét toàn bộ nội dung</text>
+    <text x="18" y="78" font-size="11" fill="#BAE6FD">• Kiểm tra thịt/cá/mắm mặn ẩn</text>
+    <text x="18" y="98" font-size="11" fill="#BAE6FD">• Đối chiếu Tag: VEGAN vs LACTO_OVO</text>
+  </g>
+
+  <!-- Line PENDING_AI_CHECK -> APPROVED (Happy path) -->
+  <path d="M 890 330 L 1020 330" fill="none" stroke="#10B981" stroke-width="3" marker-end="url(#arrow-green)" />
+  <g transform="translate(900, 280)">
+    <rect width="115" height="42" rx="8" fill="#064E3B" stroke="#10B981" stroke-width="1.5" />
+    <text x="57" y="16" font-size="10" font-weight="700" fill="#34D399" text-anchor="middle">AI Auto-Approve</text>
+    <text x="57" y="28" font-size="9" fill="#A7F3D0" text-anchor="middle">[Safety &gt;= 0.90]</text>
+    <text x="57" y="38" font-size="8.5" fill="#6EE7B7" text-anchor="middle">100% Thuần chay</text>
+  </g>
+
+  <!-- State 3: APPROVED -->
+  <g class="state-box" id="state-approved" transform="translate(1030, 270)">
+    <rect width="270" height="120" rx="14" ry="14" fill="#064E3B" stroke="#10B981" stroke-width="2.5" filter="url(#glow-green)" />
+    <rect width="270" height="36" rx="14" ry="14" fill="#047857" />
+    <rect y="22" width="270" height="14" fill="#047857" />
+    <text x="18" y="24" font-size="14" font-weight="800" fill="#ECFDF5">APPROVED (Đã Phê Duyệt)</text>
+    <text x="18" y="58" font-size="11" fill="#A7F3D0">• Cấp huy hiệu "AI Verified Vegan"</text>
+    <text x="18" y="78" font-size="11" fill="#A7F3D0">• Công khai trên bảng tin Khám phá</text>
+    <text x="18" y="98" font-size="11" fill="#A7F3D0">• Đưa vào kho gợi ý thực đơn tuần</text>
+  </g>
+
+  <!-- Line PENDING_AI_CHECK -> FLAGGED_AI -->
+  <path d="M 745 390 L 745 530" fill="none" stroke="#F59E0B" stroke-width="2.5" marker-end="url(#arrow-amber)" />
+  <g transform="translate(755, 435)">
+    <rect width="130" height="42" rx="8" fill="#78350F" stroke="#F59E0B" stroke-width="1.2" />
+    <text x="65" y="16" font-size="10" font-weight="700" fill="#FDE68A" text-anchor="middle">AI Flag Violation</text>
+    <text x="65" y="28" font-size="9" fill="#FEF3C7" text-anchor="middle">[Nghi vấn mặn / Sai tag]</text>
+    <text x="65" y="38" font-size="8.5" fill="#FCD34D" text-anchor="middle">Đẩy sang Admin Queue</text>
+  </g>
+
+  <!-- State 4: FLAGGED_AI -->
+  <g class="state-box" id="state-flagged" transform="translate(610, 540)">
+    <rect width="270" height="130" rx="14" ry="14" fill="#451A03" stroke="#F59E0B" stroke-width="2.5" filter="url(#glow-amber)" />
+    <rect width="270" height="36" rx="14" ry="14" fill="#B45309" />
+    <rect y="22" width="270" height="14" fill="#B45309" />
+    <text x="18" y="24" font-size="14" font-weight="800" fill="#FFFBEB">FLAGGED_AI (Gắn Cờ)</text>
+    <text x="18" y="58" font-size="11" fill="#FDE68A">• Ghi vết vào moderation_results</text>
+    <text x="18" y="78" font-size="11" fill="#FDE68A">• Tạm ẩn khỏi cộng đồng</text>
+    <text x="18" y="98" font-size="11" fill="#FDE68A">• Báo cáo vi phạm chi tiết cho Admin</text>
+    <text x="18" y="116" font-size="10.5" fill="#FCD34D">• Human-in-the-loop xem xét</text>
+  </g>
+
+  <!-- Line FLAGGED_AI -> APPROVED (Admin override) -->
+  <path d="M 880 600 L 1165 600 L 1165 400" fill="none" stroke="#10B981" stroke-width="2.2" marker-end="url(#arrow-green)" />
+  <g transform="translate(930, 565)">
+    <rect width="145" height="30" rx="8" fill="#064E3B" stroke="#10B981" stroke-width="1.2" />
+    <text x="72" y="14" font-size="10" font-weight="700" fill="#34D399" text-anchor="middle">Admin Duyệt Ghi Đè</text>
+    <text x="72" y="25" font-size="8.5" fill="#A7F3D0" text-anchor="middle">[Xác nhận đồ chay giả mặn]</text>
+  </g>
+
+  <!-- Line FLAGGED_AI -> PENDING_REVISION -->
+  <path d="M 610 605 L 500 605" fill="none" stroke="#C084FC" stroke-width="2.5" marker-end="url(#arrow-purple)" />
+  <g transform="translate(510, 570)">
+    <rect width="90" height="30" rx="8" fill="#3B0764" stroke="#C084FC" stroke-width="1.2" />
+    <text x="45" y="14" font-size="9.5" font-weight="700" fill="#E9D5FF" text-anchor="middle">Yêu cầu sửa</text>
+    <text x="45" y="25" font-size="8.5" fill="#D8B4FE" text-anchor="middle">[Gửi feedback]</text>
+  </g>
+
+  <!-- State 5: PENDING_REVISION -->
+  <g class="state-box" id="state-revision" transform="translate(230, 545)">
+    <rect width="260" height="120" rx="14" ry="14" fill="#3B0764" stroke="#C084FC" stroke-width="2" filter="url(#shadow)" />
+    <rect width="260" height="36" rx="14" ry="14" fill="#7E22CE" />
+    <rect y="22" width="260" height="14" fill="#7E22CE" />
+    <text x="18" y="24" font-size="13.5" font-weight="800" fill="#FAF5FF">PENDING_REVISION</text>
+    <text x="18" y="58" font-size="11" fill="#E9D5FF">• Gửi thông báo đến Tác giả</text>
+    <text x="18" y="78" font-size="11" fill="#E9D5FF">• Chỉ rõ lý do (VD: sai tag, thiếu cân)</text>
+    <text x="18" y="98" font-size="11" fill="#E9D5FF">• Tác giả mở lại form chỉnh sửa</text>
+  </g>
+
+  <!-- Line PENDING_REVISION back to PENDING_AI_CHECK -->
+  <path d="M 360 545 L 360 460 L 670 460 L 670 400" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrow-blue)" />
+  <g transform="translate(420, 445)">
+    <rect width="140" height="26" rx="8" fill="#082F49" stroke="#38BDF8" stroke-width="1" />
+    <text x="70" y="17" font-size="9.5" font-weight="700" fill="#7DD3FC" text-anchor="middle">Tác giả sửa &amp; nộp lại ↺</text>
+  </g>
+
+  <!-- Line FLAGGED_AI -> REJECTED -->
+  <path d="M 745 670 L 745 770 L 1020 770" fill="none" stroke="#F43F5E" stroke-width="2.5" marker-end="url(#arrow-rose)" />
+  <g transform="translate(800, 740)">
+    <rect width="130" height="36" rx="8" fill="#4C0519" stroke="#F43F5E" stroke-width="1.2" />
+    <text x="65" y="15" font-size="10" font-weight="700" fill="#FDA4AF" text-anchor="middle">Admin Từ Chối Hẳn</text>
+    <text x="65" y="28" font-size="8.5" fill="#FECDD3" text-anchor="middle">[Thịt thật / Spam / Vi phạm]</text>
+  </g>
+
+  <!-- State 6: REJECTED -->
+  <g class="state-box" id="state-rejected" transform="translate(1030, 715)">
+    <rect width="270" height="110" rx="14" ry="14" fill="#4C0519" stroke="#F43F5E" stroke-width="2.5" filter="url(#glow-rose)" />
+    <rect width="270" height="36" rx="14" ry="14" fill="#9F1239" />
+    <rect y="22" width="270" height="14" fill="#9F1239" />
+    <text x="18" y="24" font-size="14" font-weight="800" fill="#FFF1F2">REJECTED (Bị Từ Chối)</text>
+    <text x="18" y="58" font-size="11" fill="#FDA4AF">• Khóa vĩnh viễn quyền xuất bản</text>
+    <text x="18" y="78" font-size="11" fill="#FDA4AF">• Ghi log vào admin_audit_logs</text>
+    <text x="18" y="98" font-size="11" fill="#FDA4AF">• Trừ điểm uy tín tác giả / Cảnh cáo</text>
+  </g>
+
+  <!-- State 7: ARCHIVED -->
+  <g class="state-box" id="state-archived" transform="translate(1030, 480)">
+    <rect width="270" height="100" rx="14" ry="14" fill="#0F172A" stroke="#475569" stroke-width="2" filter="url(#shadow)" />
+    <rect width="270" height="34" rx="14" ry="14" fill="#1E293B" />
+    <rect y="20" width="270" height="14" fill="#1E293B" />
+    <text x="18" y="23" font-size="13.5" font-weight="800" fill="#E2E8F0">ARCHIVED (Lưu Trữ)</text>
+    <text x="18" y="56" font-size="11" fill="#94A3B8">• Ẩn khỏi cộng đồng</text>
+    <text x="18" y="76" font-size="11" fill="#94A3B8">• Tác giả lưu trữ riêng tư</text>
+  </g>
+
+  <!-- Line APPROVED -> ARCHIVED -->
+  <path d="M 1165 390 L 1165 470" fill="none" stroke="#64748B" stroke-width="2" marker-end="url(#arrow)" />
+  <g transform="translate(1175, 420)">
+    <rect width="70" height="22" rx="6" fill="#0F172A" stroke="#64748B" stroke-width="1" />
+    <text x="35" y="15" font-size="9" fill="#94A3B8" text-anchor="middle">Ẩn bài viết</text>
+  </g>
+
+  <!-- Final states -->
+  <g id="final-approved" transform="translate(1335, 330)">
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#10B981" stroke-width="2.5" />
+    <circle cx="0" cy="0" r="7" fill="#10B981" />
+    <line x1="-35" y1="0" x2="-16" y2="0" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-green)" />
+    <text x="22" y="5" font-size="11" font-weight="700" fill="#34D399">Công khai</text>
+  </g>
+
+  <g id="final-rejected" transform="translate(1335, 770)">
+    <circle cx="0" cy="0" r="14" fill="none" stroke="#F43F5E" stroke-width="2.5" />
+    <circle cx="0" cy="0" r="7" fill="#F43F5E" />
+    <line x1="-35" y1="0" x2="-16" y2="0" stroke="#F43F5E" stroke-width="2.5" marker-end="url(#arrow-rose)" />
+    <text x="22" y="5" font-size="11" font-weight="700" fill="#FB7185">Kết thúc</text>
+  </g>
+
+  <!-- Chi tiết bộ lọc AI Moderation Box -->
+  <g transform="translate(80, 890)">
+    <rect width="1300" height="320" rx="16" ry="16" fill="#0F172A" stroke="#DB2777" stroke-width="1.8" filter="url(#shadow)" />
+    <rect width="1300" height="40" rx="16" ry="16" fill="#831843" />
+    <rect y="24" width="1300" height="16" fill="#831843" />
+    <text x="24" y="27" font-size="15" font-weight="800" fill="#FFF1F2">CHI TIẾT BỘ TIÊU CHÍ AI KIỂM DUYỆT (GEMINI FLASH MODERATION ENGINE)</text>
+    
+    <g transform="translate(30, 60)">
+      <rect width="380" height="230" rx="12" ry="12" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+      <text x="18" y="30" font-size="13" font-weight="700" fill="#38BDF8">1. Kiểm Tra Tính Tường Minh</text>
+      <text x="18" y="60" font-size="11.5" fill="#CBD5E1">• Đối chiếu từng nguyên liệu ở bảng danh sách</text>
+      <text x="18" y="80" font-size="11.5" fill="#CBD5E1">  với các bước chế biến thực tế.</text>
+      <text x="18" y="110" font-size="11.5" fill="#F87171">• Bắt lỗi: Bước nấu xuất hiện nguyên liệu lạ</text>
+      <text x="18" y="130" font-size="11.5" fill="#CBD5E1">  chưa khai báo (VD: bỗng cho sốt mayonnaise trứng).</text>
+      <text x="18" y="160" font-size="11" fill="#FBBF24">Mã lỗi AI: ERR_UNDECLARED_INGREDIENTS</text>
+    </g>
+
+    <g transform="translate(450, 60)">
+      <rect width="380" height="230" rx="12" ry="12" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+      <text x="18" y="30" font-size="13" font-weight="700" fill="#FBBF24">2. Phát Hiện Thịt &amp; Đồ Mặn Ẩn</text>
+      <text x="18" y="60" font-size="11.5" fill="#CBD5E1">• Quét từ điển thực phẩm động vật:</text>
+      <text x="18" y="80" font-size="11.5" fill="#CBD5E1">  bò, gà, heo, tôm, cá, mỡ động vật, gelatin.</text>
+      <text x="18" y="110" font-size="11.5" fill="#F87171">• Bắt lỗi gia vị mặn: nước mắm cá cơm,</text>
+      <text x="18" y="130" font-size="11.5" fill="#CBD5E1">  hạt nêm thịt heo, mắm tôm, dầu hào mặn.</text>
+      <text x="18" y="160" font-size="11" fill="#F87171">Mã lỗi AI: VIOLATION_NON_VEG_DETECTED</text>
+    </g>
+
+    <g transform="translate(870, 60)">
+      <rect width="390" height="230" rx="12" ry="12" fill="#1E293B" stroke="#334155" stroke-width="1.5" />
+      <text x="18" y="30" font-size="13" font-weight="700" fill="#34D399">3. Xác Thực Tag Trường Phái Chay</text>
+      <text x="18" y="60" font-size="11.5" fill="#CBD5E1">• Gắn Tag VEGAN: Nghiêm cấm sữa bò,</text>
+      <text x="18" y="80" font-size="11.5" fill="#CBD5E1">  phô mai động vật, trứng gà, bơ sữa, mật ong.</text>
+      <text x="18" y="110" font-size="11.5" fill="#FBBF24">• Gắn Tag LACTO: Cho phép sữa, cấm trứng.</text>
+      <text x="18" y="130" font-size="11.5" fill="#CBD5E1">• Gắn Tag OVO: Cho phép trứng gà công nghiệp.</text>
+      <text x="18" y="160" font-size="11" fill="#FBBF24">Mã lỗi AI: VIOLATION_TAG_MISMATCH</text>
+    </g>
+  </g>
+</g>
+
+<!-- ========================================================================= -->
+<!-- ZONE 2: VÒNG ĐỜI KẾ HOẠCH BỮA ĂN CHAY AI (MEAL PLAN LIFECYCLE)            -->
+<!-- ========================================================================= -->
+<g id="zone-mealplan">
+  <rect x="1450" y="150" width="910" height="770" rx="20" ry="20" fill="rgba(251, 191, 36, 0.03)" stroke="#D97706" stroke-width="1.5" stroke-dasharray="8,6" />
+  <rect x="1480" y="136" width="460" height="30" rx="15" ry="15" fill="#0F172A" stroke="#D97706" stroke-width="1.5" />
+  <circle cx="1498" cy="151" r="5" fill="#FBBF24" />
+  <text x="1515" y="156" font-size="13" font-weight="700" fill="#FBBF24">VÒNG ĐỜI KẾ HOẠCH BỮA ĂN DINH DƯỠNG (MEAL PLAN)</text>
+
+  <!-- Start state -->
+  <circle cx="1520" cy="270" r="14" fill="#FBBF24" filter="url(#shadow)" />
+  <path d="M 1534 270 L 1600 270" fill="none" stroke="#FBBF24" stroke-width="2.2" marker-end="url(#arrow-amber)" />
+
+  <!-- MP State 1: DRAFT -->
+  <g class="state-box" transform="translate(1610, 220)">
+    <rect width="200" height="100" rx="12" ry="12" fill="#1E293B" stroke="#D97706" stroke-width="2" filter="url(#shadow)" />
+    <rect width="200" height="30" rx="12" ry="12" fill="#78350F" />
+    <rect y="18" width="200" height="12" fill="#78350F" />
+    <text x="14" y="21" font-size="12.5" font-weight="800" fill="#FEF3C7">DRAFT (Thực Đơn Nháp)</text>
+    <text x="14" y="52" font-size="10.5" fill="#CBD5E1">• AI sinh 7 ngày thực đơn</text>
+    <text x="14" y="70" font-size="10.5" fill="#CBD5E1">• Khớp Calo, Macro mục tiêu</text>
+    <text x="14" y="88" font-size="10.5" fill="#FBBF24">• Cho phép Swap đổi món</text>
+  </g>
+
+  <!-- Loop DRAFT -> DRAFT (Swap dish) -->
+  <path d="M 1660 220 C 1660 175, 1750 175, 1750 220" fill="none" stroke="#FBBF24" stroke-width="1.8" marker-end="url(#arrow-amber)" />
+  <g transform="translate(1675, 165)">
+    <rect width="60" height="18" rx="6" fill="#0F172A" stroke="#FBBF24" stroke-width="1" />
+    <text x="30" y="13" font-size="9" fill="#FDE68A" text-anchor="middle">Swap món</text>
+  </g>
+
+  <!-- DRAFT -> ACTIVE -->
+  <path d="M 1810 270 L 1950 270" fill="none" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-green)" />
+  <g transform="translate(1825, 240)">
+    <rect width="105" height="26" rx="8" fill="#064E3B" stroke="#10B981" stroke-width="1" />
+    <text x="52" y="17" font-size="9.5" font-weight="700" fill="#6EE7B7" text-anchor="middle">Kích hoạt áp dụng</text>
+  </g>
+
+  <!-- MP State 2: ACTIVE -->
+  <g class="state-box" transform="translate(1960, 220)">
+    <rect width="200" height="100" rx="12" ry="12" fill="#064E3B" stroke="#10B981" stroke-width="2" filter="url(#glow-green)" />
+    <rect width="200" height="30" rx="12" ry="12" fill="#047857" />
+    <rect y="18" width="200" height="12" fill="#047857" />
+    <text x="14" y="21" font-size="12.5" font-weight="800" fill="#ECFDF5">ACTIVE (Đang Áp Dụng)</text>
+    <text x="14" y="52" font-size="10.5" fill="#A7F3D0">• Khóa lịch ăn vào Calendar</text>
+    <text x="14" y="70" font-size="10.5" fill="#A7F3D0">• Sinh Smart Market List</text>
+    <text x="14" y="88" font-size="10.5" fill="#A7F3D0">• Sẵn sàng theo dõi bữa ăn</text>
+  </g>
+
+  <!-- ACTIVE -> IN_PROGRESS -->
+  <path d="M 2060 320 L 2060 410" fill="none" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arrow-blue)" />
+  <g transform="translate(2070, 355)">
+    <rect width="100" height="24" rx="6" fill="#0C4A6E" stroke="#38BDF8" stroke-width="1" />
+    <text x="50" y="16" font-size="9.5" font-weight="700" fill="#7DD3FC" text-anchor="middle">Đến ngày thực hiện</text>
+  </g>
+
+  <!-- MP State 3: IN_PROGRESS -->
+  <g class="state-box" transform="translate(1960, 420)">
+    <rect width="200" height="100" rx="12" ry="12" fill="#082F49" stroke="#38BDF8" stroke-width="2" filter="url(#shadow)" />
+    <rect width="200" height="30" rx="12" ry="12" fill="#0284C7" />
+    <rect y="18" width="200" height="12" fill="#0284C7" />
+    <text x="14" y="21" font-size="12.5" font-weight="800" fill="#F0F9FF">IN_PROGRESS</text>
+    <text x="14" y="52" font-size="10.5" fill="#BAE6FD">• Đánh dấu từng bữa đã ăn</text>
+    <text x="14" y="70" font-size="10.5" fill="#BAE6FD">• Tính calo/macro đã nạp</text>
+    <text x="14" y="88" font-size="10.5" fill="#BAE6FD">• Bù trừ vận động Google Fit</text>
+  </g>
+
+  <!-- IN_PROGRESS -> COMPLETED -->
+  <path d="M 2060 520 L 2060 610" fill="none" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-green)" />
+  <g transform="translate(2070, 555)">
+    <rect width="90" height="24" rx="6" fill="#064E3B" stroke="#10B981" stroke-width="1" />
+    <text x="45" y="16" font-size="9.5" font-weight="700" fill="#6EE7B7" text-anchor="middle">Hết ngày thứ 7</text>
+  </g>
+
+  <!-- MP State 4: COMPLETED -->
+  <g class="state-box" transform="translate(1960, 620)">
+    <rect width="200" height="90" rx="12" ry="12" fill="#064E3B" stroke="#10B981" stroke-width="2" filter="url(#glow-green)" />
+    <rect width="200" height="30" rx="12" ry="12" fill="#059669" />
+    <rect y="18" width="200" height="12" fill="#059669" />
+    <text x="14" y="21" font-size="12.5" font-weight="800" fill="#ECFDF5">COMPLETED</text>
+    <text x="14" y="52" font-size="10.5" fill="#A7F3D0">• Đạt mục tiêu dinh dưỡng</text>
+    <text x="14" y="70" font-size="10.5" fill="#A7F3D0">• Lưu vào báo cáo sức khỏe</text>
+  </g>
+
+  <!-- MP State 5: CANCELLED -->
+  <g class="state-box" transform="translate(1610, 420)">
+    <rect width="200" height="90" rx="12" ry="12" fill="#4C0519" stroke="#F43F5E" stroke-width="2" filter="url(#shadow)" />
+    <rect width="200" height="30" rx="12" ry="12" fill="#9F1239" />
+    <rect y="18" width="200" height="12" fill="#9F1239" />
+    <text x="14" y="21" font-size="12.5" font-weight="800" fill="#FFF1F2">CANCELLED (Đã Hủy)</text>
+    <text x="14" y="52" font-size="10.5" fill="#FDA4AF">• Hủy kế hoạch giữa chừng</text>
+    <text x="14" y="70" font-size="10.5" fill="#FDA4AF">• Người dùng đổi mục tiêu</text>
+  </g>
+
+  <!-- Lines to CANCELLED -->
+  <path d="M 1710 320 L 1710 410" fill="none" stroke="#F43F5E" stroke-width="2" marker-end="url(#arrow-rose)" />
+  <path d="M 1960 465 L 1820 465" fill="none" stroke="#F43F5E" stroke-width="2" marker-end="url(#arrow-rose)" />
+
+  <!-- Final Meal Plan -->
+  <circle cx="2060" cy="745" r="13" fill="none" stroke="#10B981" stroke-width="2" />
+  <circle cx="2060" cy="745" r="6" fill="#10B981" />
+  <path d="M 2060 710 L 2060 730" fill="none" stroke="#10B981" stroke-width="2" />
+
+  <circle cx="1710" cy="545" r="13" fill="none" stroke="#F43F5E" stroke-width="2" />
+  <circle cx="1710" cy="545" r="6" fill="#F43F5E" />
+  <path d="M 1710 510 L 1710 530" fill="none" stroke="#F43F5E" stroke-width="2" />
+</g>
+
+<!-- ========================================================================= -->
+<!-- ZONE 3: VÒNG ĐỜI NGUYÊN LIỆU TỦ BẾP (SMART FRIDGE FRESHNESS LIFECYCLE)    -->
+<!-- ========================================================================= -->
+<g id="zone-fridge">
+  <rect x="1450" y="960" width="910" height="800" rx="20" ry="20" fill="rgba(52, 211, 153, 0.03)" stroke="#059669" stroke-width="1.5" stroke-dasharray="8,6" />
+  <rect x="1480" y="946" width="460" height="30" rx="15" ry="15" fill="#0F172A" stroke="#059669" stroke-width="1.5" />
+  <circle cx="1498" cy="961" r="5" fill="#34D399" />
+  <text x="1515" y="966" font-size="13" font-weight="700" fill="#34D399">VÒNG ĐỜI NGUYÊN LIỆU &amp; ĐỘ TƯƠI TỦ LẠNH THÔNG MINH</text>
+
+  <!-- Start Fridge -->
+  <circle cx="1520" cy="1060" r="14" fill="#34D399" filter="url(#shadow)" />
+  <path d="M 1534 1060 L 1600 1060" fill="none" stroke="#34D399" stroke-width="2.2" marker-end="url(#arrow-green)" />
+
+  <!-- FR State 1: DETECTED_BY_AI -->
+  <g class="state-box" transform="translate(1610, 1010)">
+    <rect width="210" height="100" rx="12" ry="12" fill="#064E3B" stroke="#34D399" stroke-width="2" filter="url(#shadow)" />
+    <rect width="210" height="30" rx="12" ry="12" fill="#047857" />
+    <rect y="18" width="210" height="12" fill="#047857" />
+    <text x="14" y="21" font-size="12" font-weight="800" fill="#ECFDF5">DETECTED_BY_AI</text>
+    <text x="14" y="52" font-size="10.5" fill="#A7F3D0">• Vision AI quét ảnh tủ lạnh</text>
+    <text x="14" y="70" font-size="10.5" fill="#A7F3D0">• Phân biệt hộp vs quả rời</text>
+    <text x="14" y="88" font-size="10.5" fill="#A7F3D0">• Chấm điểm độ tươi (0.0-1.0)</text>
+  </g>
+
+  <!-- Line DETECTED -> FRESH -->
+  <path d="M 1820 1060 L 1950 1060" fill="none" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-green)" />
+  <g transform="translate(1835, 1030)">
+    <rect width="90" height="24" rx="6" fill="#064E3B" stroke="#10B981" stroke-width="1" />
+    <text x="45" y="16" font-size="9.5" font-weight="700" fill="#6EE7B7" text-anchor="middle">Lưu vào Tủ Bếp</text>
+  </g>
+
+  <!-- FR State 2: FRESH -->
+  <g class="state-box" transform="translate(1960, 1010)">
+    <rect width="200" height="100" rx="12" ry="12" fill="#064E3B" stroke="#10B981" stroke-width="2" filter="url(#glow-green)" />
+    <rect width="200" height="30" rx="12" ry="12" fill="#059669" />
+    <rect y="18" width="200" height="12" fill="#059669" />
+    <text x="14" y="21" font-size="12.5" font-weight="800" fill="#ECFDF5">FRESH (Tươi Mới)</text>
+    <text x="14" y="52" font-size="10.5" fill="#A7F3D0">• Điểm độ tươi &gt;= 0.80</text>
+    <text x="14" y="70" font-size="10.5" fill="#A7F3D0">• Vỏ căng, lá giòn xanh</text>
+    <text x="14" y="88" font-size="10.5" fill="#A7F3D0">• Hạn dùng tốt: 3-5 ngày</text>
+  </g>
+
+  <!-- FRESH -> USABLE -->
+  <path d="M 2060 1110 L 2060 1200" fill="none" stroke="#F59E0B" stroke-width="2.5" marker-end="url(#arrow-amber)" />
+  <g transform="translate(2070, 1145)">
+    <rect width="95" height="24" rx="6" fill="#78350F" stroke="#F59E0B" stroke-width="1" />
+    <text x="47" y="16" font-size="9.5" font-weight="700" fill="#FDE68A" text-anchor="middle">Sau 3-4 ngày</text>
+  </g>
+
+  <!-- FR State 3: USABLE -->
+  <g class="state-box" transform="translate(1960, 1210)">
+    <rect width="200" height="100" rx="12" ry="12" fill="#451A03" stroke="#F59E0B" stroke-width="2" filter="url(#glow-amber)" />
+    <rect width="200" height="30" rx="12" ry="12" fill="#B45309" />
+    <rect y="18" width="200" height="12" fill="#B45309" />
+    <text x="14" y="21" font-size="12.5" font-weight="800" fill="#FFFBEB">USABLE (Dùng Sớm)</text>
+    <text x="14" y="52" font-size="10.5" fill="#FDE68A">• Điểm tươi: 0.50 - 0.79</text>
+    <text x="14" y="70" font-size="10.5" fill="#FDE68A">• Vỏ hơi nhăn / héo nhẹ</text>
+    <text x="14" y="88" font-size="10.5" fill="#FDE68A">• Gợi ý món "Cook Now!"</text>
+  </g>
+
+  <!-- FRESH/USABLE -> CONSUMED -->
+  <path d="M 1960 1060 L 1710 1060 L 1710 1240" fill="none" stroke="#10B981" stroke-width="2" marker-end="url(#arrow-green)" />
+  <path d="M 1960 1260 L 1830 1260" fill="none" stroke="#10B981" stroke-width="2" marker-end="url(#arrow-green)" />
+  <g transform="translate(1725, 1230)">
+    <rect width="95" height="24" rx="6" fill="#064E3B" stroke="#10B981" stroke-width="1" />
+    <text x="47" y="16" font-size="9.5" font-weight="700" fill="#6EE7B7" text-anchor="middle">Nấu ăn / Dùng hết</text>
+  </g>
+
+  <!-- FR State 4: CONSUMED -->
+  <g class="state-box" transform="translate(1620, 1270)">
+    <rect width="190" height="90" rx="12" ry="12" fill="#064E3B" stroke="#10B981" stroke-width="2" filter="url(#shadow)" />
+    <rect width="190" height="30" rx="12" ry="12" fill="#059669" />
+    <rect y="18" width="190" height="12" fill="#059669" />
+    <text x="14" y="21" font-size="12" font-weight="800" fill="#ECFDF5">CONSUMED (Đã Ăn)</text>
+    <text x="14" y="52" font-size="10" fill="#A7F3D0">• Đã chế biến xong</text>
+    <text x="14" y="70" font-size="10" fill="#A7F3D0">• Trừ kho trong Tủ Bếp</text>
+  </g>
+
+  <!-- USABLE -> SPOILED -->
+  <path d="M 2060 1310 L 2060 1410" fill="none" stroke="#F43F5E" stroke-width="2.5" marker-end="url(#arrow-rose)" />
+  <g transform="translate(2070, 1350)">
+    <rect width="95" height="24" rx="6" fill="#4C0519" stroke="#F43F5E" stroke-width="1" />
+    <text x="47" y="16" font-size="9" font-weight="700" fill="#FDA4AF" text-anchor="middle">Quá hạn / Mốc</text>
+  </g>
+
+  <!-- FR State 5: SPOILED -->
+  <g class="state-box" transform="translate(1960, 1420)">
+    <rect width="200" height="90" rx="12" ry="12" fill="#4C0519" stroke="#F43F5E" stroke-width="2" filter="url(#glow-rose)" />
+    <rect width="200" height="30" rx="12" ry="12" fill="#9F1239" />
+    <rect y="18" width="200" height="12" fill="#9F1239" />
+    <text x="14" y="21" font-size="12.5" font-weight="800" fill="#FFF1F2">SPOILED (Đã Hỏng)</text>
+    <text x="14" y="52" font-size="10.5" fill="#FDA4AF">• Điểm tươi &lt; 0.50</text>
+    <text x="14" y="70" font-size="10.5" fill="#FDA4AF">• Cảnh báo KHÔNG NẤU</text>
+  </g>
+
+  <!-- Finals Fridge -->
+  <circle cx="1715" cy="1410" r="13" fill="none" stroke="#10B981" stroke-width="2" />
+  <circle cx="1715" cy="1410" r="6" fill="#10B981" />
+  <path d="M 1715 1360 L 1715 1395" fill="none" stroke="#10B981" stroke-width="2" />
+
+  <circle cx="2060" cy="1555" r="13" fill="none" stroke="#F43F5E" stroke-width="2" />
+  <circle cx="2060" cy="1555" r="6" fill="#F43F5E" />
+  <path d="M 2060 1510 L 2060 1540" fill="none" stroke="#F43F5E" stroke-width="2" />
+</g>
+
+</svg>

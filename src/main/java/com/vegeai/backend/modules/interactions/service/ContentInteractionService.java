@@ -30,6 +30,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedHashSet;
@@ -110,6 +111,27 @@ public class ContentInteractionService {
         requirePublished(type, id);
         User user = access.user(principal);
         saveRating(user, type, id, input.stars());
+
+        Optional<ContentComment> existingOpt = comments.findFirstByTargetTypeAndTargetIdAndAuthor_UserIdOrderByCreatedAtDesc(type, id, user.getUserId());
+        if (existingOpt.isPresent()) {
+            ContentComment existing = existingOpt.get();
+            applyReview(existing, input);
+            List<String> inputPhotos = input.photoUrls() == null ? List.of() : input.photoUrls();
+            final List<String> retained = (inputPhotos.size() + (photos == null ? 0 : photos.size()) > 4
+                    || !existing.getPhotoUrls().containsAll(inputPhotos))
+                    ? List.of()
+                    : inputPhotos;
+            List<String> previous = new ArrayList<>(existing.getPhotoUrls());
+            List<String> next = new ArrayList<>(retained);
+            if (photos != null && !photos.isEmpty()) {
+                next.addAll(assets.store(photos));
+            }
+            existing.setPhotoUrls(next);
+            List<String> removed = previous.stream().filter(url -> !retained.contains(url)).toList();
+            assets.delete(removed);
+            return view(comments.saveAndFlush(existing), false);
+        }
+
         ContentComment comment = new ContentComment();
         comment.setTargetType(type);
         comment.setTargetId(id);

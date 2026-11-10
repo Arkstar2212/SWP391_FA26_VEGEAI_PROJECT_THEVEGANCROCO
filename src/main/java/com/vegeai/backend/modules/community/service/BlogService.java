@@ -4,6 +4,7 @@ import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.common.exception.*;
 import com.vegeai.backend.modules.community.dto.BlogDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
+import com.vegeai.backend.modules.community.repository.BlogCommentRepository;
 import com.vegeai.backend.modules.community.repository.BlogPostRepository;
 import com.vegeai.backend.modules.interactions.entity.InteractionTarget;
 import com.vegeai.backend.modules.interactions.repository.ContentCommentRepository;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service @RequiredArgsConstructor @Transactional
@@ -27,6 +29,7 @@ public class BlogService {
     private final NotificationService notificationService;
     private final ContentCommentRepository comments;
     private final ContentRatingRepository ratings;
+    private final BlogCommentRepository blogComments;
 
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> published(String keyword, BlogCategory category, int page, int size) {
@@ -308,11 +311,13 @@ public class BlogService {
         post.setContent(input.content() == null ? "" : input.content().strip());
         post.setCategory(input.category());
         post.setCoverImage(cover(input.coverImage()));
+        post.setVideoUrl(videoUrl(input.videoUrl()));
     }
     private String cover(String value) {
         if (value == null || value.isBlank()) return null;
         String trimmed = value.strip();
         if (trimmed.matches("/images/[A-Za-z0-9._-]+")) return trimmed;
+        if (trimmed.matches("/api/public/community-media/[a-f0-9-]{36}\\.(jpg|png|webp)")) return trimmed;
         try {
             URI uri = URI.create(trimmed);
             if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
@@ -321,13 +326,66 @@ public class BlogService {
             }
             return uri.toString();
         } catch (IllegalArgumentException ex) {
-            throw new AppException(ErrorCode.VALIDATION_ERROR, "Cover image must be an HTTP(S) URL without credentials or a local /images/ path.");
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Cover image must be an HTTP(S) URL without credentials, a local /images/ path, or an uploaded community media asset.");
         }
+    }
+    private String videoUrl(String value) {
+        if (value == null || value.isBlank()) return null;
+        String trimmed = value.strip();
+        if (trimmed.matches("/api/public/community-media/[a-f0-9-]{36}\\.(mp4|webm)")) return trimmed;
+        try {
+            URI uri = URI.create(trimmed);
+            if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                    || uri.getHost() == null || uri.getUserInfo() != null) {
+                throw new IllegalArgumentException();
+            }
+            return uri.toString();
+        } catch (IllegalArgumentException ex) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Video URL must be an HTTP(S) URL without credentials or an uploaded community video asset.");
+        }
+    }
+    public List<BlogCommentResponse> getComments(UUID postId) {
+        BlogPost post = find(postId);
+        if (post.getStatus() != BlogStatus.PUBLISHED) throw missing();
+        return blogComments.findByPostIdOrderByCreatedAtDesc(postId).stream()
+                .map(c -> new BlogCommentResponse(c.getId(), c.getPost().getId(),
+                        c.getAuthor().getUserId(), access.name(c.getAuthor()),
+                        c.getContent(), c.getRating() == null ? 5 : c.getRating(), c.getCreatedAt()))
+                .toList();
+    }
+    public BlogCommentResponse addComment(String principal, UUID postId, BlogCommentInput input) {
+        BlogPost post = locked(postId);
+        if (post.getStatus() != BlogStatus.PUBLISHED) {
+            throw new AppException(ErrorCode.BLOG_STATE_CONFLICT, "Only published posts can receive comments.");
+        }
+        User author = access.user(principal);
+
+        BlogComment comment = new BlogComment();
+        comment.setPost(post);
+        comment.setAuthor(author);
+        comment.setContent(input.content().strip());
+        int rating = input.rating() == null ? 5 : Math.max(1, Math.min(5, input.rating()));
+        comment.setRating(rating);
+
+        BlogComment saved = blogComments.saveAndFlush(comment);
+
+        List<BlogComment> allComments = blogComments.findByPostIdOrderByCreatedAtDesc(postId);
+        double sum = allComments.stream().mapToInt(c -> c.getRating() == null ? 5 : c.getRating()).sum();
+        double avg = allComments.isEmpty() ? 5.0 : Math.round((sum / allComments.size()) * 10.0) / 10.0;
+        post.setRatingAverage(avg);
+        post.setRatingCount(allComments.size());
+        posts.flush();
+
+        return new BlogCommentResponse(saved.getId(), post.getId(), author.getUserId(),
+                access.name(author), saved.getContent(), saved.getRating(), saved.getCreatedAt());
     }
     private PostResponse response(BlogPost p, boolean content, boolean privateView) {
         int words = p.getContent().isBlank() ? 0 : p.getContent().strip().split("\\s+").length;
         return new PostResponse(p.getId(), p.getAuthor().getUserId(), access.name(p.getAuthor()), p.getTitle(), p.getExcerpt(),
-                content ? p.getContent() : null, p.getCoverImage(), p.getCategory(), p.getStatus(), p.getVersion(),
+                content ? p.getContent() : null, p.getCoverImage(), p.getVideoUrl(),
+                p.getRatingAverage() == null ? 5.0 : p.getRatingAverage(),
+                p.getRatingCount() == null ? 0 : p.getRatingCount(),
+                p.getCategory(), p.getStatus(), p.getVersion(),
                 Math.max(1, (int) Math.ceil(words / 200.0)), p.getCreatedAt(), p.getUpdatedAt(),
                 privateView ? p.getSubmittedAt() : null, privateView ? p.getReviewedAt() : null, p.getPublishedAt(),
                 privateView ? (p.getAiModerationStatus() == null ? AiModerationStatus.NOT_CHECKED : p.getAiModerationStatus()) : null,

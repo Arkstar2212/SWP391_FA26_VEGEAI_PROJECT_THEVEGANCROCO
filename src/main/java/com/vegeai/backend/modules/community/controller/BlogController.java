@@ -67,4 +67,16 @@ public class BlogController {
         service.delete(userId, id, version);
         return ApiResponse.success("Blog post deleted.", null);
     }
+
+    @GetMapping("/posts/{id}/comments")
+    public ApiResponse<java.util.List<BlogCommentResponse>> getComments(@PathVariable UUID id) {
+        return ApiResponse.success(service.getComments(id));
+    }
+
+    @PostMapping("/posts/{id}/comments")
+    public ApiResponse<BlogCommentResponse> addComment(@AuthenticationPrincipal String userId,
+                                                       @PathVariable UUID id,
+                                                       @Valid @RequestBody BlogCommentInput input) {
+        return ApiResponse.success(service.addComment(userId, id, input));
+    }
 }
