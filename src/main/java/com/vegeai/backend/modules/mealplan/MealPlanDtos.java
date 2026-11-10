@@ -15,9 +15,9 @@ public final class MealPlanDtos {
     public record Day(LocalDate date, List<Meal> meals, Nutrients totals) {}
     public record Snapshot(String period, LocalDate startDate, LocalDate endDate, int mealsPerDay,
                            NutritionTargetsResponse targets, List<Day> days, List<String> warnings) {}
-    public record View(UUID id, String status, LocalDateTime createdAt, LocalDateTime savedAt, Snapshot plan) {}
+    public record View(UUID id, String status, LocalDateTime createdAt, LocalDateTime savedAt, Snapshot plan, boolean needsReview) {}
     /** visibleDays/firstVisibleDate/lastVisibleDate: days of this plan not overridden by a plan saved later. */
     public record Summary(UUID id, String period, LocalDate startDate, LocalDate endDate, int mealsPerDay, LocalDateTime savedAt,
-                          int totalDays, int visibleDays, LocalDate firstVisibleDate, LocalDate lastVisibleDate) {}
-    public record CalendarDay(LocalDate date, UUID planId, String period, NutritionTargetsResponse targets, List<Meal> meals, Nutrients totals) {}
+                          int totalDays, int visibleDays, LocalDate firstVisibleDate, LocalDate lastVisibleDate, boolean needsReview) {}
+    public record CalendarDay(LocalDate date, UUID planId, String period, NutritionTargetsResponse targets, List<Meal> meals, Nutrients totals, boolean needsReview) {}
 }
