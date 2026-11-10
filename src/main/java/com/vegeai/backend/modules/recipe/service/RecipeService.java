@@ -24,8 +24,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.text.Normalizer;
 import java.util.*;
@@ -416,9 +414,6 @@ public class RecipeService {
     }
 
     private RecipeDetailResponse mapToDetailResponse(Recipe recipe, boolean admin) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        boolean authenticated = authentication != null && authentication.isAuthenticated()
-                && !"anonymousUser".equals(authentication.getPrincipal());
         List<TagDto> tagDtos = recipe.getTags().stream()
                 .map(tagService::mapToDto)
                 .toList();
@@ -455,7 +450,7 @@ public class RecipeService {
                 .ingredients(ingDtos)
                 .instructions(new ArrayList<>(recipe.getInstructions()))
                 .tags(tagDtos)
-                .videos(!admin && !authenticated ? List.of() : recipe.getVideos().stream().filter(v -> admin || v.getStatus() == com.vegeai.backend.modules.community.entity.VideoStatus.PUBLISHED)
+                .videos(recipe.getVideos().stream().filter(v -> admin || v.getStatus() == com.vegeai.backend.modules.community.entity.VideoStatus.PUBLISHED)
                         .sorted(Comparator.comparing(com.vegeai.backend.modules.community.entity.CommunityVideo::getTitle))
                         .map(v -> new com.vegeai.backend.modules.community.dto.CommunityDtos.VideoResponse(v.getId(), v.getTitle(),
                                 v.getDescription(), v.getVideoUrl(), v.getThumbnailUrl(), v.getCategory(), v.getDurationSeconds(),
