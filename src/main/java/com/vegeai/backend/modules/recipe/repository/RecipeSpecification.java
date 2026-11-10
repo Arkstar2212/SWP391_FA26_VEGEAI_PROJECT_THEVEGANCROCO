@@ -30,10 +30,8 @@ public class RecipeSpecification {
 
             // 2. Từ khóa tìm kiếm (Title hoặc Description)
             if (filter.getKeyword() != null && !filter.getKeyword().isBlank()) {
-                String pattern = "%" + filter.getKeyword().trim().toLowerCase() + "%";
-                Predicate titleMatch = cb.like(cb.lower(root.get("title")), pattern);
-                Predicate descMatch = cb.like(cb.lower(root.get("description")), pattern);
-                predicates.add(cb.or(titleMatch, descMatch));
+                String pattern = "%" + Recipe.normalizeSearchText(filter.getKeyword()) + "%";
+                predicates.add(cb.like(root.get("searchText"), pattern));
             }
 
             // 3. Thời gian nấu tối đa

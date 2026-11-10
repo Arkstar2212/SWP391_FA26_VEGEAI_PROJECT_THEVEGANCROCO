@@ -467,7 +467,6 @@ public class AuthService {
 
             boolean isJwtIdToken = rawToken.split("\\.").length == 3;
             String tokenParamName = isJwtIdToken ? "id_token" : "access_token";
-
             @SuppressWarnings("unchecked")
             java.util.Map<String, Object> map = oauth2Client.get()
                     .uri(uriBuilder -> uriBuilder
@@ -494,7 +493,7 @@ public class AuthService {
             String sub = (String) map.get("sub");
 
             // When using GIS OAuth2 initTokenClient (access_token), fetch full profile from userinfo endpoint
-            if (!isJwtIdToken && (email == null || name == null)) {
+            if (!isJwtIdToken && (email == null || name == null || sub == null)) {
                 try {
                     RestClient userInfoClient = RestClient.builder()
                             .baseUrl("https://www.googleapis.com")
@@ -516,9 +515,8 @@ public class AuthService {
             }
 
             if (email == null || email.isBlank()) {
-                throw new AppException(ErrorCode.TOKEN_INVALID, "Mã xác thực Google không hợp lệ hoặc đã hết hạn.");
+                throw new AppException(ErrorCode.TOKEN_INVALID, "Mã xác thực Google không hợp lệ hoặc không chứa email.");
             }
-
             return new GoogleTokenPayload(email, name, sub, aud);
         } catch (AppException e) {
             throw e;

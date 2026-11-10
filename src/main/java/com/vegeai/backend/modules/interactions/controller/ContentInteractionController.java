@@ -1,6 +1,7 @@
 package com.vegeai.backend.modules.interactions.controller;
 
 import com.vegeai.backend.common.dto.ApiResponse;
+import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.modules.interactions.dto.InteractionDtos.*;
 import com.vegeai.backend.modules.interactions.entity.InteractionTarget;
 import com.vegeai.backend.modules.interactions.service.ContentInteractionService;
@@ -26,6 +27,14 @@ public class ContentInteractionController {
             @AuthenticationPrincipal String userId, @RequestParam(defaultValue="0") int page,
             @RequestParam(defaultValue="10") int size) {
         return ApiResponse.success(service.publicContent(type,id,userId,page,size));
+    }
+
+    /** Backward-compatible public route used by older blog clients. */
+    @GetMapping("/blog/posts/{id}/comments")
+    public ApiResponse<PageResponse<CommentView>> blogComments(@PathVariable UUID id,
+            @AuthenticationPrincipal String userId, @RequestParam(defaultValue="0") int page,
+            @RequestParam(defaultValue="20") int size) {
+        return ApiResponse.success(service.publicContent(InteractionTarget.BLOG, id, userId, page, size).comments());
     }
 
     @GetMapping("/public/content-interactions/{type}/ratings")

@@ -67,10 +67,8 @@ public class RecipeService {
             List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
             if (status != null) predicates.add(cb.equal(root.get("status"), status));
             if (keyword != null && !keyword.isBlank()) {
-                String pattern = "%" + keyword.trim().toLowerCase() + "%";
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("title")), pattern),
-                        cb.like(cb.lower(root.get("description")), pattern)));
+                String pattern = "%" + Recipe.normalizeSearchText(keyword) + "%";
+                predicates.add(cb.like(root.get("searchText"), pattern));
             }
             return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };

@@ -206,19 +206,18 @@ public class GeminiAiService {
 
     /** Screens submitted blog text for reviewer attention without changing publication state. */
     public BlogModerationResult moderateBlog(String title, String excerpt, String content) {
-        String fullText = ((title != null ? title : "") + " " + (excerpt != null ? excerpt : "") + " " + (content != null ? content : "")).toLowerCase();
+        String fullText = ((title != null ? title : "") + " " + (excerpt != null ? excerpt : "") + " " + (content != null ? content : "")).toLowerCase(java.util.Locale.ROOT);
 
         // 1. Local Deterministic Fast Filter: Profanity, vulgarity, insults, spam & non-veg meats
         if (fullText.matches(".*\\b(ngu|chó|đm|vcl|vl|đụ|cặc|lồn|buồi|đĩ|đéo|mẹ kiếp|khốn nạn|chó đẻ|óc chó)\\b.*")
                 || fullText.contains("ngu") && (fullText.contains("chó") || fullText.contains("vl"))
-                || fullText.contains("ádasda") || fullText.contains("asdasd") || fullText.contains("qwerty")) {
+                || fullText.contains("ádasda") || fullText.contains("asdasd") || fullText.contains("qwerty") || fullText.contains("spam spam")) {
             return new BlogModerationResult(true, "Phát hiện từ ngữ thô tục, chửi thề hoặc ký tự spam không phù hợp với văn hóa cộng đồng.");
         }
 
-        if (fullText.matches(".*\\b(thịt bò|thịt heo|thịt lợn|thịt gà|thịt chó|thịt mèo|thịt dê|thịt vịt|tiết canh|mỡ heo|mỡ lợn|nước mắm cá|chả lụa mặn)\\b.*")) {
+        if (fullText.matches(".*\\b(thịt bò|thịt heo|thịt lợn|thịt gà|thịt chó|thịt mèo|thịt dê|thịt vịt|tiết canh|mỡ heo|mỡ lợn|nước mắm cá|chả lụa mặn|hải sản)\\b.*")) {
             return new BlogModerationResult(true, "Phát hiện thành phần động vật hoặc thịt gia súc/gia cầm vi phạm tôn chỉ món chay VEGEAI.");
         }
-
         try {
             requireConfiguredKey();
             SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
