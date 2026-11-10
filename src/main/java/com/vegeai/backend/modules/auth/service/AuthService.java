@@ -63,7 +63,7 @@ public class AuthService {
     @Value("${app.jwt.refresh-expiration-days:1}")
     private long refreshExpirationDays;
 
-    @Value("${app.google.client-id:}")
+    @Value("${app.google.client-id:164354959561-84vaff9lo56ummq04itrgq642kmjd4qo.apps.googleusercontent.com}")
     private String googleClientId;
 
 

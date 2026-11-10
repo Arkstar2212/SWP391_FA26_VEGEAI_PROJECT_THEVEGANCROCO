@@ -135,6 +135,41 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Login successful.", result.authResponse()));
     }
 
+    // ── 2.3 2FA / Session Re-auth OTP ────────────────────────────────────────
+
+    @PostMapping("/init-login")
+    @Operation(summary = "Initiate login with 2FA OTP verification", description = "Verifies username/password, generates and sends 6-digit OTP to user's registered email.")
+    public ResponseEntity<ApiResponse<LoginInitResponse>> initLogin(
+            @Valid @RequestBody LoginRequest req,
+            HttpServletRequest request) {
+        String clientIp = extractClientIp(request);
+        LoginInitResponse initResponse = authService.initLogin(req, clientIp);
+        return ResponseEntity.ok(ApiResponse.success(initResponse.getMessage(), initResponse));
+    }
+
+    @PostMapping("/verify-login-otp")
+    @Operation(summary = "Verify login OTP and issue access token", description = "Validates the 6-digit login OTP code and issues access token and refresh cookie.")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyLoginOtp(
+            @Valid @RequestBody VerifyLoginOtpRequest req,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        String clientIp = extractClientIp(request);
+        AuthService.LoginResult result = authService.verifyLoginOtp(req, clientIp);
+
+        ResponseCookie refreshCookie = buildRefreshCookie(result.refreshTokenValue());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        return ResponseEntity.ok(ApiResponse.success("Xác thực đăng nhập thành công.", result.authResponse()));
+    }
+
+    @PostMapping("/resend-login-otp")
+    @Operation(summary = "Resend login OTP", description = "Resends a fresh 6-digit OTP for login to user's email after cooldown.")
+    public ResponseEntity<ApiResponse<Void>> resendLoginOtp(
+            @Valid @RequestBody ResendLoginOtpRequest req) {
+        authService.resendLoginOtp(req.getUsernameOrEmail());
+        return ResponseEntity.ok(ApiResponse.success("Mã OTP mới đã được gửi tới email của bạn.", null));
+    }
+
     // ── 2.3 Google OAuth2 Login ──────────────────────────────────────────────
 
     @PostMapping("/google")
