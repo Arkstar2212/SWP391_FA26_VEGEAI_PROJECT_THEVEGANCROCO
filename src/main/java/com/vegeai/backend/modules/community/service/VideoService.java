@@ -188,6 +188,7 @@ public class VideoService {
         User author = access.user(principal);
         CommunityVideo video = locked(id);
         requirePublished(video);
+        enforceSafeVideoComment(input.content());
         VideoComment comment = new VideoComment();
         comment.setAuthor(author);
         comment.setVideo(video);
@@ -204,6 +205,7 @@ public class VideoService {
     public CommentResponse editComment(String principal, UUID videoId, UUID commentId, CommentInput input) {
         User author = access.user(principal);
         requirePublished(locked(videoId));
+        enforceSafeVideoComment(input.content());
         VideoComment comment = comments.findByIdAndVideoId(commentId, videoId)
                 .filter(c -> c.getAuthor().getUserId().equals(author.getUserId()))
                 .orElseThrow(() -> new AppException(ErrorCode.VIDEO_COMMENT_NOT_FOUND));
@@ -286,6 +288,13 @@ public class VideoService {
     private CommunityVideo locked(UUID id) { return videos.findForUpdate(id).orElseThrow(() -> new AppException(ErrorCode.VIDEO_NOT_FOUND)); }
     private void requirePublished(CommunityVideo video) {
         if (video.getStatus() != VideoStatus.PUBLISHED) throw new AppException(ErrorCode.VIDEO_NOT_FOUND);
+    }
+
+    private void enforceSafeVideoComment(String content) {
+        var verdict = geminiAiService.screenCommunityText("Bình luận video", content);
+        if (verdict.flagged()) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Nội dung bình luận không phù hợp: " + verdict.reason());
+        }
     }
 
     private void apply(CommunityVideo video, VideoInput input) {

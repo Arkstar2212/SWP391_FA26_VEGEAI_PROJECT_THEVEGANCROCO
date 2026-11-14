@@ -25,4 +25,8 @@ public interface PlaceProvider {
     List<CategoryMetadataDto> getCategoryMetadata();
 
     String reverseGeocode(double latitude, double longitude);
+
+    default List<PlaceResponse> suggestShopsForFood(String food, Double latitude, Double longitude, int radiusMeters) {
+        return List.of();
+    }
 }

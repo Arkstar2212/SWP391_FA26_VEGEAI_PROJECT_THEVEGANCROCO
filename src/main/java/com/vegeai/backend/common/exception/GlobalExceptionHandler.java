@@ -25,7 +25,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleUploadTooLarge() {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(ApiResponse.error(ErrorCode.IMAGE_TOO_LARGE.getCode(), "Ảnh vượt quá giới hạn 5 MB."));
+                .body(ApiResponse.error(ErrorCode.IMAGE_TOO_LARGE.getCode(),
+                        "Tệp tải lên vượt quá giới hạn dung lượng cho phép (tối đa 150 MB cho video hoặc 5 MB cho ảnh)."));
     }
 
     // ── AppException (typed application errors) ──────────────────────────────

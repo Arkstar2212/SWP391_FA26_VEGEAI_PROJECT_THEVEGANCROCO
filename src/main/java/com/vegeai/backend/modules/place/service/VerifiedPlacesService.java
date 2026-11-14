@@ -35,13 +35,13 @@ public class VerifiedPlacesService {
     private static final Set<String> EATERIES = Set.of("restaurant", "cafe", "fast_food", "food_court");
 
     public VerifiedPlacesService(ObjectMapper mapper, StringRedisTemplate redis,
-            @Value("${app.osm.overpass-urls:https://overpass-api.de/api/interpreter,https://ethiopia.overpass.openplaceguide.org/api/interpreter,https://overpass.private.coffee/api/interpreter}") String urls,
+            @Value("${app.osm.overpass-urls:https://overpass-api.de/api/interpreter,https://overpass.private.coffee/api/interpreter,https://lz4.overpass-api.de/api/interpreter,https://z.overpass-api.de/api/interpreter}") String urls,
             @Value("${app.osm.photon-url:https://photon.komoot.io/api/}") String photonUrl,
             @Value("${app.osm.user-agent:VEGEAI/1.0 (+https://github.com/cudatbusua/SWP391_VEGEAI_FRONTEND)}") String userAgent) {
         this.mapper=mapper; this.redis=redis; this.photonUrl=photonUrl;
         endpoints=Arrays.stream(urls.split(",")).map(String::trim).filter(s -> !s.isEmpty()).limit(3).toList();
         var factory=new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(4)); factory.setReadTimeout(Duration.ofSeconds(20));
+        factory.setConnectTimeout(Duration.ofSeconds(4)); factory.setReadTimeout(Duration.ofSeconds(11));
         client=RestClient.builder().requestFactory(factory).defaultHeader("User-Agent",userAgent)
                 .defaultHeader("Accept",MediaType.APPLICATION_JSON_VALUE).build();
     }
@@ -63,8 +63,8 @@ public class VerifiedPlacesService {
             if(read(unavailableKey)!=null) continue;
             try {
                 var form=new LinkedMultiValueMap<String,String>(); form.add("data",query);
-                JsonNode candidate=mapper.readTree(client.post().uri(endpoint)
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form).retrieve().body(String.class));
+                JsonNode candidate=executeJson(client.post().uri(endpoint)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED).body(form));
                 if(candidate==null || !candidate.path("elements").isArray() || candidate.hasNonNull("remark")) {
                     log.warn("[PLACES-OSM] Provider {} returned an invalid or busy response.", endpoint);
                     write(unavailableKey,"1",Duration.ofSeconds(30));
@@ -79,7 +79,8 @@ public class VerifiedPlacesService {
         }
         if(root==null) throw new AppException(ErrorCode.PLACES_UNAVAILABLE);
         List<PlaceResponse> places=parse(root,lat,lng,radius);
-        try { write(key,mapper.writeValueAsString(places),Duration.ofMinutes(15)); } catch(Exception ignored) { }
+        Duration ttl=places.isEmpty() ? Duration.ofMinutes(2) : Duration.ofMinutes(15);
+        try { write(key,mapper.writeValueAsString(places),ttl); } catch(Exception ignored) { }
         return places;
     }
 
@@ -89,7 +90,11 @@ public class VerifiedPlacesService {
         query=query.trim();
         if(lat!=null) {
             String text=normalize(query);
-            return nearby(lat,lng,radius).stream().filter(p -> normalize(p.getName()+" "+p.getAddress()).contains(text)).toList();
+            return nearby(lat,lng,radius).stream().filter(p -> {
+                String haystack = normalize(p.getName() + " " + p.getAddress() + " "
+                        + (p.getTypes() == null ? "" : String.join(" ", p.getTypes())));
+                return haystack.contains(text);
+            }).toList();
         }
         if(radius<500 || radius>50000) throw new AppException(ErrorCode.VALIDATION_ERROR,"Bán kính phải từ 500 đến 50000 mét.");
         double[] point=geocode(query);
@@ -115,7 +120,7 @@ public class VerifiedPlacesService {
         try {
             var uri=UriComponentsBuilder.fromUriString(photonUrl).queryParam("q","{query}").queryParam("limit",1)
                     .encode().buildAndExpand(query).toUri();
-            JsonNode root=mapper.readTree(client.get().uri(uri).retrieve().body(String.class));
+            JsonNode root=executeJson(client.get().uri(uri));
             if(root==null || !root.path("features").isArray()) throw new AppException(ErrorCode.PLACES_INVALID_RESPONSE);
             if(root.path("features").isEmpty()) { write(key,"[]",Duration.ofMinutes(5)); return null; }
             JsonNode coords=root.path("features").get(0).path("geometry").path("coordinates");
@@ -179,6 +184,15 @@ public class VerifiedPlacesService {
     private String key(String kind,String value) {
         try { return "places:osm:v1:"+kind+":"+HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8))); }
         catch(Exception ex) { throw new IllegalStateException(ex); }
+    }
+    private JsonNode executeJson(RestClient.RequestHeadersSpec<?> request) throws Exception {
+        byte[] raw = request.exchange((req, res) -> {
+            if (res.getStatusCode().isError()) {
+                throw new IllegalStateException("HTTP " + res.getStatusCode().value());
+            }
+            return res.getBody().readAllBytes();
+        });
+        return raw == null || raw.length == 0 ? null : mapper.readTree(raw);
     }
     private String read(String key) { try { return redis.opsForValue().get(key); } catch(Exception ignored) { return null; } }
     private void write(String key,String value,Duration ttl) { try { redis.opsForValue().set(key,value,ttl); } catch(Exception ignored) { } }

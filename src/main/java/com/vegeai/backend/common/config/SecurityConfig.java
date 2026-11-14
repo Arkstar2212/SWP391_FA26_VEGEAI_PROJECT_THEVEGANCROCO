@@ -87,8 +87,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/ai/chat").permitAll()
                         // Public video pages keep the video-to-recipe copilot available for everyone.
                         .requestMatchers("/api/ai/video-recipe").permitAll()
-                        // Fridge scanning and the cook-now generator are account features.
-                        .requestMatchers("/api/ai/fridge-scan", "/api/ai/generate-recipe").authenticated()
+                        // Fridge scanning, cook-now generator, and personalized blog insight require an active member account.
+                        .requestMatchers("/api/ai/fridge-scan", "/api/ai/generate-recipe", "/api/ai/blog-insight").authenticated()
                         // Swagger / OpenAPI
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                          "/api-docs/**", "/v3/api-docs/**").permitAll()

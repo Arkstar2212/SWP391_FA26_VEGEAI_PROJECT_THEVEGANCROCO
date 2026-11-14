@@ -42,7 +42,7 @@ class VerifiedPlacesApiTest {
                     boolean geocoder=exchange.getRequestURI().getPath().equals("/geocode");
                     String body=geocoder ? geocoderBody : overpassBody;
                     int status=failAll || exchange.getRequestURI().getPath().equals("/bad") ? 503 : 200;
-                    exchange.getResponseHeaders().set("Content-Type","application/json");
+                    exchange.getResponseHeaders().set("Content-Type",geocoder ? "application/json" : "application/octet-stream");
                     byte[] bytes=body.getBytes(StandardCharsets.UTF_8);
                     exchange.sendResponseHeaders(status,bytes.length);exchange.getResponseBody().write(bytes);
                 }

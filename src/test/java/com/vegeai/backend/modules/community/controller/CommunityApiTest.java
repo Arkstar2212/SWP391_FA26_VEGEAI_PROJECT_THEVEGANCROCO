@@ -57,7 +57,7 @@ class CommunityApiTest {
         if (body != null) builder.contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(body));
         var result = mvc.perform(builder).andExpect(status().is(status))
                 .andExpect(header().doesNotExist(HttpHeaders.WWW_AUTHENTICATE)).andReturn();
-        return mapper.readTree(result.getResponse().getContentAsString());
+        return mapper.readTree(result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     JsonNode question(String content) throws Exception {
@@ -404,5 +404,19 @@ class CommunityApiTest {
         JsonNode saved = call("GET", "/api/videos/favorites?page=0&size=1", memberToken, null, 200).path("data");
         assertThat(saved.path("totalElements").asInt()).isEqualTo(1);
         assertThat(saved.path("items").get(0).path("id").asText()).isEqualTo(id(first));
+    }
+
+    @Test void unsafeAndNonVegetarianCommentsAreRejectedWhileFlaggedQuestionAlertsAdmin() throws Exception {
+        JsonNode targetVideo = video("Moderated comment video", "PUBLISHED");
+        String commentPath = "/api/videos/" + id(targetVideo) + "/comments";
+
+        call("POST", commentPath, memberToken, Map.of("content", "Món này nấu với thịt bò ngon lắm"), 400);
+        call("POST", commentPath, memberToken, Map.of("content", "ádasda"), 400);
+        call("POST", commentPath, memberToken, Map.of("content", "Video hướng dẫn rất hữu ích"), 201);
+
+        JsonNode flaggedQuestion = question("Có thể dùng thịt heo thay đậu hũ được không?");
+        assertThat(flaggedQuestion.path("status").asText()).isEqualTo("PENDING");
+        JsonNode adminNotices = call("GET", "/api/notifications?page=0&size=20", adminToken, null, 200).path("data").path("items");
+        assertThat(adminNotices.toString()).contains("AI cảnh báo kiểm duyệt");
     }
 }

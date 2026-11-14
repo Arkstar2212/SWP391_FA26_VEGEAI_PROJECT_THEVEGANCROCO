@@ -2,6 +2,7 @@ package com.vegeai.backend.modules.community.service;
 
 import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.common.exception.*;
+import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import com.vegeai.backend.modules.community.dto.BlogDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
 import com.vegeai.backend.modules.community.repository.BlogCommentRepository;
@@ -30,6 +31,7 @@ public class BlogService {
     private final NotificationService notificationService;
     private final ContentCommentRepository comments;
     private final ContentRatingRepository ratings;
+    private final GeminiAiService geminiAiService;
 
     @Transactional(readOnly = true)
     public PageResponse<PostResponse> published(String keyword, BlogCategory category, int page, int size) {
@@ -280,6 +282,10 @@ public class BlogService {
         BlogPost post = locked(postId);
         if (post.getStatus() != BlogStatus.PUBLISHED) {
             throw new AppException(ErrorCode.BLOG_STATE_CONFLICT, "Only published posts can receive comments.");
+        }
+        var verdict = geminiAiService.screenCommunityText("Bình luận bài viết", input.content());
+        if (verdict.flagged()) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Nội dung bình luận không phù hợp: " + verdict.reason());
         }
         User author = access.user(principal);
 

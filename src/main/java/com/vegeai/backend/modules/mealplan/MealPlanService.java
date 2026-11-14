@@ -5,6 +5,9 @@ import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.common.exception.*;
 import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import com.vegeai.backend.modules.community.service.CommunityAccess;
+import com.vegeai.backend.modules.fridge.entity.FridgeItem;
+import com.vegeai.backend.modules.fridge.entity.FridgeItemStatus;
+import com.vegeai.backend.modules.fridge.repository.FridgeItemRepository;
 import com.vegeai.backend.modules.nutrition.dto.*;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
 import com.vegeai.backend.modules.notification.service.NotificationService;
@@ -17,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.text.Normalizer;
 import java.time.*;
 import java.util.*;
 import static com.vegeai.backend.modules.mealplan.MealPlanDtos.*;
@@ -25,6 +29,7 @@ import static com.vegeai.backend.modules.mealplan.MealPlanDtos.*;
 public class MealPlanService {
     private final MealPlanRepository plans;
     private final RecipeRepository recipes;
+    private final FridgeItemRepository fridgeItems;
     private final RecipeService recipeService;
     private final RecipeDietPolicy dietPolicy;
     private final NutritionService nutrition;
@@ -92,11 +97,49 @@ public class MealPlanService {
             throw new AppException(ErrorCode.VALIDATION_ERROR, "Ngày bắt đầu phải từ hôm nay và trong một năm tới.");
         List<Recipe> available = eligible(user).stream().limit(60).toList();
         if (available.isEmpty()) throw new AppException(ErrorCode.VALIDATION_ERROR, "Chưa có công thức đủ định lượng, dinh dưỡng và phù hợp chế độ ăn/dị ứng của bạn. Vui lòng kiểm tra hồ sơ hoặc bổ sung thư viện công thức.");
-        List<Map<String, Object>> candidates = available.stream().map(r -> Map.<String,Object>of(
-                "recipeId", r.getRecipeId(), "title", r.getTitle(), "calories", r.getCalories(), "protein", r.getProteinGrams(),
-                "carbs", r.getCarbsGrams(), "fat", r.getFatGrams(), "hasVideo", r.getVideos().stream().anyMatch(v -> v.getStatus() == com.vegeai.backend.modules.community.entity.VideoStatus.PUBLISHED))).toList();
-        List<UUID> ranked = ai.rankMealPlanRecipes(json(Map.of("task", "VEGEAI_MEAL_PLAN", "targets", profile.getTargets(),
-                "goal", profile.getGoal(), "diet", user.getDietaryPreferences(), "allergies", Objects.toString(user.getAllergies(), "NONE"), "recipes", candidates)));
+        int extraActiveCalories = request.wearableActiveCalories() != null && request.wearableActiveCalories() > 0
+                ? request.wearableActiveCalories() : 0;
+        NutritionTargetsResponse effectiveTargets = adjustTargetsForWearable(profile.getTargets(), extraActiveCalories);
+
+        List<FridgeItem> activeFridge = fridgeItems.findByUserIdAndStatusOrderByExpiryDateAsc(user.getUserId(), FridgeItemStatus.ACTIVE)
+                .stream()
+                .filter(FridgeItem::isVegetarian)
+                .filter(item -> item.getExpiryDate() == null || !item.getExpiryDate().isBefore(LocalDate.now()))
+                .toList();
+        List<String> availableFridgeNames = activeFridge.stream()
+                .map(FridgeItem::getName)
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .limit(25)
+                .toList();
+        Map<UUID, List<String>> fridgeMatchesByRecipe = new HashMap<>();
+        for (Recipe r : available) {
+            List<String> matched = matchedFridgeIngredients(r, activeFridge);
+            if (!matched.isEmpty()) fridgeMatchesByRecipe.put(r.getRecipeId(), matched);
+        }
+
+        List<Map<String, Object>> candidates = available.stream().map(r -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("recipeId", r.getRecipeId());
+            item.put("title", r.getTitle());
+            item.put("calories", r.getCalories());
+            item.put("protein", r.getProteinGrams());
+            item.put("carbs", r.getCarbsGrams());
+            item.put("fat", r.getFatGrams());
+            item.put("hasVideo", r.getVideos().stream().anyMatch(v -> v.getStatus() == com.vegeai.backend.modules.community.entity.VideoStatus.PUBLISHED));
+            int matchCount = fridgeMatchesByRecipe.getOrDefault(r.getRecipeId(), List.of()).size();
+            if (matchCount > 0) item.put("fridgeMatchCount", matchCount);
+            return item;
+        }).toList();
+        Map<String, Object> promptPayload = new LinkedHashMap<>();
+        promptPayload.put("task", "VEGEAI_MEAL_PLAN");
+        promptPayload.put("targets", effectiveTargets);
+        promptPayload.put("goal", profile.getGoal());
+        promptPayload.put("diet", user.getDietaryPreferences());
+        promptPayload.put("allergies", Objects.toString(user.getAllergies(), "NONE"));
+        if (!availableFridgeNames.isEmpty()) promptPayload.put("availableFridgeIngredients", availableFridgeNames);
+        promptPayload.put("recipes", candidates);
+        List<UUID> ranked = ai.rankMealPlanRecipes(json(promptPayload));
         Map<UUID, Recipe> byId = new HashMap<>(); available.forEach(r -> byId.put(r.getRecipeId(), r));
         if (ranked.stream().anyMatch(id -> !byId.containsKey(id))) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
         List<Recipe> ordered = new ArrayList<>(); new LinkedHashSet<>(ranked).forEach(id -> ordered.add(byId.get(id)));
@@ -106,24 +149,29 @@ public class MealPlanService {
                 : "WEEK".equals(request.period()) ? 7 : (int) java.time.temporal.ChronoUnit.DAYS.between(request.startDate(), request.startDate().plusMonths(1));
         LocalDate end = request.startDate().plusDays(requestedDays);
         List<Day> days = new ArrayList<>(); Map<UUID,Integer> usage = new HashMap<>();
+        Set<String> usedFridgeIngredients = new LinkedHashSet<>();
         for (LocalDate date = request.startDate(); date.isBefore(end); date = date.plusDays(1)) {
             List<Meal> meals = new ArrayList<>();
             for (int slot = 0; slot < request.mealsPerDay(); slot++) {
                 Recipe chosen = null; double best = Double.MAX_VALUE;
                 for (int index = 0; index < ordered.size(); index++) {
                     Recipe candidate = ordered.get(index);
-                    double portions = portions(candidate, profile.getTargets().getDailyCaloriesTarget() / (double) request.mealsPerDay());
-                    double cost = cost(candidate, portions, profile.getTargets(), request.mealsPerDay())
+                    double portions = portions(candidate, effectiveTargets.getDailyCaloriesTarget() / (double) request.mealsPerDay());
+                    int fridgeBonusCount = Math.min(2, fridgeMatchesByRecipe.getOrDefault(candidate.getRecipeId(), List.of()).size());
+                    double cost = cost(candidate, portions, effectiveTargets, request.mealsPerDay())
                             + usage.getOrDefault(candidate.getRecipeId(),0) * 0.08 + index * 0.002
+                            - fridgeBonusCount * 0.12
                             + (meals.stream().anyMatch(m -> m.recipeId().equals(candidate.getRecipeId())) ? 0.8 : 0);
                     if (cost < best) { best = cost; chosen = candidate; }
                 }
-                meals.add(meal(slot, chosen, profile.getTargets(), request.mealsPerDay()));
+                meals.add(meal(slot, chosen, effectiveTargets, request.mealsPerDay()));
                 usage.merge(chosen.getRecipeId(), 1, Integer::sum);
+                usedFridgeIngredients.addAll(fridgeMatchesByRecipe.getOrDefault(chosen.getRecipeId(), List.of()));
             }
             days.add(new Day(date, meals, sum(meals)));
         }
-        Snapshot snap = new Snapshot(request.period(), request.startDate(), end.minusDays(1), request.mealsPerDay(), profile.getTargets(), days, warnings(days, profile.getTargets(), available.size()));
+        Snapshot snap = new Snapshot(request.period(), request.startDate(), end.minusDays(1), request.mealsPerDay(),
+                effectiveTargets, days, warnings(days, effectiveTargets, available.size(), usedFridgeIngredients, extraActiveCalories));
         MealPlan plan = new MealPlan(); plan.setUserId(user.getUserId()); plan.setStatus("DRAFT"); plan.setSnapshot(json(snap)); plan.setProfileSignature(signature(profile));
         MealPlan created = plans.saveAndFlush(plan);
         // Generation is a user-requested activity and is confirmed in the in-app notification center.
@@ -149,7 +197,17 @@ public class MealPlanService {
                 round(meals.stream().mapToDouble(m->m.nutrition().carbs()).sum()), round(meals.stream().mapToDouble(m->m.nutrition().fat()).sum()), round(meals.stream().mapToDouble(m->m.nutrition().fiber()).sum()));
     }
     private List<String> warnings(List<Day> days, NutritionTargetsResponse target, int count) {
+        return warnings(days, target, count, Set.of(), 0);
+    }
+    private List<String> warnings(List<Day> days, NutritionTargetsResponse target, int count, Set<String> usedFridgeIngredients, int extraActiveCalories) {
         List<String> messages = new ArrayList<>(); messages.add("Dinh dưỡng dự kiến từ dữ liệu công thức, không phải lượng đã ăn. Kiểm tra nhãn nguyên liệu và nguy cơ lây nhiễm chéo nếu có dị ứng.");
+        if (!usedFridgeIngredients.isEmpty()) {
+            messages.add("Đã ưu tiên công thức tận dụng nguyên liệu sẵn có trong tủ lạnh: "
+                    + String.join(", ", usedFridgeIngredients.stream().limit(8).toList()) + ".");
+        }
+        if (extraActiveCalories > 0) {
+            messages.add("Đã cộng bù +" + extraActiveCalories + " kcal vận động từ thiết bị đeo vào ngân sách năng lượng mỗi ngày.");
+        }
         if (count < 7) messages.add("Thư viện món phù hợp còn ít; kế hoạch có thể lặp lại món.");
         if (days.stream().anyMatch(d -> Math.abs(d.totals().calories()/target.getDailyCaloriesTarget()-1) > .15
                 || Math.abs(d.totals().protein()/Math.max(1,target.getProteinTargetG())-1) > .25
@@ -158,6 +216,46 @@ public class MealPlanService {
             messages.add("Một số ngày chưa đạt mục tiêu calo hoặc macro. Xem tổng từng ngày và đổi món trước khi lưu; không xem đây là kế hoạch dinh dưỡng y khoa.");
         if (days.stream().flatMap(d->d.meals().stream()).anyMatch(m->m.recipe().getVideos().isEmpty())) messages.add("Một số công thức chưa có video liên kết; hướng dẫn nấu bằng chữ vẫn có sẵn.");
         return messages;
+    }
+    private NutritionTargetsResponse adjustTargetsForWearable(NutritionTargetsResponse base, int extraActiveCalories) {
+        if (extraActiveCalories <= 0) return base;
+        int adjustedCalories = base.getDailyCaloriesTarget() + extraActiveCalories;
+        double ratio = adjustedCalories / (double) Math.max(1, base.getDailyCaloriesTarget());
+        return NutritionTargetsResponse.builder()
+                .bmi(base.getBmi())
+                .bmiCategory(base.getBmiCategory())
+                .bmiCategoryLabel(base.getBmiCategoryLabel())
+                .bmr(base.getBmr())
+                .tdee(base.getTdee())
+                .dailyCaloriesTarget(adjustedCalories)
+                .customCalorieTarget(base.isCustomCalorieTarget())
+                .proteinTargetG((int) Math.round(base.getProteinTargetG() * ratio))
+                .carbsTargetG((int) Math.round(base.getCarbsTargetG() * ratio))
+                .fatTargetG((int) Math.round(base.getFatTargetG() * ratio))
+                .fiberTargetG(base.getFiberTargetG())
+                .warnings(base.getWarnings())
+                .build();
+    }
+    private List<String> matchedFridgeIngredients(Recipe recipe, List<FridgeItem> activeFridge) {
+        if (activeFridge.isEmpty() || recipe.getIngredients().isEmpty()) return List.of();
+        Set<String> matched = new LinkedHashSet<>();
+        for (RecipeIngredient ingredient : recipe.getIngredients()) {
+            String ingName = stripAccents(Objects.toString(ingredient.getNormalizedName(), ingredient.getName()));
+            if (ingName.length() < 2) continue;
+            for (FridgeItem item : activeFridge) {
+                String itemNorm = stripAccents(Objects.toString(item.getNormalizedName(), item.getName()));
+                if (itemNorm.length() < 2) continue;
+                if (ingName.contains(itemNorm) || itemNorm.contains(ingName)) {
+                    matched.add(item.getName());
+                }
+            }
+        }
+        return List.copyOf(matched);
+    }
+    private static String stripAccents(String value) {
+        if (value == null) return "";
+        String decomposed = Normalizer.normalize(value, Normalizer.Form.NFD);
+        return decomposed.replaceAll("\\p{M}+", "").replace('đ', 'd').replace('Đ', 'd').toLowerCase(Locale.ROOT).trim();
     }
     @Transactional(readOnly=true) public View get(String principal, UUID id) {
         User user = member(principal);

@@ -37,5 +37,6 @@ EXPOSE 8081
 ENTRYPOINT ["java", \
     "-XX:+UseG1GC", \
     "-XX:MaxRAMPercentage=75.0", \
+    "-Djava.net.preferIPv4Stack=true", \
     "-Djava.security.egd=file:/dev/./urandom", \
     "-jar", "app.jar"]

@@ -87,6 +87,23 @@ public abstract class GeminiIntegrationTestSupport {
                         "dietaryType", "VEGAN", "ingredients", List.of("Cải ngọt", "Nấm bào ngư"),
                         "instructions", List.of("Wash vegetables", "Cook in vegetable broth"),
                         "cookTimeMinutes", 20, "safetyNotes", List.of());
+            } else if (prompt.contains("<blog_post>")) {
+                if (prompt.contains("fixture:blog-incomplete")) {
+                    reply = Map.of("headline", "Thiếu takeaways", "keyTakeaways", List.of(), "scientificOrLifestyleInsight", "Thiếu", "actionableSteps", List.of());
+                } else {
+                    reply = Map.of(
+                            "headline", "Tổng hợp điểm cốt lõi về B12 và sắt thực vật",
+                            "keyTakeaways", List.of(
+                                    "Kết hợp vitamin C giúp tăng hấp thu sắt non-heme từ rau lá xanh đậm.",
+                                    "Người ăn thuần chay nên theo dõi và bổ sung nguồn vitamin B12 ổn định."),
+                            "scientificOrLifestyleInsight", "AI đối chiếu dinh dưỡng cho thấy sắt từ thực vật hấp thu hiệu quả hơn khi đi cùng vitamin C và tránh uống trà/cà phê sát giờ ăn.",
+                            "actionableSteps", List.of(
+                                    "Thêm ớt chuông hoặc nước chanh vào bữa ăn giàu đậu và rau lá xanh.",
+                                    "Hỏi sâu hơn AI Bếp Trưởng để tính lượng B12 và sắt theo thực đơn ngày."),
+                            "personalizedNote", "Phù hợp với chế độ thuần chay hiện tại của bạn.",
+                            "nutritionSafetyDisclaimer", "Thông tin chỉ mang tính tham khảo dinh dưỡng, không thay thế tư vấn y khoa.",
+                            "suggestedFollowUpPrompt", "Hãy gợi ý thực đơn 1 ngày giàu sắt và vitamin B12 phù hợp hồ sơ của tôi.");
+                }
             } else {
                 reply = Map.of("inScope", !prompt.contains("fixture:out-of-scope"), "reply", "Test plant-based advice", "recommendedRecipes", List.of("Canh rau"));
             }

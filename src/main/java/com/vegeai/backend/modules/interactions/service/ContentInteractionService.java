@@ -3,6 +3,7 @@ package com.vegeai.backend.modules.interactions.service;
 import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.common.exception.AppException;
 import com.vegeai.backend.common.exception.ErrorCode;
+import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import com.vegeai.backend.modules.community.entity.BlogPost;
 import com.vegeai.backend.modules.community.entity.BlogStatus;
 import com.vegeai.backend.modules.community.entity.CommunityVideo;
@@ -49,6 +50,14 @@ public class ContentInteractionService {
     private final VideoRepository videos;
     private final CommunityAccess access;
     private final ContentInteractionAssetService assets;
+    private final GeminiAiService geminiAiService;
+
+    private void enforceSafeText(String text) {
+        var verdict = geminiAiService.screenCommunityText("Bình luận / đánh giá cộng đồng", text);
+        if (verdict.flagged()) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Nội dung bình luận không phù hợp: " + verdict.reason());
+        }
+    }
 
     @Transactional(readOnly = true)
     public ContentView publicContent(InteractionTarget type, UUID id, String principal, int page, int size) {
@@ -98,6 +107,7 @@ public class ContentInteractionService {
 
     public CommentView addComment(String principal, InteractionTarget type, UUID id, CommentInput input) {
         requirePublished(type, id);
+        enforceSafeText(input.content());
         ContentComment comment = new ContentComment();
         comment.setTargetType(type);
         comment.setTargetId(id);
@@ -109,6 +119,7 @@ public class ContentInteractionService {
     public CommentView addReview(String principal, InteractionTarget type, UUID id, ReviewInput input,
                                  List<MultipartFile> photos) {
         requirePublished(type, id);
+        enforceSafeText(input.content());
         User user = access.user(principal);
         saveRating(user, type, id, input.stars());
 
@@ -146,6 +157,7 @@ public class ContentInteractionService {
     public CommentView editComment(String principal, InteractionTarget type, UUID targetId,
                                    UUID commentId, CommentInput input) {
         requirePublished(type, targetId);
+        enforceSafeText(input.content());
         User user = access.user(principal);
         ContentComment comment = comments.findByIdAndTargetTypeAndTargetId(commentId, type, targetId)
                 .filter(c -> c.getAuthor().getUserId().equals(user.getUserId()))
@@ -159,6 +171,7 @@ public class ContentInteractionService {
     public CommentView editReview(String principal, InteractionTarget type, UUID targetId,
                                   UUID commentId, ReviewInput input, List<MultipartFile> photos) {
         requirePublished(type, targetId);
+        enforceSafeText(input.content());
         User user = access.user(principal);
         ContentComment comment = comments.findByIdAndTargetTypeAndTargetId(commentId, type, targetId)
                 .filter(c -> c.getAuthor().getUserId().equals(user.getUserId()))

@@ -48,7 +48,7 @@ class AdminRoleBoundaryTest {
         if (token != null) builder.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         if (body != null) builder.contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(body));
         var result = mvc.perform(builder).andExpect(status().is(code)).andReturn();
-        return mapper.readTree(result.getResponse().getContentAsString());
+        return mapper.readTree(result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
     }
     @Test void adminCannotUsePersonalApisButCanReadPublicContentAndManageAccounts() throws Exception {
         for (String path : List.of("/api/fridge", "/api/nutrition/profile", "/api/ai/chat/history", "/api/recipes/cookbook", "/api/recipes/fridge-match")) {
@@ -158,5 +158,22 @@ class AdminRoleBoundaryTest {
         assertThat(drafts.path("totalElements").asInt()).isEqualTo(1);
         assertThat(drafts.path("items").get(0).path("status").asText()).isEqualTo("DRAFT");
         call("GET", "/api/admin/recipes", memberToken, null, 403);
+    }
+
+    @Test void adminCanExtractVideoRecipeWhileAiChatRemainsMemberOnly() throws Exception {
+        Map<String, Object> videoReq = Map.of(
+                "title", "Đậu hũ sốt cà chua chay",
+                "description", "Món chay thanh đạm cho bữa tối",
+                "videoUrl", "/api/public/community-media/00000000-0000-0000-0000-000000000001.mp4"
+        );
+        JsonNode adminExtracted = call("POST", "/api/ai/video-recipe", adminToken, videoReq, 200).path("data");
+        assertThat(adminExtracted.path("title").asText()).isEqualTo("Đậu hũ sốt cà chua chay");
+        assertThat(adminExtracted.path("source").asText()).isEqualTo("TEMPLATE_FALLBACK");
+        assertThat(adminExtracted.path("aiFallbackNotice").asText()).isNotBlank();
+
+        JsonNode guestExtracted = call("POST", "/api/ai/video-recipe", null, videoReq, 200).path("data");
+        assertThat(guestExtracted.path("source").asText()).isEqualTo("TEMPLATE_FALLBACK");
+
+        call("POST", "/api/ai/generate-recipe", adminToken, Map.of("recipeName", "Canh nấm"), 403);
     }
 }

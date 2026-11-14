@@ -127,6 +127,24 @@ class PlaceControllerTest {
         assertEquals("2.5 km", GeoUtils.formatDistanceText(2.52));
     }
 
+    @Test
+    @DisplayName("Suggest for food delegates cleanly and returns OSM fields without invented properties")
+    void suggestForFood_delegatesAndPreservesOsmContract() throws Exception {
+        when(placeProvider.suggestShopsForFood("Nấm bào ngư", 10.7769, 106.7009, 5000))
+                .thenReturn(List.of(places.get(1), places.get(0)));
+
+        mockMvc.perform(get("/api/places/suggest-for-food")
+                        .param("food", "Nấm bào ngư")
+                        .param("lat", "10.7769")
+                        .param("lng", "106.7009"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data", hasSize(2)))
+                .andExpect(jsonPath("$.data[0].placeId", is("way/2")))
+                .andExpect(jsonPath("$.data[0].dataSource", is("OPENSTREETMAP")))
+                .andExpect(jsonPath("$.data[0].rating").doesNotExist());
+    }
+
     private List<PlaceResponse> filter(PlaceCategory requestedCategory, String keyword) {
         return places.stream()
                 .filter(place -> requestedCategory == PlaceCategory.ALL || requestedCategory == place.getCategory())

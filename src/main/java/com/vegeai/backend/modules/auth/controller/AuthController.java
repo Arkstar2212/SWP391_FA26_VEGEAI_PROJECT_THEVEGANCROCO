@@ -81,7 +81,7 @@ public class AuthController {
             **Kích hoạt tài khoản bằng mã OTP 6 chữ số.**
             
             - `email`: Email đã dùng để đăng ký.
-            - `otp`: Mã số gồm 6 chữ số nhận từ email hoặc console backend (hạn sử dụng 3 phút).
+            - `otp`: Mã số gồm 6 chữ số nhận từ email (hạn sử dụng 3 phút).
             - Sau khi kích hoạt thành công, tài khoản chuyển sang trạng thái `ACTIVE` và có thể đăng nhập.
             """)
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody VerifyEmailRequest req) {

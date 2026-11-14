@@ -48,6 +48,12 @@ public class GeneratedRecipeAiResponse {
     @Schema(description = "Lưu ý dinh dưỡng, mẹo nấu ngon hoặc lưu ý an toàn dị ứng")
     private List<String> safetyNotes;
 
+    @Schema(description = "Nguồn tạo công thức: AI hoặc TEMPLATE_FALLBACK")
+    private String source;
+
+    @Schema(description = "Thông báo minh bạch nếu kết quả dùng mẫu dự phòng do chưa cấu hình API key hoặc AI tạm thời gián đoạn")
+    private String aiFallbackNotice;
+
     @Schema(description = "Thời điểm tạo công thức")
     private Instant createdAt;
 

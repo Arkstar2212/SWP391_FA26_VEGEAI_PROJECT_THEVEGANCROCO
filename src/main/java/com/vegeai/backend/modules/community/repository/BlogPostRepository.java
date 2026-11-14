@@ -49,4 +49,7 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, UUID>, JpaSp
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from BlogPost p where p.id = :id")
     Optional<BlogPost> findForUpdate(@Param("id") UUID id);
+
+    @EntityGraph(attributePaths = "author")
+    Optional<BlogPost> findWithAuthorById(UUID id);
 }

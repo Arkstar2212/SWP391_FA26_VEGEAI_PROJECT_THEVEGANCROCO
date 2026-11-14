@@ -10,6 +10,10 @@ import com.vegeai.backend.modules.recipe.repository.RecipeRepository;
 import com.vegeai.backend.modules.recipe.repository.TagRepository;
 import com.vegeai.backend.modules.community.entity.*;
 import com.vegeai.backend.modules.community.repository.VideoRepository;
+import com.vegeai.backend.modules.fridge.entity.FreshnessStatus;
+import com.vegeai.backend.modules.fridge.entity.FridgeItem;
+import com.vegeai.backend.modules.fridge.entity.FridgeItemStatus;
+import com.vegeai.backend.modules.fridge.repository.FridgeItemRepository;
 import com.vegeai.backend.modules.mealplan.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +37,7 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
     @Autowired RecipeRepository recipes; @Autowired VideoRepository videos; @Autowired JwtService jwt;
     @Autowired RecipeDietPolicy policy; @MockBean TokenBlacklistService blacklist;
     @Autowired TagRepository tags;
+    @Autowired FridgeItemRepository fridgeItems;
     User member, other, admin; String token, otherToken, adminToken;
     @BeforeEach void setup() {
         member=user(UserRole.MEMBER); other=user(UserRole.MEMBER); admin=user(UserRole.ADMIN);
@@ -56,7 +61,7 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
         if(auth!=null)req.header(HttpHeaders.AUTHORIZATION,"Bearer "+auth);
         if(body!=null)req.contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(body));
         var res=mvc.perform(req).andExpect(status().is(code)).andReturn();
-        return mapper.readTree(res.getResponse().getContentAsString()).path("data");
+        return mapper.readTree(res.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8)).path("data");
     }
     Map<String,Object> profileBody() {
         return new HashMap<>(Map.of("gender","FEMALE","dateOfBirth","2000-01-15","heightCm",160,"weightKg",55,
@@ -291,5 +296,49 @@ class MealPlanApiTest extends GeminiIntegrationTestSupport {
             assertThat(meal.path("recipe").path("videos").size()).isEqualTo(1);
             assertThat(meal.path("recipe").path("videos").get(0).path("id").asText()).isEqualTo(publicVideo.getId().toString());
         }
+    }
+
+    @Test void fridgeIngredientsAndWearableCaloriesInfluencePlanAndStayAnonymized() throws Exception {
+        profile();
+        recipe("Nấm bào ngư kho tộ", "Nấm bào ngư", 450);
+        fridgeItems.saveAndFlush(FridgeItem.builder()
+                .userId(member.getUserId())
+                .name("Nấm bào ngư")
+                .normalizedName("nấm bào ngư")
+                .category("VEGAN")
+                .isVegetarian(true)
+                .freshnessStatus(FreshnessStatus.FRESH)
+                .status(FridgeItemStatus.ACTIVE)
+                .firstScannedAt(java.time.LocalDateTime.now())
+                .lastScannedAt(java.time.LocalDateTime.now())
+                .expiryDate(LocalDate.now().plusDays(3))
+                .build());
+        fridgeItems.saveAndFlush(FridgeItem.builder()
+                .userId(member.getUserId())
+                .name("Hết hạn không dùng")
+                .normalizedName("hết hạn không dùng")
+                .category("VEGAN")
+                .isVegetarian(true)
+                .freshnessStatus(FreshnessStatus.SPOILED)
+                .status(FridgeItemStatus.ACTIVE)
+                .firstScannedAt(java.time.LocalDateTime.now().minusDays(5))
+                .lastScannedAt(java.time.LocalDateTime.now().minusDays(5))
+                .expiryDate(LocalDate.now().minusDays(1))
+                .build());
+
+        Map<String, Object> body = new HashMap<>(generateBody("WEEK"));
+        body.put("wearableActiveCalories", 350);
+        JsonNode plan = call("POST", "/api/meal-plans/generate", token, body, 200);
+
+        String aiPrompt = lastRequest.toString();
+        assertThat(aiPrompt).contains("availableFridgeIngredients", "Nấm bào ngư", "fridgeMatchCount");
+        assertThat(aiPrompt).doesNotContain("Hết hạn không dùng", member.getEmail(), member.getFullName(), "0912345678");
+        assertThat(plan.path("plan").path("warnings").toString()).contains("Nấm bào ngư", "350 kcal");
+
+        JsonNode baselinePlan = generate("WEEK");
+        int baseCal = baselinePlan.path("plan").path("targets").path("dailyCaloriesTarget").asInt();
+        int boostedCal = plan.path("plan").path("targets").path("dailyCaloriesTarget").asInt();
+        assertThat(baseCal).isPositive();
+        assertThat(boostedCal).isEqualTo(baseCal + 350);
     }
 }

@@ -7,7 +7,12 @@ import java.util.*;
 public final class MealPlanDtos {
     private MealPlanDtos() {}
     public record Generate(@NotNull @Pattern(regexp="WEEK|MONTH|CUSTOM") String period, @NotNull LocalDate startDate,
-                           @Min(1) @Max(6) int mealsPerDay, @Min(1) @Max(31) Integer days) {}
+                           @Min(1) @Max(6) int mealsPerDay, @Min(1) @Max(31) Integer days,
+                           @Min(0) @Max(3000) Integer wearableActiveCalories) {
+        public Generate(String period, LocalDate startDate, int mealsPerDay, Integer days) {
+            this(period, startDate, mealsPerDay, days, null);
+        }
+    }
     public record Swap(@NotNull UUID recipeId) {}
     public record Nutrients(double calories, double protein, double carbs, double fat, double fiber) {}
     public record Meal(int slot, UUID recipeId, String title, String imageUrl, double portions,

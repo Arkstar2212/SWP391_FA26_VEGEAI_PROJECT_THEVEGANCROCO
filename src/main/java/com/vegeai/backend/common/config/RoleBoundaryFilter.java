@@ -26,7 +26,7 @@ public class RoleBoundaryFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         if (path.isEmpty()) path = request.getRequestURI().substring(request.getContextPath().length());
         boolean adminArea = within(path, "/api/admin");
-        boolean personal = within(path, "/api/ai") || within(path, "/api/fridge")
+        boolean personal = (within(path, "/api/ai") && !within(path, "/api/ai/video-recipe")) || within(path, "/api/fridge")
                 || within(path, "/api/nutrition") || within(path, "/api/meal-plans") || within(path, "/api/recipes/cookbook")
                 || within(path, "/api/questions/mine") || within(path, "/api/videos/favorites")
                 || path.equals("/api/recipes/fridge-match");

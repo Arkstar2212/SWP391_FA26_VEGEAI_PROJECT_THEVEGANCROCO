@@ -71,7 +71,7 @@ public class CookbookService {
                 .difficulty(generated.getDifficulty() != null ? generated.getDifficulty() : "EASY")
                 .estimatedCalories(generated.getEstimatedCalories())
                 .dietaryType(generated.getDietaryType() != null ? generated.getDietaryType() : "VEGAN")
-                .originSource("AI_GENERATED")
+                .originSource("TEMPLATE_FALLBACK".equals(generated.getSource()) ? "TEMPLATE_FALLBACK" : "AI_GENERATED")
                 .ingredients(generated.getIngredients() != null ? new ArrayList<>(generated.getIngredients()) : new ArrayList<>())
                 .instructions(generated.getInstructions() != null ? new ArrayList<>(generated.getInstructions()) : new ArrayList<>())
                 .safetyNotes(generated.getSafetyNotes() != null ? new ArrayList<>(generated.getSafetyNotes()) : new ArrayList<>())

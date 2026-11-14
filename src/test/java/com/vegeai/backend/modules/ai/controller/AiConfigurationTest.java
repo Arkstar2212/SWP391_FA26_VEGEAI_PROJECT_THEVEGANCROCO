@@ -11,6 +11,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.ActiveProfiles;
 import com.vegeai.backend.modules.auth.service.JwtService;
+import com.vegeai.backend.modules.community.entity.BlogCategory;
+import com.vegeai.backend.modules.community.entity.BlogPost;
+import com.vegeai.backend.modules.community.entity.BlogStatus;
+import com.vegeai.backend.modules.community.repository.BlogPostRepository;
 import com.vegeai.backend.modules.user.repository.UserRepository;
 import com.vegeai.backend.modules.user.entity.*;
 import java.util.UUID;
@@ -32,7 +36,9 @@ class AiConfigurationTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired private UserRepository users;
+    @Autowired private BlogPostRepository blogPosts;
     @Autowired private JwtService jwt;
+    private User customer;
     private String token;
 
     @MockBean(answer = org.mockito.Answers.RETURNS_DEEP_STUBS)
@@ -42,7 +48,7 @@ class AiConfigurationTest {
     void isolateGuestQuota() {
         when(redis.opsForValue().increment(anyString())).thenReturn(1L);
         String id=UUID.randomUUID().toString();
-        User customer=users.saveAndFlush(User.builder().username("config-"+id).email(id+"@example.test")
+        customer=users.saveAndFlush(User.builder().username("config-"+id).email(id+"@example.test")
                 .fullName("Configuration fixture").passwordHash("test-only").role(UserRole.MEMBER).status(AccountStatus.ACTIVE).build());
         token=jwt.generateAccessToken(customer);
     }
@@ -65,5 +71,28 @@ class AiConfigurationTest {
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value(1706));
+    }
+
+    @Test
+    void blogInsightWithoutKeyReturnsUnavailableInsteadOfFakeSummary() throws Exception {
+        BlogPost post = new BlogPost();
+        post.setAuthor(customer);
+        post.setTitle("Test nutrition insight");
+        post.setExcerpt("Excerpt");
+        post.setContent("Detailed content about plant-based B12.");
+        post.setCategory(BlogCategory.NUTRITION);
+        post.setStatus(BlogStatus.PUBLISHED);
+        post = blogPosts.saveAndFlush(post);
+        try {
+            mockMvc.perform(post("/api/ai/blog-insight")
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"postId\":\"" + post.getId() + "\"}"))
+                    .andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.code").value(1706));
+        } finally {
+            blogPosts.deleteById(post.getId());
+        }
     }
 }

@@ -105,11 +105,10 @@ public class UserDataInitializer implements CommandLineRunner {
                     .build();
 
             userRepository.save(user);
-            log.info("[USER-INIT] Successfully seeded account: {} ({}) with password: {}", email, role, rawPassword);
+            log.info("[USER-INIT] Successfully seeded account: {} ({})", email, role);
         } else {
-            // Synchronize credentials and enrich profile fields
-            user.setPasswordHash(encodedHash);
-            boolean changed = true;
+            // Enrich missing profile fields without overwriting credentials already updated by the user.
+            boolean changed = false;
             if (user.getFullName() == null || user.getFullName().equals("Standard Member") || user.getFullName().equals("System Administrator")) {
                 user.setFullName(fullName);
                 changed = true;

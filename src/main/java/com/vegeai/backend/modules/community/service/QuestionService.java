@@ -2,6 +2,7 @@ package com.vegeai.backend.modules.community.service;
 
 import com.vegeai.backend.common.dto.PageResponse;
 import com.vegeai.backend.common.exception.*;
+import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import com.vegeai.backend.modules.community.dto.CommunityDtos.*;
 import com.vegeai.backend.modules.community.entity.*;
 import com.vegeai.backend.modules.community.repository.QuestionRepository;
@@ -21,6 +22,7 @@ public class QuestionService {
     private final QuestionRepository questions;
     private final CommunityAccess access;
     private final NotificationService notificationService;
+    private final GeminiAiService geminiAiService;
 
     @PreAuthorize("hasRole('MEMBER')")
     public QuestionResponse create(String principal, QuestionInput input) {
@@ -31,9 +33,14 @@ public class QuestionService {
         question.setAuthor(user);
         question.setContent(content);
         CommunityQuestion saved = questions.saveAndFlush(question);
+        var verdict = geminiAiService.screenCommunityText("Câu hỏi cộng đồng", content);
+        String adminNote = verdict.flagged()
+                ? "[AI cảnh báo kiểm duyệt: " + verdict.reason() + "] Một thành viên vừa gửi câu hỏi cần chú ý."
+                : "Một thành viên vừa gửi câu hỏi mới lên cộng đồng.";
         // Notify moderators only after the submitted question has been persisted successfully.
-        notificationService.notifyAdministrators("QUESTION_SUBMITTED", "Câu hỏi mới cần được duyệt",
-                "Một thành viên vừa gửi câu hỏi mới lên cộng đồng.", "/admin/questions/" + saved.getId());
+        notificationService.notifyAdministrators("QUESTION_SUBMITTED",
+                verdict.flagged() ? "Câu hỏi mới cần kiểm duyệt (AI gắn cờ)" : "Câu hỏi mới cần được duyệt",
+                adminNote, "/admin/questions/" + saved.getId());
         return response(saved, true);
     }
 

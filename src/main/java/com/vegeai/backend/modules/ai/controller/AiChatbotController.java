@@ -1,8 +1,12 @@
 package com.vegeai.backend.modules.ai.controller;
 
 import com.vegeai.backend.common.dto.ApiResponse;
+import com.vegeai.backend.common.exception.AppException;
+import com.vegeai.backend.common.exception.ErrorCode;
 import com.vegeai.backend.modules.ai.dto.AiChatRequest;
 import com.vegeai.backend.modules.ai.dto.AiChatResponse;
+import com.vegeai.backend.modules.ai.dto.BlogInsightAiRequest;
+import com.vegeai.backend.modules.ai.dto.BlogInsightAiResponse;
 import com.vegeai.backend.modules.ai.service.GeminiAiService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -58,5 +62,22 @@ public class AiChatbotController {
         AiChatResponse responseData = geminiAiService.processChat(req, username, isGuest);
 
         return ResponseEntity.ok(ApiResponse.success("AI response generated successfully.", responseData));
+    }
+
+    @PostMapping("/blog-insight")
+    @Operation(summary = "AI phân tích luận điểm & tư vấn cá nhân hóa cho bài đăng cộng đồng",
+            description = "Phân tích nội dung bài đăng kiến thức / lối sống xanh bằng Google Gemini kết hợp hồ sơ sức khỏe và cảnh báo dị ứng của thành viên.")
+    public ResponseEntity<ApiResponse<BlogInsightAiResponse>> analyzeBlogInsight(
+            @Valid @RequestBody BlogInsightAiRequest req) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        String username = auth.getName();
+        log.info("[AI-BLOG-INSIGHT] Analyzing blog post '{}' for user '{}'", req.getPostId(), username);
+        BlogInsightAiResponse responseData = geminiAiService.analyzeBlogInsight(req.getPostId(), username);
+
+        return ResponseEntity.ok(ApiResponse.success("AI phân tích bài đăng thành công.", responseData));
     }
 }

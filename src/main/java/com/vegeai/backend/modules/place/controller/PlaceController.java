@@ -129,4 +129,18 @@ public class PlaceController {
                 .data(categories)
                 .build());
     }
+
+    @GetMapping("/suggest-for-food")
+    @Operation(
+            summary = "Gợi ý quán chay và cửa hàng nguyên liệu phù hợp theo tên món ăn / thực phẩm",
+            description = "Xếp hạng các quán chay, siêu thị và cửa hàng thực phẩm có thẻ vegetarian/vegan trên OpenStreetMap theo độ phù hợp với món ăn hoặc nguyên liệu tìm kiếm."
+    )
+    public ApiResponse<List<PlaceResponse>> suggestForFood(
+            @RequestParam("food") String food,
+            @RequestParam(value = "lat", required = false) Double lat,
+            @RequestParam(value = "lng", required = false) Double lng,
+            @RequestParam(value = "radius", defaultValue = "5000") int radius
+    ) {
+        return ApiResponse.success(placeProvider.suggestShopsForFood(food, lat, lng, radius));
+    }
 }
