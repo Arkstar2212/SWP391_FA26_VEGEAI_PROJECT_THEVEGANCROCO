@@ -24,6 +24,7 @@ public class AuthResponse {
     private final String username;
     private final String email;
     private final String fullName;
+    private final String avatarUrl;
     private final String role;
     private final String status;
     private final Boolean isProfileCompleted;

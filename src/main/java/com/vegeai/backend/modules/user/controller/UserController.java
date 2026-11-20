@@ -4,6 +4,7 @@ import com.vegeai.backend.common.dto.ApiResponse;
 import com.vegeai.backend.modules.user.dto.ChangePasswordHashedRequest;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
 import com.vegeai.backend.modules.user.dto.ChangeEmailRequest;
+import com.vegeai.backend.modules.user.dto.ChangeUsernameRequest;
 import com.vegeai.backend.modules.user.dto.PublicUserProfileResponse;
 import com.vegeai.backend.modules.user.dto.QuickProfileRequest;
 import com.vegeai.backend.modules.user.dto.UpdateUserProfileRequest;
@@ -80,6 +81,19 @@ public class UserController {
             @AuthenticationPrincipal String userId,
             @Valid @RequestBody ChangeEmailRequest req) {
         return ResponseEntity.ok(ApiResponse.success("Email updated successfully.", userService.changeEmail(userId, req)));
+    }
+
+    @PutMapping("/me/username")
+    @Operation(summary = "Change the current user's username", description = """
+            **Đổi tên người dùng (`@username`) cho tài khoản đang đăng nhập.**
+
+            - Cho phép người dùng (bao gồm tài khoản đăng nhập bằng Google/Gmail) cập nhật thủ công từ username tự động sinh.
+            - `username`: 4–50 ký tự, có ít nhất 1 chữ cái, chỉ gồm chữ cái không dấu, số và dấu gạch dưới (`_`), không trùng lặp và không thuộc từ khóa hệ thống.
+            """)
+    public ResponseEntity<ApiResponse<UserProfileResponse>> changeUsername(
+            @AuthenticationPrincipal String userId,
+            @Valid @RequestBody ChangeUsernameRequest req) {
+        return ResponseEntity.ok(ApiResponse.success("Username updated successfully.", userService.changeUsername(userId, req)));
     }
 
     @PutMapping("/me/quick-profile")

@@ -8,6 +8,7 @@ import com.vegeai.backend.modules.nutrition.service.NutritionCalculator;
 import com.vegeai.backend.modules.nutrition.service.NutritionService;
 import com.vegeai.backend.modules.user.dto.ChangePasswordRequest;
 import com.vegeai.backend.modules.user.dto.ChangeEmailRequest;
+import com.vegeai.backend.modules.user.dto.ChangeUsernameRequest;
 import com.vegeai.backend.modules.user.dto.PublicUserProfileResponse;
 import com.vegeai.backend.modules.user.dto.QuickProfileRequest;
 import com.vegeai.backend.modules.user.dto.UpdateUserProfileRequest;
@@ -17,17 +18,25 @@ import com.vegeai.backend.modules.user.entity.User;
 import com.vegeai.backend.modules.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
+
+    private static final Set<String> RESERVED_USERNAMES = Set.of(
+            "admin", "administrator", "root", "system", "support",
+            "vegeai", "moderator", "staff", "null", "undefined",
+            "me", "api", "login", "register", "settings"
+    );
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -44,7 +53,9 @@ public class UserService {
         String previous = user.getAvatarUrl();
         user.setAvatarUrl(stored.getFirst());
         User saved = userRepository.saveAndFlush(user);
-        if (previous != null) assetService.delete(java.util.List.of(previous));
+        if (previous != null && previous.startsWith("/api/public/content-interactions/assets/")) {
+            assetService.delete(java.util.List.of(previous));
+        }
         return UserProfileResponse.from(saved);
     }
 
@@ -69,6 +80,45 @@ public class UserService {
                 "Địa chỉ email đăng nhập của bạn đã được cập nhật thành công.", "/settings?tab=settings");
         log.info("[USER] Email changed for userId={}", saved.getUserId());
         return UserProfileResponse.from(saved);
+    }
+
+    @Transactional
+    public UserProfileResponse changeUsername(String userIdStr, ChangeUsernameRequest req) {
+        User user = findUserById(userIdStr);
+        if (user.getStatus() == AccountStatus.PENDING_VERIFICATION) {
+            throw new AppException(ErrorCode.ACCOUNT_PENDING_VERIFICATION,
+                    "Tài khoản chưa được xác thực email. Vui lòng xác thực trước khi đổi tên người dùng.");
+        }
+        if (user.getStatus() == AccountStatus.LOCKED) {
+            throw new AppException(ErrorCode.ACCOUNT_LOCKED);
+        }
+        if (user.getStatus() == AccountStatus.DISABLED) {
+            throw new AppException(ErrorCode.ACCOUNT_DISABLED);
+        }
+
+        String newUsername = req.getUsername().trim().toLowerCase(java.util.Locale.ROOT);
+        if (RESERVED_USERNAMES.contains(newUsername)) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR,
+                    "Tên người dùng này thuộc danh sách hệ thống bảo lưu. Vui lòng chọn tên khác.");
+        }
+        if (newUsername.equalsIgnoreCase(user.getUsername())) {
+            return UserProfileResponse.from(user);
+        }
+        if (userRepository.existsByUsernameIgnoreCase(newUsername)) {
+            throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
+        }
+
+        String oldUsername = user.getUsername();
+        user.setUsername(newUsername);
+        try {
+            User saved = userRepository.saveAndFlush(user);
+            notificationService.notifyUser(saved, "ACCOUNT_USERNAME_CHANGED", "Tên người dùng đã được thay đổi",
+                    "Tên người dùng của bạn đã được cập nhật thành @" + saved.getUsername() + ".", "/settings?tab=profile");
+            log.info("[USER] Username changed for userId={}: {} -> {}", saved.getUserId(), oldUsername, saved.getUsername());
+            return UserProfileResponse.from(saved);
+        } catch (DataIntegrityViolationException ex) {
+            throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
+        }
     }
 
     /**

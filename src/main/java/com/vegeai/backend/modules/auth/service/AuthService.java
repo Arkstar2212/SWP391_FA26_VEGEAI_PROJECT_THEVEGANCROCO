@@ -313,6 +313,7 @@ public class AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .status(user.getStatus().name())
                 .isProfileCompleted(user.isProfileCompleted())
@@ -372,6 +373,7 @@ public class AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .status(user.getStatus().name())
                 .isProfileCompleted(user.isProfileCompleted())
@@ -391,6 +393,7 @@ public class AuthService {
         if (email == null || email.isBlank()) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS, "Không thể lấy thông tin email từ tài khoản Google.");
         }
+        String googlePicture = sanitizeGooglePictureUrl(payload.picture());
 
         User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
             String baseUsername = email.contains("@")
@@ -417,6 +420,7 @@ public class AuthService {
                     .email(email)
                     .username(candidateUsername)
                     .fullName(fullName)
+                    .avatarUrl(googlePicture)
                     .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
                     .role(UserRole.MEMBER)
                     .status(AccountStatus.ACTIVE)
@@ -431,6 +435,12 @@ public class AuthService {
             throw new AppException(ErrorCode.ACCOUNT_LOCKED);
         } else if (user.getStatus() == AccountStatus.DISABLED) {
             throw new AppException(ErrorCode.ACCOUNT_DISABLED);
+        }
+
+        // Sync Google profile picture if the user hasn't set a custom uploaded avatar yet
+        if (googlePicture != null && (user.getAvatarUrl() == null || user.getAvatarUrl().isBlank()
+                || isGoogleHostedAvatar(user.getAvatarUrl()))) {
+            user.setAvatarUrl(googlePicture);
         }
 
         user.setLastLogin(LocalDateTime.now());
@@ -448,6 +458,7 @@ public class AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .status(user.getStatus().name())
                 .isProfileCompleted(user.isProfileCompleted())
@@ -457,7 +468,7 @@ public class AuthService {
         return new LoginResult(authResponse, refreshToken.getToken(), rememberMe);
     }
 
-    private record GoogleTokenPayload(String email, String name, String sub, String aud) {}
+    private record GoogleTokenPayload(String email, String name, String picture, String sub, String aud) {}
 
     private GoogleTokenPayload verifyGoogleIdToken(String rawToken) {
         try {
@@ -490,10 +501,11 @@ public class AuthService {
 
             String email = (String) map.get("email");
             String name = (String) map.get("name");
+            String picture = (String) map.get("picture");
             String sub = (String) map.get("sub");
 
-            // When using GIS OAuth2 initTokenClient (access_token), fetch full profile from userinfo endpoint
-            if (!isJwtIdToken && (email == null || name == null || sub == null)) {
+            // When using GIS OAuth2 initTokenClient (access_token), fetch full profile (including picture) from userinfo endpoint
+            if (!isJwtIdToken && (email == null || name == null || sub == null || picture == null)) {
                 try {
                     RestClient userInfoClient = RestClient.builder()
                             .baseUrl("https://www.googleapis.com")
@@ -507,6 +519,7 @@ public class AuthService {
                     if (userInfo != null) {
                         if (email == null) email = (String) userInfo.get("email");
                         if (name == null) name = (String) userInfo.get("name");
+                        if (picture == null) picture = (String) userInfo.get("picture");
                         if (sub == null) sub = (String) userInfo.get("sub");
                     }
                 } catch (Exception ex) {
@@ -517,12 +530,36 @@ public class AuthService {
             if (email == null || email.isBlank()) {
                 throw new AppException(ErrorCode.TOKEN_INVALID, "Mã xác thực Google không hợp lệ hoặc không chứa email.");
             }
-            return new GoogleTokenPayload(email, name, sub, aud);
+            return new GoogleTokenPayload(email, name, picture, sub, aud);
         } catch (AppException e) {
             throw e;
         } catch (Exception e) {
             log.error("[AUTH] Google token verification failed: {}", e.getMessage());
             throw new AppException(ErrorCode.TOKEN_INVALID, "Xác thực với Google thất bại: " + e.getMessage());
+        }
+    }
+
+    private String sanitizeGooglePictureUrl(String rawUrl) {
+        if (rawUrl == null || rawUrl.isBlank()) return null;
+        String trimmed = rawUrl.trim();
+        if (trimmed.length() > 500) return null;
+        return isGoogleHostedAvatar(trimmed) ? trimmed : null;
+    }
+
+    private boolean isGoogleHostedAvatar(String url) {
+        if (url == null || url.isBlank()) return false;
+        try {
+            java.net.URI uri = java.net.URI.create(url.trim());
+            if (!"https".equalsIgnoreCase(uri.getScheme())) return false;
+            String host = uri.getHost();
+            if (host == null) return false;
+            String lower = host.toLowerCase(java.util.Locale.ROOT);
+            return lower.endsWith(".googleusercontent.com")
+                    || lower.equals("googleusercontent.com")
+                    || lower.endsWith(".ggpht.com")
+                    || lower.endsWith(".google.com");
+        } catch (IllegalArgumentException ex) {
+            return false;
         }
     }
 
@@ -566,6 +603,7 @@ public class AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .status(user.getStatus().name())
                 .isProfileCompleted(user.isProfileCompleted())
