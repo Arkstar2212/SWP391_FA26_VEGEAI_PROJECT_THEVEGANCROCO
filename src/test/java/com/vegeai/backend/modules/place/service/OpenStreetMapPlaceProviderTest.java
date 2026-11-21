@@ -346,10 +346,46 @@ class OpenStreetMapPlaceProviderTest {
         assertEquals("Circle K Lê Thánh Tôn", places.get(0).getName());
         assertEquals(PlaceCategory.GROCERY_STORE, places.get(0).getCategory());
         assertFalse(places.get(0).isVerified());
+        assertEquals("OSM_SHOP", places.get(0).getDietaryEvidence());
 
         assertEquals("Bách hóa XANH", places.get(1).getName());
         assertEquals(PlaceCategory.SUPERMARKET, places.get(1).getCategory());
         assertFalse(places.get(1).isVerified());
+        assertEquals("OSM_SHOP", places.get(1).getDietaryEvidence());
+    }
+
+    @Test
+    void nominatimFallbackOnlyReturnsShopsInsideRequestedRadius() throws Exception {
+        byte[] body = """
+                [{"osm_type":"node","osm_id":101,"lat":"10.8451","lon":"106.8387",
+                  "name":"King Food Mart","class":"shop","type":"supermarket","display_name":"King Food Mart"},
+                 {"osm_type":"node","osm_id":102,"lat":"10.8738","lon":"106.8081",
+                  "name":"Far Shop","class":"shop","type":"supermarket","display_name":"Far Shop"}]
+                """.getBytes(StandardCharsets.UTF_8);
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/search", exchange -> {
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(body);
+            }
+        });
+        server.start();
+        try {
+            OpenStreetMapPlaceProvider provider = new OpenStreetMapPlaceProvider(
+                    objectMapper, mock(StringRedisTemplate.class));
+            ReflectionTestUtils.setField(provider, "nominatimUrl",
+                    "http://127.0.0.1:" + server.getAddress().getPort());
+            @SuppressWarnings("unchecked")
+            List<PlaceResponse> places = ReflectionTestUtils.invokeMethod(provider,
+                    "queryNominatimNearby", 10.8440, 106.8376, 3500, PlaceCategory.ALL, null);
+
+            assertEquals(1, places.size());
+            assertEquals("King Food Mart", places.get(0).getName());
+            assertEquals("OSM_SHOP", places.get(0).getDietaryEvidence());
+        } finally {
+            server.stop(0);
+        }
     }
 
 }

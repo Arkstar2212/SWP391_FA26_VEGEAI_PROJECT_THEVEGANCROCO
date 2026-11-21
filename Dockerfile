@@ -4,12 +4,9 @@
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 WORKDIR /workspace
 
-# Keep dependency resolution cacheable when only source files change.
 COPY pom.xml ./
-RUN mvn -B -DskipTests dependency:go-offline
-
 COPY src ./src
-RUN mvn -B -DskipTests package
+RUN --mount=type=cache,target=/root/.m2 mvn -B -DskipTests package
 
 # ============================================================
 # Minimal Production JRE Runtime

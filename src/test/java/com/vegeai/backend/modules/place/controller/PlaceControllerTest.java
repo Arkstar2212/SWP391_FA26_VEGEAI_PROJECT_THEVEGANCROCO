@@ -61,6 +61,7 @@ class PlaceControllerTest {
                 anyInt(), any(PlaceCategory.class)))
                 .thenAnswer(invocation -> filter(invocation.getArgument(4), null));
         when(placeProvider.getCategoryMetadata()).thenReturn(List.of());
+        when(placeProvider.resolveArea("Quận 1")).thenReturn(new double[]{10.7769, 106.7009});
     }
 
     @Test
@@ -105,6 +106,14 @@ class PlaceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(1)))
                 .andExpect(jsonPath("$.data[0].category", is("RESTAURANT")));
+    }
+
+    @Test
+    void resolvesAreaCenterEvenIfThereAreNoNearbyRestaurants() throws Exception {
+        mockMvc.perform(get("/api/places/resolve-area").param("query", "Quận 1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.lat").value(10.7769))
+                .andExpect(jsonPath("$.data.lon").value(106.7009));
     }
 
     @Test

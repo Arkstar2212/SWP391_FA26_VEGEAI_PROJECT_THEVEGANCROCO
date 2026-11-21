@@ -21,7 +21,7 @@ import java.util.Map;
 @RequestMapping("/api/places")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "10. OpenStreetMap Places", description = "Tìm địa điểm có thẻ chay do cộng đồng OpenStreetMap đóng góp.")
+@Tag(name = "10. OpenStreetMap Places", description = "Tìm quán có thông tin món chay và cửa hàng thực phẩm trên OpenStreetMap.")
 public class PlaceController {
 
     private final PlaceProvider placeProvider;
@@ -30,6 +30,13 @@ public class PlaceController {
     @GetMapping("/reverse-geocode")
     public ApiResponse<Map<String, String>> reverseGeocode(@RequestParam double lat, @RequestParam double lng) {
         return ApiResponse.success(Map.of("address", placeProvider.reverseGeocode(lat, lng)));
+    }
+
+    @GetMapping("/resolve-area")
+    @Operation(summary = "Resolve a typed area to map coordinates, even when no vegetarian places were found")
+    public ApiResponse<Map<String, Double>> resolveArea(@RequestParam String query) {
+        double[] point = placeProvider.resolveArea(query);
+        return ApiResponse.success(point == null ? null : Map.of("lat", point[0], "lon", point[1]));
     }
 
     @GetMapping("/verified/nearby")
@@ -49,8 +56,8 @@ public class PlaceController {
 
     @GetMapping("/nearby")
     @Operation(
-            summary = "Tìm địa điểm có thẻ chay quanh tọa độ hiện tại",
-            description = "Trả về địa điểm có thẻ vegetarian/vegan do cộng đồng OpenStreetMap đóng góp, trong bán kính mặc định 5km. Không dùng dữ liệu mẫu. Rating và trạng thái mở cửa không được OpenStreetMap cung cấp."
+            summary = "Tìm quán chay và cửa hàng thực phẩm quanh tọa độ hiện tại",
+            description = "Trả về địa điểm thật trên OpenStreetMap trong bán kính mặc định 5km. Cửa hàng thực phẩm không mặc định là cửa hàng chay; kết quả có thể chưa đầy đủ."
     )
     public ResponseEntity<ApiResponse<List<PlaceResponse>>> getNearbyVegetarianPlaces(
             @Parameter(description = "Vĩ độ của người dùng (Latitude)", example = "10.7769", required = true)
@@ -76,7 +83,7 @@ public class PlaceController {
         return ResponseEntity.ok(ApiResponse.<List<PlaceResponse>>builder()
                 .success(true)
                 .code(200)
-                .message("Tìm thấy " + places.size() + " địa điểm chay quanh bạn")
+                .message("Tìm thấy " + places.size() + " địa điểm quanh bạn trên OpenStreetMap")
                 .data(places)
                 .build());
     }

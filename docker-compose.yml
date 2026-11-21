@@ -68,6 +68,9 @@ services:
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
       GEMINI_BASE_URL: ${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-164354959561-84vaff9lo56ummq04itrgq642kmjd4qo.apps.googleusercontent.com}
+      APP_OPENSTREETMAP_OVERPASS_URL: ${APP_OPENSTREETMAP_OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+      APP_OPENSTREETMAP_NOMINATIM_URL: ${APP_OPENSTREETMAP_NOMINATIM_URL:-https://nominatim.openstreetmap.org}
+      APP_OPENSTREETMAP_POI_FALLBACK_ENABLED: ${APP_OPENSTREETMAP_POI_FALLBACK_ENABLED:-true}
       CONTENT_UPLOAD_DIR: /app/uploads/content-interactions
       COMMUNITY_UPLOAD_DIR: /app/uploads/community
     ports:

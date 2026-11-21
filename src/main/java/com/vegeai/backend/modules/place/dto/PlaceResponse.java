@@ -77,6 +77,9 @@ public class PlaceResponse implements Serializable {
     @Schema(description = "Nguồn của tín hiệu vegetarian-only, nếu có", example = "OPENSTREETMAP_TAGS")
     private String verificationSource;
 
+    @Schema(description = "Bằng chứng dữ liệu: OSM_EXCLUSIVE, OSM_OPTION, OSM_SHOP hoặc NAME_ONLY")
+    private String dietaryEvidence;
+
     @Schema(description = "Nguồn dữ liệu địa điểm", example = "OPENSTREETMAP")
     private String dataSource;
 

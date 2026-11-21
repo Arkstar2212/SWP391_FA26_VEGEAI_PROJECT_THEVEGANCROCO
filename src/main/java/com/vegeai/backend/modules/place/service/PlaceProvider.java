@@ -26,6 +26,8 @@ public interface PlaceProvider {
 
     String reverseGeocode(double latitude, double longitude);
 
+    double[] resolveArea(String query);
+
     default List<PlaceResponse> suggestShopsForFood(String food, Double latitude, Double longitude, int radiusMeters) {
         return List.of();
     }

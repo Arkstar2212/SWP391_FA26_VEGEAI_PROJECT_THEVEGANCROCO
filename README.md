@@ -114,7 +114,7 @@ Place API routes remain under `/api/places`: `/nearby`, `/search`, `/categories`
 
 Authenticated in-app notifications are available through `GET /api/notifications?page=0&size=20`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/{id}/read`, and `PATCH /api/notifications/read-all`. Reads and updates are scoped to the authenticated recipient. Notifications are created for profile/nutrition and fridge/meal-plan activity, blog and question moderation, question answers, and video comments/favorites. Hibernate creates the `user_notifications` table from the entity mapping.
 
-OpenStreetMap endpoints can be overridden with `APP_OPENSTREETMAP_OVERPASS_URL` and `APP_OPENSTREETMAP_NOMINATIM_URL`. Respect provider rate limits; the backend caches place queries for one hour.
+OpenStreetMap endpoints can be overridden with `APP_OPENSTREETMAP_OVERPASS_URL` and `APP_OPENSTREETMAP_NOMINATIM_URL`. When Overpass is unavailable, a bounded Nominatim search can return a partial list of real places; set `APP_OPENSTREETMAP_POI_FALLBACK_ENABLED=false` to disable it. The backend limits Nominatim requests to one per second and caches results. Public Overpass and Nominatim availability is outside the application's control.
 
 ### AI operations and blog moderation
 

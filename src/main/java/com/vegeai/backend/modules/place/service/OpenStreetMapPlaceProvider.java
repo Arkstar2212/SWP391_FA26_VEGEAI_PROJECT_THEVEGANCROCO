@@ -45,7 +45,7 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
         requestFactory.setReadTimeout(Duration.ofSeconds(8));
         return RestClient.builder()
             .requestFactory(requestFactory)
-            .defaultHeader("User-Agent", "VEGEAI-Backend/1.0 (OpenStreetMap place search)")
+            .defaultHeader("User-Agent", "VEGEAI-Backend/1.0 (+https://github.com/cudatbusua/SWP391_VEGEAI_FRONTEND)")
             .defaultHeader("Accept-Language", "vi,en")
             .defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE)
             .build();
@@ -65,6 +65,9 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
 
     @Value("${app.osm.photon-url:https://photon.komoot.io/api/}")
     private String photonUrl = "https://photon.komoot.io/api/";
+
+    @Value("${app.openstreetmap.poi-fallback-enabled:true}")
+    private boolean poiFallbackEnabled = true;
 
     @Override
     public List<PlaceResponse> findNearbyVegetarianPlaces(
@@ -146,6 +149,7 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
                 log.warn("[PLACES-OSM] Serving {} cached places after provider failure.", stale.size());
                 return stale;
             }
+            if (!poiFallbackEnabled) throw exception;
             try {
                 List<PlaceResponse> fallback = queryNominatimNearby(
                         latitude, longitude, radius, requestedCategory, fallbackSearchTerm)
@@ -210,13 +214,13 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
                 CategoryMetadataDto.builder()
                         .category(PlaceCategory.SUPERMARKET)
                         .displayName("Siêu thị")
-                        .description("Siêu thị có bán nguyên liệu, rau củ và thực phẩm chay trên OpenStreetMap.")
+                        .description("Siêu thị trên OpenStreetMap; vui lòng xác nhận mặt hàng chay trực tiếp với cửa hàng.")
                         .icon("shopping-cart")
                         .build(),
                 CategoryMetadataDto.builder()
                         .category(PlaceCategory.GROCERY_STORE)
                         .displayName("Cửa hàng tiện lợi & Thực phẩm")
-                        .description("Cửa hàng tiện lợi, cửa hàng thực phẩm, rau củ và nguyên liệu chế biến món chay trên OpenStreetMap.")
+                        .description("Cửa hàng thực phẩm trên OpenStreetMap; chưa xác minh tồn kho hoặc chế độ ăn.")
                         .icon("store")
                         .build()
         );
@@ -317,6 +321,14 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
             }
         }
         throw new AppException(ErrorCode.PLACES_PROVIDER_UNAVAILABLE);
+    }
+
+    @Override
+    public double[] resolveArea(String query) {
+        if (query == null || query.isBlank() || query.length() > 200) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Nhập tên khu vực hợp lệ.");
+        }
+        return geocode(query.trim());
     }
 
     private double[] geocode(String query) {
@@ -441,6 +453,9 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
                     .types(tags.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).sorted().toList())
                     .isVerified(explicitlyVegetarianOnly)
                     .verificationSource(explicitlyVegetarianOnly ? "OPENSTREETMAP_TAGS" : null)
+                    .dietaryEvidence(explicitlyVegetarianOnly ? "OSM_EXCLUSIVE"
+                            : hasVegetarianTag(tags) ? "OSM_OPTION"
+                            : hasFoodIngredientShopTag(tags) ? "OSM_SHOP" : "NAME_ONLY")
                     .dataSource("OPENSTREETMAP")
                     .attribution(OSM_ATTRIBUTION)
                     .build());
@@ -499,6 +514,7 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
             }
         }
         return unique.values().stream()
+                .filter(place -> place.getDistanceKm() <= radiusMeters / 1000.0)
                 .sorted(Comparator.comparing(PlaceResponse::getDistanceKm))
                 .limit(45)
                 .toList();
@@ -706,6 +722,7 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
                 .types(types)
                 .isVerified(false)
                 .verificationSource(null)
+                .dietaryEvidence(category == PlaceCategory.RESTAURANT ? "NAME_ONLY" : "OSM_SHOP")
                 .dataSource("OPENSTREETMAP_PHOTON")
                 .openStreetMapUrl(buildOpenStreetMapUrl(osmType, osmId, latitude, longitude))
                 .attribution(OSM_ATTRIBUTION)
@@ -788,8 +805,11 @@ public class OpenStreetMapPlaceProvider implements PlaceProvider {
                 .distanceText(GeoUtils.formatDistanceText(distanceKm))
                 .phoneNumber(tags.get("phone"))
                 .types(types)
-                .isVerified(hasVegetarianTag(tags))
-                .verificationSource(hasVegetarianTag(tags) ? "OPENSTREETMAP_TAGS" : null)
+                .isVerified(hasExclusiveVegetarianTag(tags))
+                .verificationSource(hasExclusiveVegetarianTag(tags) ? "OPENSTREETMAP_TAGS" : null)
+                .dietaryEvidence(hasExclusiveVegetarianTag(tags) ? "OSM_EXCLUSIVE"
+                        : hasVegetarianTag(tags) ? "OSM_OPTION"
+                        : category == PlaceCategory.RESTAURANT ? "NAME_ONLY" : "OSM_SHOP")
                 .dataSource("OPENSTREETMAP_NOMINATIM")
                 .openStreetMapUrl("https://www.openstreetmap.org/" + osmType + "/" + osmId)
                 .attribution(OSM_ATTRIBUTION)
