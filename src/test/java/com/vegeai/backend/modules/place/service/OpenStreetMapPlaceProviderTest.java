@@ -2,6 +2,7 @@ package com.vegeai.backend.modules.place.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vegeai.backend.modules.place.dto.PlaceCategory;
+import com.vegeai.backend.modules.place.dto.AreaSuggestion;
 import com.vegeai.backend.modules.place.dto.PlaceResponse;
 import com.sun.net.httpserver.HttpServer;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -24,6 +25,47 @@ import static org.mockito.Mockito.*;
 class OpenStreetMapPlaceProviderTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    void suggestsRealVietnameseAreasBeforeOtherPlaces() throws Exception {
+        byte[] body = """
+                {"features":[
+                  {"properties":{"name":"Cafe Quận 1","osm_key":"amenity","city":"Hồ Chí Minh"},
+                   "geometry":{"coordinates":[106.704,10.77]}},
+                  {"properties":{"name":"Quận 1","osm_key":"boundary","city":"Hồ Chí Minh"},
+                   "geometry":{"coordinates":[106.70,10.775]}},
+                  {"properties":{"name":"Outside Vietnam","osm_key":"place"},
+                   "geometry":{"coordinates":[100.5,13.7]}},
+                  {"properties":{"name":"Unnamed road","osm_key":"highway","city":"Hồ Chí Minh"},
+                   "geometry":{"coordinates":[106.7,10.78]}}
+                ]}
+                """.getBytes(StandardCharsets.UTF_8);
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/api/", exchange -> {
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (var output = exchange.getResponseBody()) { output.write(body); }
+        });
+        server.start();
+        try {
+            StringRedisTemplate redis = mock(StringRedisTemplate.class);
+            @SuppressWarnings("unchecked")
+            ValueOperations<String, String> values = mock(ValueOperations.class);
+            when(redis.opsForValue()).thenReturn(values);
+            OpenStreetMapPlaceProvider provider = new OpenStreetMapPlaceProvider(objectMapper, redis);
+            ReflectionTestUtils.setField(provider, "photonUrl", "http://127.0.0.1:" + server.getAddress().getPort() + "/api/");
+
+            List<AreaSuggestion> suggestions = provider.suggestAreas("quận", 10.7769, 106.7009);
+
+            assertEquals(3, suggestions.size());
+            assertEquals("Quận 1", suggestions.get(0).name());
+            assertEquals("AREA", suggestions.get(0).category());
+            assertEquals("STREET", suggestions.get(1).category());
+            assertEquals("PLACE", suggestions.get(2).category());
+        } finally {
+            server.stop(0);
+        }
+    }
 
     @Test
     void parsesTaggedVegetarianPlaceWithoutInventingGoogleMetadata() throws Exception {
@@ -383,6 +425,46 @@ class OpenStreetMapPlaceProviderTest {
             assertEquals(1, places.size());
             assertEquals("King Food Mart", places.get(0).getName());
             assertEquals("OSM_SHOP", places.get(0).getDietaryEvidence());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void nominatimFallbackRejectsUsedGoodsAdsAndRestaurantsWithoutVegetarianEvidence() throws Exception {
+        byte[] body = """
+                [{"osm_type":"node","osm_id":201,"lat":"10.8451","lon":"106.8387",
+                  "name":"thu mua kệ siêu thị cũ muskvn","class":"shop","type":"supermarket"},
+                 {"osm_type":"node","osm_id":202,"lat":"10.8452","lon":"106.8387",
+                  "name":"Quán Ăn Bình Thường","class":"amenity","type":"restaurant"},
+                 {"osm_type":"node","osm_id":203,"lat":"10.8453","lon":"106.8387",
+                  "name":"Quán Chay Sen","class":"amenity","type":"restaurant"},
+                 {"osm_type":"node","osm_id":204,"lat":"10.8454","lon":"106.8387",
+                  "name":"King Food Mart","class":"shop","type":"supermarket"},
+                 {"osm_type":"node","osm_id":205,"lat":"10.8455","lon":"106.8387",
+                  "name":"71","class":"shop","type":"supermarket"}]
+                """.getBytes(StandardCharsets.UTF_8);
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/search", exchange -> {
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(body);
+            }
+        });
+        server.start();
+        try {
+            OpenStreetMapPlaceProvider provider = new OpenStreetMapPlaceProvider(
+                    objectMapper, mock(StringRedisTemplate.class));
+            ReflectionTestUtils.setField(provider, "nominatimUrl",
+                    "http://127.0.0.1:" + server.getAddress().getPort());
+            @SuppressWarnings("unchecked")
+            List<PlaceResponse> places = ReflectionTestUtils.invokeMethod(provider,
+                    "queryNominatimNearby", 10.8440, 106.8376, 3500, PlaceCategory.ALL, null);
+
+            assertEquals(2, places.size());
+            assertTrue(places.stream().anyMatch(place -> place.getName().equals("Quán Chay Sen")));
+            assertTrue(places.stream().anyMatch(place -> place.getName().equals("King Food Mart")));
         } finally {
             server.stop(0);
         }
