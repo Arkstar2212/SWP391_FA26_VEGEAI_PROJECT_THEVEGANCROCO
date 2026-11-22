@@ -2,6 +2,7 @@ package com.vegeai.backend.modules.place.controller;
 
 import com.vegeai.backend.common.dto.ApiResponse;
 import com.vegeai.backend.modules.place.dto.CategoryMetadataDto;
+import com.vegeai.backend.modules.place.dto.AreaSuggestion;
 import com.vegeai.backend.modules.place.dto.PlaceCategory;
 import com.vegeai.backend.modules.place.dto.PlaceResponse;
 import com.vegeai.backend.modules.place.service.VerifiedPlacesService;
@@ -37,6 +38,13 @@ public class PlaceController {
     public ApiResponse<Map<String, Double>> resolveArea(@RequestParam String query) {
         double[] point = placeProvider.resolveArea(query);
         return ApiResponse.success(point == null ? null : Map.of("lat", point[0], "lon", point[1]));
+    }
+
+    @GetMapping("/suggest-areas")
+    @Operation(summary = "Suggest real OpenStreetMap locations while typing an area")
+    public ApiResponse<List<AreaSuggestion>> suggestAreas(@RequestParam String query,
+            @RequestParam(required = false) Double lat, @RequestParam(required = false) Double lng) {
+        return ApiResponse.success(placeProvider.suggestAreas(query, lat, lng));
     }
 
     @GetMapping("/verified/nearby")

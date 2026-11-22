@@ -1,6 +1,7 @@
 package com.vegeai.backend.modules.place.service;
 
 import com.vegeai.backend.modules.place.dto.CategoryMetadataDto;
+import com.vegeai.backend.modules.place.dto.AreaSuggestion;
 import com.vegeai.backend.modules.place.dto.PlaceCategory;
 import com.vegeai.backend.modules.place.dto.PlaceResponse;
 
@@ -27,6 +28,8 @@ public interface PlaceProvider {
     String reverseGeocode(double latitude, double longitude);
 
     double[] resolveArea(String query);
+
+    List<AreaSuggestion> suggestAreas(String query, Double latitude, Double longitude);
 
     default List<PlaceResponse> suggestShopsForFood(String food, Double latitude, Double longitude, int radiusMeters) {
         return List.of();
