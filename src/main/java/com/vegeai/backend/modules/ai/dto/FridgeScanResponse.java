@@ -34,6 +34,11 @@ public class FridgeScanResponse {
     @Schema(description = "Cảnh báo an toàn thực phẩm, nguyên liệu hỏng hoặc cảnh báo dị ứng nếu có")
     private List<String> warnings;
 
+    @Schema(description = "Xác nhận ảnh tải lên là bối cảnh thực phẩm / tủ lạnh / nguyên liệu nấu ăn hợp lệ", example = "true")
+    @com.fasterxml.jackson.annotation.JsonProperty("isFoodScene")
+    @Builder.Default
+    private boolean isFoodScene = true;
+
     @Schema(description = "Thời điểm quét ảnh")
     private Instant scannedAt;
 
@@ -54,7 +59,13 @@ public class FridgeScanResponse {
         @Schema(description = "Tên nguyên liệu tiếng Việt", example = "Cải ngọt")
         private String name;
 
-        @Schema(description = "Phân loại chay: VEGAN (Thuần chay), LACTO_OVO (Chay trứng sữa), NON_VEG (Đồ mặn), NON_FOOD (Vật phẩm không phải thực phẩm)", example = "VEGAN")
+        @Schema(description = "Số lượng ước lượng từ ảnh", example = "2.0")
+        private Double quantity;
+
+        @Schema(description = "Đơn vị tính phù hợp: phần, quả, củ, bó, cái, hộp, chai, gói, kg, g, ml", example = "bó")
+        private String unit;
+
+        @Schema(description = "Phân loại chay: VEGAN (Thuần chay), LACTO (Chay có sữa), OVO (Chay có trứng), LACTO_OVO (Chay trứng sữa), NON_VEG (Đồ mặn), NON_FOOD (Vật phẩm không phải thực phẩm)", example = "VEGAN")
         private String category;
 
         @Schema(description = "Xác nhận có phải món chay hay không", example = "true")
@@ -65,6 +76,14 @@ public class FridgeScanResponse {
         @com.fasterxml.jackson.annotation.JsonProperty("isEdible")
         @Builder.Default
         private boolean isEdible = true;
+
+        @Schema(description = "Cần kiểm tra trực tiếp nhãn thành phần (chai sốt/gia vị đóng hộp/món chế biến sẵn)", example = "false")
+        @com.fasterxml.jackson.annotation.JsonProperty("needsLabelVerification")
+        private boolean needsLabelVerification;
+
+        @Schema(description = "Thuộc nhóm Ngũ vị tân (hành, tỏi, hẹ, kiệu, nén)", example = "false")
+        @com.fasterxml.jackson.annotation.JsonProperty("containsFivePungent")
+        private boolean containsFivePungent;
 
         @Schema(description = "Lý do cảnh báo nếu vật phẩm không ăn được hoặc không thuộc nguyên liệu nấu ăn", example = "Củi khô không phải thực phẩm nấu ăn")
         private String rejectionReason;

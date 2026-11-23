@@ -39,9 +39,11 @@ public class AiChatRequest {
         private String text;
     }
 
+    @Size(max = 32)
     @io.swagger.v3.oas.annotations.media.Schema(description = "Màn hình người dùng đang đứng khi gọi AI: FRIDGE, RECIPE, NUTRITION, GENERAL", example = "FRIDGE")
     private String contextScreen;
 
+    @Size(max = 2000)
     @io.swagger.v3.oas.annotations.media.Schema(description = "Dữ liệu ngữ cảnh bổ sung kèm theo (ví dụ: danh sách nguyên liệu tủ lạnh)", example = "Cải ngọt, Cà chua, Đậu phụ")
     private String contextData;
 }

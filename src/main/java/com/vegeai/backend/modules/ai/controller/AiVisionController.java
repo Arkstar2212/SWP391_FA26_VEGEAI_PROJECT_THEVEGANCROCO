@@ -101,8 +101,12 @@ public class AiVisionController {
                 username, image.getOriginalFilename(), image.getSize(), image.getContentType());
 
         FridgeScanResponse scanResult = geminiAiService.scanFridge(image, username, isGuest);
+        boolean hasEdibleIngredients = scanResult.isFoodScene()
+                && scanResult.getIngredients() != null
+                && scanResult.getIngredients().stream()
+                        .anyMatch(item -> item != null && item.isEdible() && !"NON_FOOD".equals(item.getCategory()));
         try {
-            if (image != null && !image.isEmpty()) {
+            if (hasEdibleIngredients && image != null && !image.isEmpty()) {
                 scanResult.setScanImageUrl(
                         fridgeScanAssetService.storeSafely(image.getBytes(), image.getContentType()));
             }
