@@ -308,8 +308,8 @@ public class GeminiAiService {
                - Thêm cảnh báo rõ ràng vào danh sách 'warnings': "Phát hiện vật phẩm không phải thực phẩm nấu ăn: [Tên vật phẩm] (ví dụ: củi khô, cành cây...). Đã tự động loại bỏ khỏi danh sách nguyên liệu khả dụng."
                - TUYỆT ĐỐI KHÔNG dùng các món NON_FOOD để gợi ý món ăn (suggestedRecipes).
             3. PHÂN LOẠI CHAY:
-               - 'VEGAN': Thực vật, nấm, ngũ cốc, đậu (Thuần chay hoàn toàn).
-               - 'LACTO_OVO': Trứng, sữa, bơ, phô mai (Chay có trứng sữa).
+               - 'VEGAN': Thực vật, nấm, ngũ cốc, đậu, sữa thực vật (sữa đậu nành, sữa hạnh nhân, sữa yến mạch, sữa dừa...), quả bơ (Thuần chay hoàn toàn).
+               - 'LACTO_OVO': Trứng (trứng gà, trứng vịt, trứng cút...), sữa động vật (sữa tươi bò, sữa đặc), bơ động vật, phô mai, sữa chua (Chay có trứng sữa — TUYỆT ĐỐI KHÔNG gắn 'VEGAN' cho trứng, sữa động vật hay phô mai!).
                - 'NON_VEG': Thịt động vật, gia cầm, cá, tôm cua, hải sản, xúc xích mặn, mỡ động vật.
                  --> BẮT BUỘC: Nếu phát hiện bất kỳ món NON_VEG nào, đặt 'hasNonVegetarianItem' = true, 'isVegetarian' = false và thêm cảnh báo nghiêm ngặt vào danh sách 'warnings'.
                - 'NON_FOOD': Củi khô, que gỗ, cành cây, đồ vật gia dụng không ăn được...
@@ -521,6 +521,10 @@ public class GeminiAiService {
      * Enriches prompt with member profile (BMI, dietary preferences, allergies).
      */
     private String buildUserHealthContext(String usernameOrEmail, boolean isGuest) {
+        return buildUserHealthContext(usernameOrEmail, isGuest, true);
+    }
+
+    private String buildUserHealthContext(String usernameOrEmail, boolean isGuest, boolean includeFridgeInventory) {
         if (isGuest || usernameOrEmail == null || usernameOrEmail.isBlank() || "Guest".equalsIgnoreCase(usernameOrEmail)) {
             return "[NGỮ CẢNH]: Người dùng là Khách vãng lai (chưa đăng nhập). Hãy tư vấn dinh dưỡng chay tổng quát và gợi ý các món phổ biến, giàu dưỡng chất.";
         }
@@ -560,20 +564,22 @@ public class GeminiAiService {
                     .append(p.getCarbsTargetG()).append(" g; chất béo ").append(p.getFatTargetG()).append(" g; chất xơ ")
                     .append(p.getFiberTargetG()).append(" g\n");
         });
-        try {
-            List<FridgeItem> activeFridgeItems = fridgeItemRepository
-                    .findByUserIdAndStatusOrderByExpiryDateAsc(u.getUserId(), FridgeItemStatus.ACTIVE);
-            if (activeFridgeItems != null && !activeFridgeItems.isEmpty()) {
-                sb.append("- NGUYÊN LIỆU TRONG KHO TỦ LẠNH HIỆN CÓ: ");
-                String names = activeFridgeItems.stream()
-                        .map(i -> i.getName() + (i.getQuantity() != null ? " (" + i.getQuantity() + " " + (i.getUnit() != null ? i.getUnit() : "") + ")" : ""))
-                        .reduce((a, b) -> a + ", " + b).orElse("");
-                sb.append(names).append("\n");
-            } else {
-                sb.append("- KHO TỦ LẠNH HIỆN TẠI: Đang trống, chưa có nguyên liệu nào được lưu trữ.\n");
+        if (includeFridgeInventory) {
+            try {
+                List<FridgeItem> activeFridgeItems = fridgeItemRepository
+                        .findByUserIdAndStatusOrderByExpiryDateAsc(u.getUserId(), FridgeItemStatus.ACTIVE);
+                if (activeFridgeItems != null && !activeFridgeItems.isEmpty()) {
+                    sb.append("- NGUYÊN LIỆU TRONG KHO TỦ LẠNH HIỆN CÓ: ");
+                    String names = activeFridgeItems.stream()
+                            .map(i -> i.getName() + (i.getQuantity() != null ? " (" + i.getQuantity() + " " + (i.getUnit() != null ? i.getUnit() : "") + ")" : ""))
+                            .reduce((a, b) -> a + ", " + b).orElse("");
+                    sb.append(names).append("\n");
+                } else {
+                    sb.append("- KHO TỦ LẠNH HIỆN TẠI: Đang trống, chưa có nguyên liệu nào được lưu trữ.\n");
+                }
+            } catch (Exception ex) {
+                // Ignore fridge query error in context
             }
-        } catch (Exception ex) {
-            // Ignore fridge query error in context
         }
         return sb.toString();
     }
@@ -707,7 +713,8 @@ public class GeminiAiService {
         Optional<User> userOpt = findUserByIdentifier(currentUsername);
         boolean requiresProfileSetup = !isGuest && userOpt.isPresent() && !userOpt.get().isProfileCompleted();
 
-        String userContext = buildUserHealthContext(currentUsername, isGuest);
+        // Không nhồi danh sách kho cũ vào prompt Vision để tránh AI đọc nhầm kho cũ thay vì nhìn ảnh thật
+        String userContext = buildUserHealthContext(currentUsername, isGuest, false);
 
         if (!isKeyConfigured()) {
             log.warn("[GEMINI-VISION] API key is not configured; refusing to return simulated ingredients as a real scan.");
@@ -749,8 +756,8 @@ public class GeminiAiService {
         Map<String, Object> imagePart = Map.of("inlineData", inlineData);
 
         String promptText = (userContext != null && !userContext.isBlank())
-                ? userContext + "\n\nHãy phân tích ảnh chụp tủ lạnh này. Nhận diện các nguyên liệu, xác định có phải đồ chay không, đánh giá độ tươi và đề xuất món ăn phù hợp."
-                : "Hãy phân tích ảnh chụp tủ lạnh này. Nhận diện các nguyên liệu, xác định có phải đồ chay không, đánh giá độ tươi và đề xuất món ăn phù hợp.";
+                ? userContext + "\n\nHãy phân tích ĐÚNG và CHỈ các nguyên liệu nhìn thấy trực tiếp trong ảnh chụp tủ lạnh này (không tự suy đoán nguyên liệu ngoài ảnh). Nhận diện tên cụ thể, phân loại đúng VEGAN / LACTO_OVO / NON_VEG / NON_FOOD, đánh giá độ tươi và đề xuất món ăn phù hợp."
+                : "Hãy phân tích ĐÚNG và CHỈ các nguyên liệu nhìn thấy trực tiếp trong ảnh chụp tủ lạnh này (không tự suy đoán nguyên liệu ngoài ảnh). Nhận diện tên cụ thể, phân loại đúng VEGAN / LACTO_OVO / NON_VEG / NON_FOOD, đánh giá độ tươi và đề xuất món ăn phù hợp.";
 
         Map<String, Object> textPart = Map.of("text", promptText);
         Map<String, Object> contentObj = Map.of("role", "user", "parts", List.of(textPart, imagePart));
@@ -782,12 +789,21 @@ public class GeminiAiService {
             FridgeScanResponse res = objectMapper.readValue(cleanJson, FridgeScanResponse.class);
             if (res == null || res.getSummary() == null || res.getSummary().isBlank() || res.getIngredients() == null) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
             boolean nonVegetarian = false;
+            boolean lactoOvo = false;
             boolean spoiled = false;
             for (FridgeScanResponse.ScannedIngredient item : res.getIngredients()) {
                 if (item == null || item.getName() == null || item.getName().isBlank()
                         || item.getCategory() == null || !Set.of("VEGAN", "LACTO_OVO", "NON_VEG", "NON_FOOD").contains(item.getCategory())
                         || item.getFreshness() == null || !Set.of("FRESH", "USABLE", "SPOILED").contains(item.getFreshness())) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
-                String lowerName = item.getName() != null ? item.getName().trim().toLowerCase(Locale.ROOT) : "";
+                if (item.getRejectionReason() != null) {
+                    String trimmedReason = item.getRejectionReason().trim();
+                    item.setRejectionReason(
+                            trimmedReason.isEmpty() || "null".equalsIgnoreCase(trimmedReason) || "none".equalsIgnoreCase(trimmedReason)
+                                    ? null
+                                    : trimmedReason
+                    );
+                }
+                String lowerName = item.getName().trim().toLowerCase(Locale.ROOT);
                 boolean isNonFood = "NON_FOOD".equals(item.getCategory())
                         || lowerName.contains("củi") || lowerName.contains("que củi") || lowerName.contains("cành cây")
                         || lowerName.contains("khúc gỗ") || lowerName.contains("gỗ") || lowerName.contains("cây cảnh")
@@ -800,6 +816,9 @@ public class GeminiAiService {
                     item.setFreshness("SPOILED");
                     item.setRejectionReason("Vật phẩm '" + item.getName() + "' không thuộc dạng nguyên liệu thực phẩm dùng để nấu ăn.");
                 } else {
+                    if (!"NON_VEG".equals(item.getCategory()) && isLactoOvoKeyword(lowerName)) {
+                        item.setCategory("LACTO_OVO");
+                    }
                     item.setEdible(true);
                     item.setVegetarian(!"NON_VEG".equals(item.getCategory()));
                     if (lowerName.equals("rau xanh") || lowerName.equals("rau")) {
@@ -810,11 +829,21 @@ public class GeminiAiService {
                 item.setMatchedExistingFridgeItemId(null);
                 item.setPreviousDaysInFridge(null);
                 nonVegetarian |= (!item.isVegetarian() && !"NON_FOOD".equals(item.getCategory()));
+                lactoOvo |= "LACTO_OVO".equals(item.getCategory());
                 spoiled |= "SPOILED".equals(item.getFreshness());
             }
             res.setHasNonVegetarianItem(nonVegetarian);
             res.setWarnings(new ArrayList<>(res.getWarnings() == null ? List.of() : res.getWarnings()));
             if (nonVegetarian) res.getWarnings().add("Có nguyên liệu không phải đồ chay; không dùng nguyên liệu này cho món chay.");
+            if (lactoOvo) {
+                boolean hasLactoWarning = res.getWarnings().stream()
+                        .anyMatch(w -> w != null && (w.toLowerCase(Locale.ROOT).contains("lacto")
+                                || w.toLowerCase(Locale.ROOT).contains("trứng")
+                                || w.toLowerCase(Locale.ROOT).contains("sữa")));
+                if (!hasLactoWarning) {
+                    res.getWarnings().add("Phát hiện nguyên liệu Lacto-Ovo (trứng/sữa/phô mai); không phù hợp nếu bạn ăn Thuần chay (VEGAN).");
+                }
+            }
             boolean hasNonFood = res.getIngredients().stream().anyMatch(i -> !i.isEdible() || "NON_FOOD".equals(i.getCategory()));
             if (hasNonFood) {
                 res.getWarnings().add("⚠️ CẢNH BÁO VẬT PHẨM: Đã phát hiện vật phẩm không phải nguyên liệu thực phẩm nấu ăn (ví dụ: củi khô, cành cây...). Hệ thống đã tự động đánh dấu và loại bỏ khỏi danh sách nguyên liệu chế biến.");
@@ -830,6 +859,26 @@ public class GeminiAiService {
             }
             return res;
         } catch (com.fasterxml.jackson.core.JsonProcessingException ex) { throw new AppException(ErrorCode.AI_RESPONSE_INVALID); }
+    }
+
+    private boolean isLactoOvoKeyword(String lowerName) {
+        if (lowerName == null || lowerName.isBlank()) {
+            return false;
+        }
+        // Exclude explicit plant-based milk/cheese alternatives and avocado ("trái bơ", "bơ sáp")
+        if (lowerName.contains("chay") || lowerName.contains("hạnh nhân") || lowerName.contains("đậu nành")
+                || lowerName.contains("yến mạch") || lowerName.contains("sữa hạt") || lowerName.contains("óc chó")
+                || lowerName.contains("sữa dừa") || lowerName.contains("sữa gạo") || lowerName.contains("bơ sáp")
+                || lowerName.contains("trái bơ") || lowerName.contains("quả bơ")
+                || lowerName.contains("almond") || lowerName.contains("soy") || lowerName.contains("oat")
+                || lowerName.contains("coconut") || lowerName.contains("plant")) {
+            return false;
+        }
+        return lowerName.contains("trứng") || lowerName.contains("sữa") || lowerName.contains("phô mai")
+                || lowerName.contains("pho mát") || lowerName.contains("váng sữa") || lowerName.contains("kem tươi")
+                || lowerName.contains("bơ lạt") || lowerName.contains("bơ động vật")
+                || lowerName.contains("egg") || lowerName.contains("milk")
+                || lowerName.contains("cheese") || lowerName.contains("yogurt") || lowerName.contains("dairy");
     }
 
     private List<String> getCandidateModels() {
@@ -1074,7 +1123,8 @@ public class GeminiAiService {
         if (text == null || text.isBlank()) {
             return "";
         }
-        String norm = Normalizer.normalize(text.trim().toLowerCase(), Normalizer.Form.NFD);
+        String prepared = text.trim().toLowerCase(Locale.ROOT).replace('đ', 'd');
+        String norm = Normalizer.normalize(prepared, Normalizer.Form.NFD);
         return norm.replaceAll("\\p{M}", "").replaceAll("\\s+", " ").trim();
     }
 

@@ -83,6 +83,9 @@ public class FridgeItemResponse {
     @Schema(description = "Độ tin cậy của AI", example = "0.96")
     private Double confidence;
 
+    @Schema(description = "Đường dẫn ảnh quét tủ lạnh đã lưu trên server", example = "/api/public/fridge-scans/3fa85f64-5717-4562-b3fc-2c963f66afa6.jpg")
+    private String imageUrl;
+
     @Schema(description = "Cảnh báo khẩn cấp hoặc nhắc nhở từ AI", example = "⚠️ Cà chua đã nằm trong tủ 3 ngày (còn ~2 ngày nữa là hỏng). Hãy ưu tiên nấu ngay!")
     private String warningMessage;
 

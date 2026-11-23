@@ -133,4 +133,90 @@ class GeminiAiServiceFallbackTest {
             server.stop(0);
         }
     }
+
+    @Test
+    void scanFridgeExcludesFridgeInventoryFromPromptAndFixesLactoOvoAndNullReason() throws Exception {
+        var userRepo = mock(UserRepository.class);
+        var fridgeRepo = mock(FridgeItemRepository.class);
+        var userId = java.util.UUID.randomUUID();
+        var user = com.vegeai.backend.modules.user.entity.User.builder()
+                .userId(userId)
+                .username("member")
+                .email("member@vegeai.com")
+                .fullName("Member")
+                .dietaryPreferences("VEGAN")
+                .allergies("NONE")
+                .build();
+        org.mockito.Mockito.when(userRepo.findByUsernameOrEmailIgnoreCase("member")).thenReturn(java.util.Optional.of(user));
+        var existing = com.vegeai.backend.modules.fridge.entity.FridgeItem.builder()
+                .itemId(java.util.UUID.randomUUID())
+                .userId(userId)
+                .name("Bí đỏ hồ lô dẻo")
+                .normalizedName("bi do ho lo deo")
+                .firstScannedAt(java.time.LocalDateTime.now().minusDays(2))
+                .expiryDate(java.time.LocalDate.now().plusDays(5))
+                .status(com.vegeai.backend.modules.fridge.entity.FridgeItemStatus.ACTIVE)
+                .build();
+        org.mockito.Mockito.when(fridgeRepo.findByUserIdAndStatusOrderByExpiryDateAsc(
+                userId, com.vegeai.backend.modules.fridge.entity.FridgeItemStatus.ACTIVE))
+                .thenReturn(List.of(existing));
+
+        var capturedPrompt = new java.util.concurrent.atomic.AtomicReference<String>("");
+        String geminiPayload = """
+                {
+                  "summary": "Có trứng, sữa và bơ",
+                  "totalItemsDetected": 3,
+                  "hasNonVegetarianItem": false,
+                  "ingredients": [
+                    { "name": "Trứng gà", "category": "VEGAN", "isVegetarian": true, "rejectionReason": "null", "freshness": "FRESH", "freshnessScore": 0.9 },
+                    { "name": "Sữa hạnh nhân", "category": "VEGAN", "isVegetarian": true, "freshness": "FRESH", "freshnessScore": 0.9 },
+                    { "name": "Bơ sáp", "category": "VEGAN", "isVegetarian": true, "freshness": "FRESH", "freshnessScore": 0.9 }
+                  ],
+                  "suggestedRecipes": [],
+                  "warnings": []
+                }
+                """;
+        byte[] okResponse = new ObjectMapper().writeValueAsBytes(java.util.Map.of(
+                "candidates", List.of(java.util.Map.of("finishReason", "STOP",
+                        "content", java.util.Map.of("parts", List.of(java.util.Map.of("text", geminiPayload)))))
+        ));
+
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/models/", exchange -> {
+            byte[] reqBytes = exchange.getRequestBody().readAllBytes();
+            var json = new ObjectMapper().readTree(reqBytes);
+            capturedPrompt.set(json.path("contents").path(0).path("parts").path(0).path("text").asText());
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, okResponse.length);
+            try (var out = exchange.getResponseBody()) {
+                out.write(okResponse);
+            }
+        });
+        server.start();
+        try {
+            String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
+            GeminiAiService service = new GeminiAiService(
+                    userRepo, fridgeRepo, mock(BlogPostRepository.class), mock(StringRedisTemplate.class),
+                    new ObjectMapper(), mock(CookbookService.class), mock(NutritionProfileRepository.class),
+                    new AiAuditService(mock(AiAuditLogWriter.class))
+            );
+            ReflectionTestUtils.setField(service, "apiKey", "AIzaDummyKeyForUnitTest1234567890");
+            ReflectionTestUtils.setField(service, "model", "gemini-3.5-flash-lite");
+            ReflectionTestUtils.setField(service, "baseUrl", baseUrl);
+
+            var mockImage = new org.springframework.mock.web.MockMultipartFile(
+                    "image", "fridge.jpg", "image/jpeg", "bytes".getBytes(StandardCharsets.UTF_8));
+            var result = service.scanFridge(mockImage, "member", false);
+
+            assertFalse(capturedPrompt.get().contains("Bí đỏ hồ lô dẻo"));
+            assertFalse(capturedPrompt.get().contains("NGUYÊN LIỆU TRONG KHO TỦ LẠNH HIỆN CÓ"));
+            assertEquals("LACTO_OVO", result.getIngredients().get(0).getCategory());
+            assertNull(result.getIngredients().get(0).getRejectionReason());
+            assertEquals("VEGAN", result.getIngredients().get(1).getCategory());
+            assertEquals("VEGAN", result.getIngredients().get(2).getCategory());
+            assertTrue(result.getWarnings().stream().anyMatch(w -> w.contains("Lacto-Ovo")));
+        } finally {
+            server.stop(0);
+        }
+    }
 }

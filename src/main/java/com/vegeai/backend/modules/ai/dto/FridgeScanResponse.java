@@ -41,6 +41,9 @@ public class FridgeScanResponse {
     @com.fasterxml.jackson.annotation.JsonProperty("requiresProfileSetup")
     private boolean requiresProfileSetup;
 
+    @Schema(description = "Đường dẫn ảnh đã lưu trên server cho lần quét này", example = "/api/public/fridge-scans/3fa85f64-5717-4562-b3fc-2c963f66afa6.jpg")
+    private String scanImageUrl;
+
     @Data
     @Builder
     @NoArgsConstructor

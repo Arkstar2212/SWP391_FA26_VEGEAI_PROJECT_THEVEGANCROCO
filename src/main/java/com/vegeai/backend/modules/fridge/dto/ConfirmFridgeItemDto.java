@@ -3,12 +3,14 @@ package com.vegeai.backend.modules.fridge.dto;
 import com.vegeai.backend.modules.fridge.entity.FreshnessStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -16,6 +18,9 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Schema(description = "Thông tin nguyên liệu sau khi người dùng kiểm duyệt từ kết quả scan để lưu vào tủ lạnh")
 public class ConfirmFridgeItemDto {
+
+    @Schema(description = "ID nguyên liệu ACTIVE đã khớp từ Smart Fridge Memory (nếu có)")
+    private UUID matchedExistingFridgeItemId;
 
     @NotBlank(message = "Tên nguyên liệu không được để trống")
     @Schema(description = "Tên nguyên liệu", example = "Cà chua")
@@ -55,4 +60,8 @@ public class ConfirmFridgeItemDto {
 
     @Schema(description = "Độ tin cậy của AI", example = "0.98")
     private Double confidence;
+
+    @Size(max = 500, message = "Đường dẫn ảnh tối đa 500 ký tự.")
+    @Schema(description = "Đường dẫn ảnh quét tủ lạnh đã lưu trên server", example = "/api/public/fridge-scans/3fa85f64-5717-4562-b3fc-2c963f66afa6.jpg")
+    private String imageUrl;
 }

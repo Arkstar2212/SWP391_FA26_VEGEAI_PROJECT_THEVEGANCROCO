@@ -426,4 +426,94 @@ class FridgeControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(1801));
     }
+
+    @Test
+    @DisplayName("confirmScanItems: Lưu kèm imageUrl khi xác nhận từ AI scan và chặn URL độc hại")
+    void confirmScanItems_persistsScanImageUrl_andRejectsUnsafeUrl() throws Exception {
+        String savedImageUrl = "/api/public/fridge-scans/3fa85f64-5717-4562-b3fc-2c963f66afa6.jpg";
+        ConfirmFridgeScanRequest req = ConfirmFridgeScanRequest.builder()
+                .items(List.of(
+                        ConfirmFridgeItemDto.builder()
+                                .name("Nấm đùi gà")
+                                .quantity(2.0)
+                                .unit("hộp")
+                                .freshnessStatus(FreshnessStatus.FRESH)
+                                .imageUrl(savedImageUrl)
+                                .build()
+                ))
+                .build();
+
+        mockMvc.perform(post("/api/fridge/confirm-items")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + primaryToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.items[0].imageUrl").value(savedImageUrl));
+
+        mockMvc.perform(get("/api/fridge/items")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + primaryToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].imageUrl").value(savedImageUrl));
+
+        ConfirmFridgeScanRequest invalidReq = ConfirmFridgeScanRequest.builder()
+                .items(List.of(
+                        ConfirmFridgeItemDto.builder()
+                                .name("Nấm đùi gà")
+                                .imageUrl("javascript:alert(1)")
+                                .build()
+                ))
+                .build();
+
+        mockMvc.perform(post("/api/fridge/confirm-items")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + primaryToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidReq)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
+    }
+
+    @Test
+    @DisplayName("confirmScanItems: Cập nhật món trùng theo matchedExistingFridgeItemId và ép SPOILED khi đã quá hạn")
+    void confirmScanItems_matchesExistingById_andMarksExpiredAsSpoiled() throws Exception {
+        FridgeItem expiredTomato = fridgeItemRepository.save(FridgeItem.builder()
+                .userId(primaryUser.getUserId())
+                .name("Cà chua chín mọng Đà Lạt")
+                .normalizedName("ca chua chin mong da lat")
+                .category("VEGAN")
+                .isVegetarian(true)
+                .quantity(2.0)
+                .unit("quả")
+                .freshnessStatus(FreshnessStatus.FRESH)
+                .firstScannedAt(LocalDateTime.now().minusDays(7))
+                .lastScannedAt(LocalDateTime.now().minusDays(7))
+                .estimatedShelfLifeDays(5)
+                .expiryDate(LocalDate.now().minusDays(2))
+                .status(FridgeItemStatus.ACTIVE)
+                .build());
+
+        ConfirmFridgeScanRequest req = ConfirmFridgeScanRequest.builder()
+                .items(List.of(
+                        ConfirmFridgeItemDto.builder()
+                                .matchedExistingFridgeItemId(expiredTomato.getItemId())
+                                .name("Cà chua")
+                                .quantity(3.0)
+                                .unit("quả")
+                                .freshnessStatus(FreshnessStatus.FRESH)
+                                .build()
+                ))
+                .build();
+
+        mockMvc.perform(post("/api/fridge/confirm-items")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + primaryToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.totalProcessed").value(1))
+                .andExpect(jsonPath("$.data.newlyAddedCount").value(0))
+                .andExpect(jsonPath("$.data.updatedExistingCount").value(1))
+                .andExpect(jsonPath("$.data.items[0].itemId").value(expiredTomato.getItemId().toString()))
+                .andExpect(jsonPath("$.data.items[0].freshnessStatus").value("SPOILED"));
+
+        assertEquals(1, fridgeItemRepository.count());
+    }
 }

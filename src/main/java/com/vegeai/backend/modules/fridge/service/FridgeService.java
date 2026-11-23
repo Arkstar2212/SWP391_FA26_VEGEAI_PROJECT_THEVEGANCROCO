@@ -52,8 +52,16 @@ public class FridgeService {
         for (ConfirmFridgeItemDto dto : request.getItems()) {
             String normName = normalizeName(dto.getName());
 
-            Optional<FridgeItem> existingOpt = fridgeItemRepository
-                    .findByUserIdAndNormalizedNameAndStatus(userId, normName, FridgeItemStatus.ACTIVE);
+            Optional<FridgeItem> existingOpt = Optional.empty();
+            if (dto.getMatchedExistingFridgeItemId() != null) {
+                existingOpt = fridgeItemRepository
+                        .findByItemIdAndUserId(dto.getMatchedExistingFridgeItemId(), userId)
+                        .filter(item -> item.getStatus() == FridgeItemStatus.ACTIVE);
+            }
+            if (existingOpt.isEmpty()) {
+                existingOpt = fridgeItemRepository
+                        .findByUserIdAndNormalizedNameAndStatus(userId, normName, FridgeItemStatus.ACTIVE);
+            }
 
             if (existingOpt.isPresent()) {
                 // Đã có trong tủ -> Quét lại lần sau: Cập nhật vòng đời & hạn dùng
@@ -81,14 +89,18 @@ public class FridgeService {
                 if (dto.getNotes() != null && !dto.getNotes().isBlank()) {
                     existing.setNotes(dto.getNotes());
                 }
+                String cleanImageUrl = sanitizeImageUrl(dto.getImageUrl());
+                if (cleanImageUrl != null) {
+                    existing.setImageUrl(cleanImageUrl);
+                }
 
-                // Tự động kiểm tra: nếu ngày còn lại <= 1 mà vẫn để FRESH thì chuyển sang USABLE
+                // Tự động kiểm tra: quá hạn thì chuyển SPOILED, còn <= 1 ngày mà đang FRESH thì chuyển USABLE
                 long daysRemaining = existing.calculateDaysRemaining();
                 long daysInFridge = existing.calculateDaysInFridge();
-                if (daysRemaining <= 1 && existing.getFreshnessStatus() == FreshnessStatus.FRESH) {
-                    existing.setFreshnessStatus(FreshnessStatus.USABLE);
-                } else if (daysRemaining < 0) {
+                if (daysRemaining < 0) {
                     existing.setFreshnessStatus(FreshnessStatus.SPOILED);
+                } else if (daysRemaining <= 1 && existing.getFreshnessStatus() == FreshnessStatus.FRESH) {
+                    existing.setFreshnessStatus(FreshnessStatus.USABLE);
                 }
 
                 FridgeItem saved = fridgeItemRepository.save(existing);
@@ -125,6 +137,7 @@ public class FridgeService {
                         .storageTip(dto.getStorageTip())
                         .notes(dto.getNotes())
                         .confidence(dto.getConfidence())
+                        .imageUrl(sanitizeImageUrl(dto.getImageUrl()))
                         .build();
 
                 FridgeItem saved = fridgeItemRepository.save(newItem);
@@ -415,6 +428,7 @@ public class FridgeService {
                 .storageTip(item.getStorageTip())
                 .notes(item.getNotes())
                 .confidence(item.getConfidence())
+                .imageUrl(item.getImageUrl())
                 .warningMessage(warningMessage)
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt())
@@ -425,11 +439,34 @@ public class FridgeService {
      * Chuẩn hóa tên nguyên liệu: bỏ dấu tiếng Việt, viết thường, cắt khoảng trắng dư thừa
      * Giúp "Cà chua", "cà chua", "Ca chua" đều khớp về "ca chua".
      */
+    private static String sanitizeImageUrl(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() > 500) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Đường dẫn ảnh tối đa 500 ký tự.");
+        }
+        if (trimmed.matches("/api/public/fridge-scans/[a-f0-9-]{36}\\.(jpg|png|webp)")) {
+            return trimmed;
+        }
+        try {
+            java.net.URI uri = java.net.URI.create(trimmed);
+            if (("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                    && uri.getHost() != null && uri.getUserInfo() == null) {
+                return uri.toString();
+            }
+        } catch (IllegalArgumentException ignored) {
+        }
+        throw new AppException(ErrorCode.VALIDATION_ERROR, "Đường dẫn ảnh nguyên liệu không hợp lệ.");
+    }
+
     public String normalizeName(String name) {
         if (name == null || name.isBlank()) {
             return "";
         }
-        String normalized = Normalizer.normalize(name.trim().toLowerCase(), Normalizer.Form.NFD);
+        String prepared = name.trim().toLowerCase(Locale.ROOT).replace('đ', 'd');
+        String normalized = Normalizer.normalize(prepared, Normalizer.Form.NFD);
         return normalized.replaceAll("\\p{M}", "").replaceAll("\\s+", " ").trim();
     }
 

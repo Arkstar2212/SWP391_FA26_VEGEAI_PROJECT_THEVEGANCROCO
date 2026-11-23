@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS fridge_items (
     notes VARCHAR(500),
     storage_tip VARCHAR(255),
     confidence DOUBLE PRECISION,
+    image_url VARCHAR(500),
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
 );

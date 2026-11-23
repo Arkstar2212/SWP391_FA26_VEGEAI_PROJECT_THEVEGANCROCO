@@ -6,6 +6,7 @@ import com.vegeai.backend.modules.ai.dto.GenerateRecipeAiRequest;
 import com.vegeai.backend.modules.ai.dto.GeneratedRecipeAiResponse;
 import com.vegeai.backend.modules.ai.dto.VideoRecipeAiRequest;
 import com.vegeai.backend.modules.ai.service.GeminiAiService;
+import com.vegeai.backend.modules.fridge.service.FridgeScanAssetService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,6 +47,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AiVisionController {
 
     private final GeminiAiService geminiAiService;
+    private final FridgeScanAssetService fridgeScanAssetService;
 
     @PostMapping(value = "/fridge-scan", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
@@ -99,6 +101,14 @@ public class AiVisionController {
                 username, image.getOriginalFilename(), image.getSize(), image.getContentType());
 
         FridgeScanResponse scanResult = geminiAiService.scanFridge(image, username, isGuest);
+        try {
+            if (image != null && !image.isEmpty()) {
+                scanResult.setScanImageUrl(
+                        fridgeScanAssetService.storeSafely(image.getBytes(), image.getContentType()));
+            }
+        } catch (java.io.IOException ex) {
+            log.warn("[AI-VISION] Could not read uploaded bytes after scan for persistence: {}", ex.getMessage());
+        }
 
         return ResponseEntity.ok(ApiResponse.success("Phân tích ảnh tủ lạnh thành công.", scanResult));
     }

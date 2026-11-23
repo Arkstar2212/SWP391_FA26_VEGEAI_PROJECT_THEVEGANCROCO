@@ -22,8 +22,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.vegeai.backend.modules.ai.dto.GenerateRecipeAiRequest;
 import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -108,7 +110,39 @@ class AiVisionControllerTest extends GeminiIntegrationTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data.ingredients", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.data.warnings", notNullValue()));
+                .andExpect(jsonPath("$.data.warnings", notNullValue()))
+                .andExpect(jsonPath("$.data.scanImageUrl", matchesPattern("^/api/public/fridge-scans/[a-f0-9-]{36}\\.png$")));
+    }
+
+    @Test
+    @DisplayName("FR-VIS-PERSIST: Ảnh sau khi AI quét thành công được lưu xuống server và truy cập lại qua GET /api/public/fridge-scans/{filename}")
+    void scanFridge_PersistsScannedImageAndServesViaPublicEndpoint() throws Exception {
+        byte[] dummyImageBytes = "persisted-fridge-jpeg-bytes".getBytes();
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "my-fridge.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                dummyImageBytes
+        );
+
+        String responseBody = mockMvc.perform(multipart("/api/ai/fridge-scan")
+                        .file(imageFile)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + memberToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scanImageUrl", matchesPattern("^/api/public/fridge-scans/[a-f0-9-]{36}\\.jpg$")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String scanImageUrl = objectMapper.readTree(responseBody).path("data").path("scanImageUrl").asText();
+
+        mockMvc.perform(get(scanImageUrl))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.IMAGE_JPEG))
+                .andExpect(content().bytes(dummyImageBytes));
+
+        mockMvc.perform(get("/api/public/fridge-scans/invalid-filename.jpg"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
