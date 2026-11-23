@@ -57,4 +57,9 @@ public interface FridgeItemRepository extends JpaRepository<FridgeItem, UUID> {
      * Đếm số món thuần chay đang có trong tủ.
      */
     long countByUserIdAndStatusAndIsVegetarian(UUID userId, FridgeItemStatus status, boolean isVegetarian);
+
+    /**
+     * Kiểm tra đường dẫn ảnh quét có còn được tham chiếu bởi nguyên liệu nào trong kho hay không.
+     */
+    boolean existsByImageUrl(String imageUrl);
 }
