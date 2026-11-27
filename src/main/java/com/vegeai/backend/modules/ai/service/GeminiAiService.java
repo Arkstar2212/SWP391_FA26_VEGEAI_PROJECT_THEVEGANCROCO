@@ -76,7 +76,7 @@ public class GeminiAiService {
             "Lưu ý: Phân tích trên do AI tổng hợp chỉ mang tính tham khảo dinh dưỡng và lối sống chay, không thay thế chẩn đoán hay chỉ định y khoa.";
     private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 5;
     private static final int CHAT_READ_TIMEOUT_SECONDS = 20;
-    private static final int VISION_READ_TIMEOUT_SECONDS = 18;
+    private static final int VISION_READ_TIMEOUT_SECONDS = 30;
     private static final int UTILITY_READ_TIMEOUT_SECONDS = 20;
     private static final long MAX_FALLBACK_WALL_CLOCK_MS = 65_000L;
     private static final Set<String> ALLOWED_SCAN_CATEGORIES =
@@ -540,7 +540,10 @@ public class GeminiAiService {
                     .isGuestTrial(isGuest)
                     .requiresProfileSetup(requiresProfileSetup)
                     .build();
-        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) { throw new AppException(ErrorCode.AI_RESPONSE_INVALID); }
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            log.warn("[GEMINI-AI] Failed to parse chat JSON: {}", ex.getOriginalMessage());
+            throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+        }
     }
 
     /**
@@ -787,7 +790,7 @@ public class GeminiAiService {
         Map<String, Object> generationConfig = Map.of(
                 "temperature", 0.2,
                 "responseMimeType", "application/json",
-                "maxOutputTokens", 2048
+                "maxOutputTokens", 8192
         );
 
         Map<String, Object> requestBody = Map.of(
@@ -835,17 +838,30 @@ public class GeminiAiService {
 
             for (FridgeScanResponse.ScannedIngredient item : res.getIngredients()) {
                 if (item == null || item.getName() == null || item.getName().isBlank()
-                        || item.getCategory() == null
-                        || item.getFreshness() == null || !Set.of("FRESH", "USABLE", "SPOILED").contains(item.getFreshness())) {
+                        || item.getCategory() == null) {
+                    log.warn("[GEMINI-VISION] Invalid scanned ingredient item: {}", item);
                     throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
                 }
-                String normalizedCat = "OVO_LACTO".equalsIgnoreCase(item.getCategory().trim())
-                        ? "LACTO_OVO"
-                        : item.getCategory().trim().toUpperCase(Locale.ROOT);
+                String rawCat = item.getCategory().trim().toUpperCase(Locale.ROOT);
+                String normalizedCat = switch (rawCat) {
+                    case "OVO_LACTO", "VEGETARIAN" -> "LACTO_OVO";
+                    default -> rawCat;
+                };
                 if (!ALLOWED_SCAN_CATEGORIES.contains(normalizedCat)) {
+                    log.warn("[GEMINI-VISION] Unsupported ingredient category '{}' for item '{}'", item.getCategory(), item.getName());
                     throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
                 }
                 item.setCategory(normalizedCat);
+
+                String rawFreshness = item.getFreshness() != null ? item.getFreshness().trim().toUpperCase(Locale.ROOT) : "";
+                if ("NON_FOOD".equals(normalizedCat)) {
+                    item.setFreshness("SPOILED");
+                } else if (Set.of("FRESH", "USABLE", "SPOILED").contains(rawFreshness)) {
+                    item.setFreshness(rawFreshness);
+                } else {
+                    double score = item.getFreshnessScore() != null ? item.getFreshnessScore() : 0.85;
+                    item.setFreshness(score < 0.5 ? "SPOILED" : (score < 0.8 ? "USABLE" : "FRESH"));
+                }
 
                 if (item.getRejectionReason() != null) {
                     String trimmedReason = item.getRejectionReason().trim();
@@ -920,7 +936,10 @@ public class GeminiAiService {
             enrichAllergyWarnings(res, currentUsername);
             enrichFridgeMemory(res, currentUsername);
             return res;
-        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) { throw new AppException(ErrorCode.AI_RESPONSE_INVALID); }
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            log.warn("[GEMINI-VISION] Failed to parse fridge scan JSON: {}", ex.getOriginalMessage());
+            throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+        }
     }
 
     private static final Set<String> ALLOWED_SCAN_UNITS =
@@ -1252,7 +1271,10 @@ public class GeminiAiService {
         com.vegeai.backend.modules.admin.service.AiCallContext.recordUsage(root.path("usageMetadata"));
         JsonNode candidate = root.path("candidates").path(0);
         String finish = candidate.path("finishReason").asText();
-        if (!finish.isBlank() && !finish.equals("STOP")) throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+        if (!finish.isBlank() && !finish.equals("STOP")) {
+            log.warn("[GEMINI] Non-STOP finishReason='{}' (output may be truncated or blocked)", finish);
+            throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+        }
         StringBuilder text = new StringBuilder();
         for (JsonNode part : candidate.path("content").path("parts")) {
             if (!part.path("thought").asBoolean() && part.path("text").isTextual()) text.append(part.path("text").asText());
@@ -1543,7 +1565,10 @@ public class GeminiAiService {
             res.setAiFallbackNotice(null);
             res.setRequiresProfileSetup(false);
             return res;
-        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) { throw new AppException(ErrorCode.AI_RESPONSE_INVALID); }
+        } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
+            log.warn("[GEMINI-RECIPE] Failed to parse recipe JSON: {}", ex.getOriginalMessage());
+            throw new AppException(ErrorCode.AI_RESPONSE_INVALID);
+        }
     }
 
     private GeneratedRecipeAiResponse buildFallbackRecipe(GenerateRecipeAiRequest req, User user) {
